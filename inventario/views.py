@@ -11,7 +11,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Toner, Movimiento, Servicio
 from .forms import TonerForm, MovimientoForm
 
+print("VIEWS VERSION: 2025-12-23 08:50")
 
+def backup_db(request):
+    return HttpResponse("Backup endpon OK")
 
 
 def dashboard(request):

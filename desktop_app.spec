@@ -23,6 +23,9 @@ datas = [
 
 hiddenimports = []
 hiddenimports += collect_submodules("django")
+hiddenimports += collect_submodules("inventario")
+hiddenimports += collect_submodules("config")
+
 
 a = Analysis(
     ["desktop_app.py"],

@@ -9,7 +9,11 @@ urlpatterns = [
     path("movimientos/<int:mov_id>/anular/", views.movimiento_anular, name="movimiento_anular"),
     path("movimientos/", views.movimientos_list, name="movimientos_list"),
     path("movimientos/export/csv/", views.movimientos_export_csv, name="movimientos_export_csv"),
-    path("backup/", views.backup_db, name="backup_db"),
-    path("backups/abrir/", views.abrir_backups, name="abrir_backups"),
-
 ]
+
+# rutas opcionales (no deben romper el arranque)
+if hasattr(views, "backup_db"):
+    urlpatterns.append(path("backup/", views.backup_db, name="backup_db"))
+
+if hasattr(views, "abrir_backups"):
+    urlpatterns.append(path("backups/abrir/", views.abrir_backups, name="abrir_backups"))
