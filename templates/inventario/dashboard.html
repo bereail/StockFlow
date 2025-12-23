@@ -1,29 +1,35 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="row" style="justify-content:space-between;margin-bottom:12px">
+<div class="row space-between" style="margin-bottom:12px">
   <div>
-    <div style="font-size:22px;font-weight:800">Dashboard</div>
-    <div class="muted">Toners + movimientos recientes</div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Toners + movimientos recientes</div>
   </div>
 
-  <form method="get" class="row">
+  <form method="get" class="row" style="gap:10px">
     <input
       name="q"
       value="{{ q }}"
       placeholder="Buscar toner (marca / modelo / código)"
       style="width:320px"
     >
-    <button class="btn" type="submit">Buscar</button>
+    <button class="btn primary" type="submit">
+      <span class="mi">search</span>
+      Buscar
+    </button>
   </form>
 </div>
 
 <div class="grid">
   <!-- ================= TONERS ================= -->
   <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Toners</h3>
-      <a class="btn" href="/toners/nuevo/">+ Nuevo</a>
+    <div class="card-header">
+      <h3>Toners</h3>
+      <a class="btn" href="/toners/nuevo/">
+        <span class="mi">add</span>
+        Nuevo
+      </a>
     </div>
 
     <table>
@@ -40,13 +46,18 @@
         {% for t in toners %}
           <tr
             onclick="window.location='/movimientos/nuevo/?toner={{ t.id }}'"
-            style="cursor:pointer"
             title="Registrar movimiento"
           >
             <td>{{ t.marca }}</td>
             <td>{{ t.modelo }}</td>
-            <td>{{ t.codigo|default:"-" }}</td>
-            <td><strong>{{ t.stock }}</strong></td>
+            <td class="muted">{{ t.codigo|default:"-" }}</td>
+
+            {# Si tenés minimo en este listado, marca low cuando stock <= minimo #}
+            <td>
+              <span class="stock {% if t.minimo and t.stock <= t.minimo %}low{% endif %}">
+                {{ t.stock }}
+              </span>
+            </td>
           </tr>
         {% empty %}
           <tr>
@@ -59,9 +70,12 @@
 
   <!-- ================= MOVIMIENTOS RECIENTES ================= -->
   <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Movimientos recientes</h3>
-      <a class="btn" href="/movimientos/nuevo/">+ Nuevo</a>
+    <div class="card-header">
+      <h3>Movimientos recientes</h3>
+      <a class="btn" href="/movimientos/nuevo/">
+        <span class="mi">add_circle</span>
+        Nuevo
+      </a>
     </div>
 
     <table>
@@ -78,11 +92,21 @@
       <tbody>
         {% for m in movimientos %}
           <tr>
-            <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
-            <td>{{ m.tipo }}</td>
+            <td class="muted">{{ m.fecha|date:"Y-m-d H:i" }}</td>
+
+            <td>
+              {% if m.tipo|lower == "entrada" %}
+                <span class="chip ok"><span class="mi">south_west</span> Entrada</span>
+              {% elif m.tipo|lower == "salida" %}
+                <span class="chip danger"><span class="mi">north_east</span> Salida</span>
+              {% else %}
+                <span class="chip"><span class="mi">info</span> {{ m.tipo }}</span>
+              {% endif %}
+            </td>
+
             <td>{{ m.toner.marca }} {{ m.toner.modelo }}</td>
-            <td><strong>{{ m.cantidad }}</strong></td>
-            <td>{{ m.servicio.nombre|default:"-" }}</td>
+            <td><span class="stock">{{ m.cantidad }}</span></td>
+            <td class="muted">{{ m.servicio.nombre|default:"-" }}</td>
           </tr>
         {% empty %}
           <tr>
@@ -96,7 +120,10 @@
 
 <!-- ================= STOCK BAJO ================= -->
 <div class="card" style="margin-top:14px">
-  <h3 style="margin-top:0">Stock bajo</h3>
+  <div class="card-header">
+    <h3>Stock bajo</h3>
+    <span class="chip warn"><span class="mi">warning</span> Revisar</span>
+  </div>
 
   <table>
     <thead>
@@ -111,8 +138,8 @@
       {% for t in stock_bajo %}
         <tr>
           <td>{{ t.marca }} {{ t.modelo }}</td>
-          <td><strong>{{ t.stock }}</strong></td>
-          <td>{{ t.minimo }}</td>
+          <td><span class="stock low">{{ t.stock }}</span></td>
+          <td class="muted">{{ t.minimo }}</td>
         </tr>
       {% empty %}
         <tr>

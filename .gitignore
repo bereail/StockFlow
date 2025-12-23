@@ -1,0 +1,62 @@
+# ===============================
+# Python
+# ===============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# ===============================
+# Django
+# ===============================
+db.sqlite3
+db.sqlite3-journal
+
+# Archivos generados en runtime
+*.log
+
+# Migraciones compiladas
+**/migrations/__pycache__/
+
+# ===============================
+# PyInstaller
+# ===============================
+build/
+dist/
+*.spec.bak
+
+# Cache de PyInstaller
+*.toc
+*.manifest
+
+# ===============================
+# Desktop / OS
+# ===============================
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ===============================
+# IDE / Editores
+# ===============================
+.vscode/
+.idea/
+*.swp
+
+# ===============================
+# Secrets
+# ===============================
+.env
+.env.*
+
+# ===============================
+# AppData local (por las dudas)
+# ===============================
+StockToner/
+
