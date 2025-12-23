@@ -1,0 +1,72 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <h2 style="margin-top:0">{{ title }}</h2>
+  <div class="muted">EGRESO requiere servicio y no permite stock negativo.</div>
+
+  <form method="post" style="margin-top:10px">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div style="display:grid;gap:10px">
+      <div>
+        <label>Toner</label>
+        {{ form.toner }} {{ form.toner.errors }}
+      </div>
+
+      <div class="row" style="gap:10px">
+        <div style="flex:1">
+          <label>Tipo</label>
+          {{ form.tipo }} {{ form.tipo.errors }}
+        </div>
+        <div style="flex:1">
+          <label>Cantidad</label>
+          {{ form.cantidad }} {{ form.cantidad.errors }}
+        </div>
+      </div>
+
+      <!-- 👇 IMPORTANTE: id para ocultar/mostrar -->
+      <div id="servicio_row">
+        <label>Servicio (solo EGRESO)</label>
+        {{ form.servicio }} {{ form.servicio.errors }}
+      </div>
+
+      <div>
+        <label>Entregado a</label>
+        {{ form.entregado_a }} {{ form.entregado_a.errors }}
+      </div>
+
+      <div>
+        <label>Observaciones</label>
+        {{ form.observaciones }} {{ form.observaciones.errors }}
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" type="submit">Guardar movimiento</button>
+      <a class="btn2" href="/">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function toggleServicio() {
+    const tipo = document.querySelector('#id_tipo')?.value;
+    const servicioRow = document.querySelector('#servicio_row');
+    if (!servicioRow) return;
+    servicioRow.style.display = (tipo === 'EGRESO') ? 'block' : 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const tipoSelect = document.querySelector('#id_tipo');
+    if (tipoSelect) {
+      tipoSelect.addEventListener('change', toggleServicio);
+    }
+    toggleServicio();
+
+    // UX: poner cursor directo en cantidad
+    const cantidad = document.querySelector('#id_cantidad');
+    if (cantidad) cantidad.focus();
+  });
+</script>
+{% endblock %}

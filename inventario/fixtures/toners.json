@@ -1,0 +1,13 @@
+[
+{
+  "model": "inventario.toner",
+  "pk": 1,
+  "fields": {
+    "marca": "Brother",
+    "modelo": "660",
+    "codigo": "",
+    "stock": 20,
+    "minimo": 0
+  }
+}
+]

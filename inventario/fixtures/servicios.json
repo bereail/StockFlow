@@ -1,0 +1,10 @@
+[
+{
+  "model": "inventario.servicio",
+  "pk": 1,
+  "fields": {
+    "nombre": "Maternidad",
+    "descripcion": ""
+  }
+}
+]

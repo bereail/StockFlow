@@ -1,0 +1,34 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+<div class="card" style="max-width:680px">
+  <h2 style="margin-top:0">{{ title }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div style="display:grid;gap:10px">
+      <div>
+        <label>Marca</label>
+        {{ form.marca }} {{ form.marca.errors }}
+      </div>
+      <div>
+        <label>Modelo</label>
+        {{ form.modelo }} {{ form.modelo.errors }}
+      </div>
+      <div>
+        <label>Código</label>
+        {{ form.codigo }} {{ form.codigo.errors }}
+      </div>
+      <div>
+        <label>Stock inicial</label>
+        {{ form.stock }} {{ form.stock.errors }}
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" type="submit">Guardar</button>
+      <a class="btn2" href="/">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

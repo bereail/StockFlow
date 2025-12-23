@@ -1,0 +1,23 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+<div class="card" style="max-width:760px">
+  <h2 style="margin-top:0">Servicios</h2>
+
+  <form method="post" class="row" style="margin-bottom:12px">
+    {% csrf_token %}
+    <input name="nombre" placeholder="Nuevo servicio (ej: Administración)" style="width:360px">
+    <button class="btn" type="submit">Agregar</button>
+  </form>
+
+  <table>
+    <thead><tr><th>Nombre</th><th>Descripción</th></tr></thead>
+    <tbody>
+      {% for s in servicios %}
+        <tr><td>{{ s.nombre }}</td><td>{{ s.descripcion|default:"-" }}</td></tr>
+      {% empty %}
+        <tr><td colspan="2" class="muted">No hay servicios.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

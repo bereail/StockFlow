@@ -1,0 +1,97 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="card">
+<div class="row" style="justify-content:space-between">
+  <h2 style="margin:0">Movimientos</h2>
+  <div class="row">
+    <a class="btn2" href="/movimientos/export/csv/?{{ request.GET.urlencode }}">Exportar CSV</a>
+    <a class="btn" href="/movimientos/nuevo/">+ Nuevo movimiento</a>
+  </div>
+</div>
+
+
+  <!-- FILTROS -->
+  <form method="get" class="row" style="margin:12px 0; flex-wrap:wrap">
+    <select name="tipo" style="width:160px">
+      <option value="">Tipo (todos)</option>
+      <option value="INGRESO" {% if filtros.tipo == "INGRESO" %}selected{% endif %}>INGRESO</option>
+      <option value="EGRESO" {% if filtros.tipo == "EGRESO" %}selected{% endif %}>EGRESO</option>
+    </select>
+
+    <select name="toner" style="width:260px">
+      <option value="">Toner (todos)</option>
+      {% for t in toners %}
+        <option value="{{ t.id }}" {% if filtros.toner == t.id|stringformat:"s" %}selected{% endif %}>
+          {{ t.marca }} {{ t.modelo }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <select name="servicio" style="width:240px">
+      <option value="">Servicio (todos)</option>
+      {% for s in servicios %}
+        <option value="{{ s.id }}" {% if filtros.servicio == s.id|stringformat:"s" %}selected{% endif %}>
+          {{ s.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <input type="date" name="desde" value="{{ filtros.desde }}">
+    <input type="date" name="hasta" value="{{ filtros.hasta }}">
+
+    <button class="btn" type="submit">Filtrar</button>
+    <a class="btn2" href="/movimientos/">Limpiar</a>
+  </form>
+
+  <!-- TABLA -->
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Toner</th>
+        <th>Cant</th>
+        <th>Servicio</th>
+        <th>Entregado a</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for m in movimientos %}
+        <tr class="{% if m.anulado %}anulado{% endif %}">
+          <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
+          <td>{{ m.tipo }}</td>
+          <td>{{ m.toner.marca }} {{ m.toner.modelo }}</td>
+          <td><strong>{{ m.cantidad }}</strong></td>
+          <td>{{ m.servicio.nombre|default:"-" }}</td>
+          <td>{{ m.entregado_a|default:"-" }}</td>
+
+          <td>
+            {% if m.anulado %}
+              <span class="muted">Anulado</span>
+            {% else %}
+              <strong>Activo</strong>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if not m.anulado %}
+              <a class="btn2" href="/movimientos/{{ m.id }}/anular/">Anular</a>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="8" class="muted">No hay movimientos.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+<div class="card" style="max-width:600px">
+  <h2>Anular movimiento</h2>
+
+  <p>
+    <strong>{{ mov.tipo }}</strong> —
+    {{ mov.cantidad }} × {{ mov.toner.marca }} {{ mov.toner.modelo }}
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <label>Motivo de la anulación</label>
+    <input name="motivo" placeholder="Error de carga / devolución / otro" required>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" type="submit">Confirmar anulación</button>
+      <a class="btn2" href="/movimientos/">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
