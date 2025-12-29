@@ -13,20 +13,22 @@ class Servicio(models.Model):
         return self.nombre
 
 
-class Toner(models.Model):
-    marca = models.CharField(max_length=60, blank=True)       # p.ej. HP
-    modelo = models.CharField(max_length=80)                  # p.ej. 12A / Q2612A
-    codigo = models.CharField(max_length=50, blank=True)      # opcional (interno)
-    stock = models.PositiveIntegerField(default=0)
-    minimo = models.PositiveIntegerField(default=0)  # nuevo
 
-    class Meta:
-        unique_together = [("marca", "modelo")]
-        ordering = ["marca", "modelo"]
+
+class Toner(models.Model):
+    modelo = models.CharField(max_length=100)
+
+    marca = models.CharField(max_length=100, blank=True, default="")
+    codigo = models.CharField(max_length=100, blank=True, default="")
+
+    stock = models.IntegerField(default=0)
+    minimo = models.IntegerField(default=0)
+
+    activo = models.BooleanField(default=True)
 
     def __str__(self):
-        base = f"{self.marca} {self.modelo}".strip()
-        return f"{base} (stock: {self.stock})"
+        return self.modelo
+
 
 
 class Movimiento(models.Model):

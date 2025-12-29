@@ -26,10 +26,16 @@
   <div class="card">
     <div class="card-header">
       <h3>Toners</h3>
-      <a class="btn" href="/toners/nuevo/">
-        <span class="mi">add</span>
-        Nuevo
-      </a>
+      <div class="row" style="gap:8px">
+        <a class="btn2" href="{% url 'toner_list' %}">
+          <span class="mi">list</span>
+          Ver todos
+        </a>
+        <a class="btn" href="{% url 'toner_new' %}">
+          <span class="mi">add</span>
+          Nuevo
+        </a>
+      </div>
     </div>
 
     <table>
@@ -48,11 +54,9 @@
             onclick="window.location='/movimientos/nuevo/?toner={{ t.id }}'"
             title="Registrar movimiento"
           >
-            <td>{{ t.marca }}</td>
+            <td>{{ t.marca|default:"-" }}</td>
             <td>{{ t.modelo }}</td>
             <td class="muted">{{ t.codigo|default:"-" }}</td>
-
-            {# Si tenés minimo en este listado, marca low cuando stock <= minimo #}
             <td>
               <span class="stock {% if t.minimo and t.stock <= t.minimo %}low{% endif %}">
                 {{ t.stock }}
@@ -72,7 +76,7 @@
   <div class="card">
     <div class="card-header">
       <h3>Movimientos recientes</h3>
-      <a class="btn" href="/movimientos/nuevo/">
+      <a class="btn" href="{% url 'movimiento_new' %}">
         <span class="mi">add_circle</span>
         Nuevo
       </a>

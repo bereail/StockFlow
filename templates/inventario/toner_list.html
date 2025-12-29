@@ -1,0 +1,72 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:12px">
+  <div>
+    <div class="page-title">{{ title }}</div>
+    <div class="page-subtitle">Listado completo + acciones</div>
+  </div>
+
+  <form method="get" class="page-actions">
+    <input name="q" value="{{ q }}" placeholder="Buscar (marca/modelo/código)" style="width:320px">
+    <button class="btn" type="submit">Buscar</button>
+    <a class="btn2" href="{% url 'toner_new' %}">+ Nuevo</a>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Código</th>
+        <th>Stock</th>
+        <th>Mínimo</th>
+        <th>Estado</th>
+        <th style="width:240px">Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for t in toners %}
+        <tr>
+          <td>{{ t.marca|default:"-" }}</td>
+          <td><strong>{{ t.modelo }}</strong></td>
+          <td class="muted">{{ t.codigo|default:"-" }}</td>
+          <td>{{ t.stock }}</td>
+          <td>{{ t.minimo }}</td>
+
+          <td>
+            {% if t.activo %}
+              <span class="chip ok"><span class="mi">check</span> Activo</span>
+            {% else %}
+              <span class="chip"><span class="mi">pause</span> Inactivo</span>
+            {% endif %}
+          </td>
+
+          <td>
+            <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
+
+            <form method="post" action="{% url 'toner_toggle_active' t.id %}" style="display:inline">
+              {% csrf_token %}
+              <button class="btn2 {% if t.activo %}danger{% endif %}" type="submit">
+                {% if t.activo %}
+                  Desactivar
+                {% else %}
+                  Activar
+                {% endif %}
+              </button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" class="muted">No hay toners cargados.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

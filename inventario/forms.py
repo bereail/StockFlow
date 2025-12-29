@@ -11,6 +11,13 @@ class TonerForm(forms.ModelForm):
             "codigo": forms.TextInput(attrs={"placeholder": "Código interno (opcional)"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["minimo"].required = False
+        self.fields["stock"].required = False
+        self.fields["marca"].required = False
+        self.fields["codigo"].required = False
+
 class MovimientoForm(forms.ModelForm):
     class Meta:
         model = Movimiento

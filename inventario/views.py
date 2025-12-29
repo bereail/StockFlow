@@ -11,75 +11,175 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Toner, Movimiento, Servicio
 from .forms import TonerForm, MovimientoForm
 
-print("VIEWS VERSION: 2025-12-23 08:50")
+print("VIEWS VERSION: 2025-12-29 10:15")
 
-def backup_db(request):
-    return HttpResponse("Backup endpon OK")
 
 
 def dashboard(request):
     q = (request.GET.get("q") or "").strip()
+
+    toners = Toner.objects.filter(activo=True)
+
+    if q:
+        toners = toners.filter(
+            Q(marca__icontains=q) |
+            Q(modelo__icontains=q) |
+            Q(codigo__icontains=q)
+        )
+
+    toners = toners.order_by("marca", "modelo")
+
+    movimientos = (
+        Movimiento.objects
+        .select_related("toner", "servicio")
+        .order_by("-id")[:20]
+    )
+
+    stock_bajo = (
+        Toner.objects
+        .filter(activo=True, minimo__gt=0, stock__lte=F("minimo"))
+        .order_by("stock")[:50]
+    )
+
+    return render(request, "inventario/dashboard.html", {
+        "toners": toners,
+        "movimientos": movimientos,
+        "stock_bajo": stock_bajo,
+        "q": q,
+    })
+
+
+#################### TONER CRUD ###############################
+def toner_new(request):
+    print("=== TONER NEW ===")
+    print("DB PATH:", settings.DATABASES["default"]["NAME"])
+
+    if request.method == "POST":
+        form = TonerForm(request.POST)
+
+        if form.is_valid():
+            toner = form.save()
+            print("GUARDADO OK ID:", toner.id, toner.modelo)
+
+            # Confirmación extra: contar y mostrar ultimo
+            print("TOTAL TONERS (post-save):", Toner.objects.count())
+            print("ULTIMO TONER (post-save):", Toner.objects.order_by("-id").values("id", "modelo").first())
+
+            return redirect("/")
+        else:
+            print("FORM ERRORS:", form.errors)
+            print("NON FIELD:", form.non_field_errors())
+    else:
+        form = TonerForm()
+
+    return render(request, "inventario/toner_form.html", {
+        "form": form,
+        "title": "Nuevo toner"
+    })
+
+
+def toner_list(request):
+    q = (request.GET.get("q") or "").strip()
     toners = Toner.objects.all()
+
     if q:
         toners = toners.filter(
             Q(marca__icontains=q) | Q(modelo__icontains=q) | Q(codigo__icontains=q)
         )
+
     toners = toners.order_by("marca", "modelo")
 
-    movimientos = Movimiento.objects.select_related("toner", "servicio")[:20]
-    stock_bajo = Toner.objects.filter(minimo__gt=0, stock__lte=F("minimo")).order_by("stock")[:50]
+    return render(request, "inventario/toner_list.html", {
+        "toners": toners,
+        "q": q,
+        "title": "Toners",
+    })
 
 
-    return render(request, "inventario/dashboard.html", {
-    "toners": toners,
-    "movimientos": movimientos,
-    "stock_bajo": stock_bajo,
-    "q": q,
-})
+def toner_edit(request, pk):
+    toner = get_object_or_404(Toner, pk=pk)
 
-
-def toner_new(request):
     if request.method == "POST":
-        form = TonerForm(request.POST)
+        form = TonerForm(request.POST, instance=toner)
         if form.is_valid():
             form.save()
-            messages.success(request, "Toner creado.")
-            return redirect("dashboard")
+            messages.success(request, "Toner actualizado.")
+            return redirect("toner_list")
     else:
-        form = TonerForm()
-    return render(request, "inventario/toner_form.html", {"form": form, "title": "Nuevo Toner"})
+        form = TonerForm(instance=toner)
+
+    return render(request, "inventario/toner_form.html", {
+        "form": form,
+        "title": f"Editar toner #{toner.id}",
+    })
+
+
+def toner_toggle_active(request, pk):
+    toner = get_object_or_404(Toner, pk=pk)
+
+    if request.method == "POST":
+        toner.activo = not toner.activo
+        toner.save()
+        messages.success(
+            request,
+            "Toner activado." if toner.activo else "Toner desactivado."
+        )
+        return redirect("toner_list")
+
+    return render(request, "inventario/toner_toggle_active.html", {
+        "toner": toner
+    })
+
+
+
+
+#########################   MOVIMIENTOS CRUD #################################
 
 def movimiento_new(request):
     initial = {}
     toner_q = request.GET.get("toner")
+
+    # si viene por querystring, lo ponemos como initial,
+    # pero OJO: validamos que exista y esté activo
     if toner_q:
-        initial["toner"] = toner_q
+        try:
+            toner_id = int(toner_q)
+            if Toner.objects.filter(id=toner_id, activo=True).exists():
+                initial["toner"] = toner_id
+            else:
+                messages.error(request, "Ese toner está desactivado o no existe.")
+                return redirect("dashboard")
+        except ValueError:
+            messages.error(request, "Toner inválido.")
+            return redirect("dashboard")
 
     if request.method == "POST":
         form = MovimientoForm(request.POST)
+
+        # 1) limitar opciones a toners activos (también en POST)
+        form.fields["toner"].queryset = Toner.objects.filter(activo=True)
+
         if form.is_valid():
+            # 2) validación extra defensiva (por si alguien manipula el POST)
+            toner = form.cleaned_data.get("toner")
+            if toner and not toner.activo:
+                messages.error(request, "No se puede registrar movimiento: el toner está desactivado.")
+                return redirect("dashboard")
+
             form.save()
             messages.success(request, "Movimiento registrado y stock actualizado.")
             return redirect("dashboard")
+
         messages.error(request, "Revisá los errores del formulario.")
     else:
         form = MovimientoForm(initial=initial)
+        # mostrar solo activos en el select
+        form.fields["toner"].queryset = Toner.objects.filter(activo=True)
 
-    return render(request, "inventario/movimiento_form.html", {"form": form, "title": "Nuevo Movimiento"})
-
-def servicios(request):
-    # mini pantalla para cargar servicios rápido
-    if request.method == "POST":
-        nombre = (request.POST.get("nombre") or "").strip()
-        if nombre:
-            Servicio.objects.get_or_create(nombre=nombre)
-            messages.success(request, "Servicio guardado.")
-            return redirect("servicios")
-        messages.error(request, "Nombre requerido.")
-
-    lista = Servicio.objects.order_by("nombre")
-    return render(request, "inventario/servicios.html", {"servicios": lista})
-
+    return render(request, "inventario/movimiento_form.html", {
+        "form": form,
+        "title": "Nuevo Movimiento"
+    })
 
 def movimiento_anular(request, mov_id):
     mov = get_object_or_404(Movimiento, id=mov_id)
@@ -216,6 +316,30 @@ def movimientos_export_csv(request):
         ])
 
     return response
+
+
+######################### SERVICIOS CRUD #################################
+
+def servicios(request):
+    # mini pantalla para cargar servicios rápido
+    if request.method == "POST":
+        nombre = (request.POST.get("nombre") or "").strip()
+        if nombre:
+            Servicio.objects.get_or_create(nombre=nombre)
+            messages.success(request, "Servicio guardado.")
+            return redirect("servicios")
+        messages.error(request, "Nombre requerido.")
+
+    lista = Servicio.objects.order_by("nombre")
+    return render(request, "inventario/servicios.html", {"servicios": lista})
+
+
+######################### BACKUPS #################################
+
+
+def backup_db(request):
+    return HttpResponse("Backup endpoint OK")
+
 
 def _get_backups_dir():
     appdata_dir = os.path.dirname(str(settings.DATABASES["default"]["NAME"]))  # ...\StockToner
