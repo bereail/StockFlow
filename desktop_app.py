@@ -1,3 +1,4 @@
+# desktop_app.py
 import os
 import sys
 import threading
@@ -14,6 +15,8 @@ BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 os.chdir(BASE_DIR)
 
 
+
+# Determina dónde guardar datos persistentes (AppData)
 def get_data_dir():
     appdata = os.environ.get("APPDATA")
     if not appdata:

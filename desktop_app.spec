@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['run_app.py'],
+    ['desktop_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('staticfiles', 'staticfiles')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='run_app',
+    name='desktop_app',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
