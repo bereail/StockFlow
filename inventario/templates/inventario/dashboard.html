@@ -51,8 +51,8 @@
       <tbody>
         {% for t in toners %}
           <tr
-            onclick="window.location='/movimientos/nuevo/?toner={{ t.id }}'"
-            title="Registrar movimiento"
+            onclick="window.location.href = '{% url "movimiento_new" %}'"
+            title="Registrar movimiento (nuevo)"
           >
             <td>{{ t.marca|default:"-" }}</td>
             <td>{{ t.modelo }}</td>
@@ -76,10 +76,17 @@
   <div class="card">
     <div class="card-header">
       <h3>Movimientos recientes</h3>
-      <a class="btn" href="{% url 'movimiento_new' %}">
-        <span class="mi">add_circle</span>
-        Nuevo
-      </a>
+      <div class="row" style="gap:8px">
+        <a class="btn2" href="{% url 'movimientos_list' %}">
+          <span class="mi">list</span>
+          Ver todos
+        </a>
+
+        <a class="btn" href="{% url 'movimiento_new' %}">
+          <span class="mi">add_circle</span>
+          Nuevo
+        </a>
+      </div>
     </div>
 
     <table>
@@ -87,8 +94,7 @@
         <tr>
           <th>Fecha</th>
           <th>Tipo</th>
-          <th>Toner</th>
-          <th>Cant</th>
+          <th>Items</th>
           <th>Servicio</th>
         </tr>
       </thead>
@@ -99,22 +105,48 @@
             <td class="muted">{{ m.fecha|date:"Y-m-d H:i" }}</td>
 
             <td>
-              {% if m.tipo|lower == "entrada" %}
-                <span class="chip ok"><span class="mi">south_west</span> Entrada</span>
-              {% elif m.tipo|lower == "salida" %}
-                <span class="chip danger"><span class="mi">north_east</span> Salida</span>
+              {% if m.tipo == "INGRESO" %}
+                <span class="chip ok"><span class="mi">south_west</span> Ingreso</span>
+              {% elif m.tipo == "EGRESO" %}
+                <span class="chip danger"><span class="mi">north_east</span> Egreso</span>
               {% else %}
                 <span class="chip"><span class="mi">info</span> {{ m.tipo }}</span>
               {% endif %}
+
+              {% if m.anulado %}
+                <span class="chip warn" title="{{ m.anulado_motivo|default:'Anulado' }}">
+                  <span class="mi">block</span> Anulado
+                </span>
+              {% endif %}
             </td>
 
-            <td>{{ m.toner.marca }} {{ m.toner.modelo }}</td>
-            <td><span class="stock">{{ m.cantidad }}</span></td>
+            <td>
+              {# --- TONERS --- #}
+              {% for it in m.toners.all %}
+                <div class="muted" style="white-space:nowrap;">
+                  <span class="chip" style="padding:2px 8px;">T</span>
+                  <b>{{ it.cantidad }}</b> x {{ it.toner.marca|default:"" }} {{ it.toner.modelo }}
+                </div>
+              {% endfor %}
+
+              {# --- ARTÍCULOS --- #}
+              {% for it in m.articulos.all %}
+                <div class="muted" style="white-space:nowrap;">
+                  <span class="chip" style="padding:2px 8px;">A</span>
+                  <b>{{ it.cantidad }}</b> x {{ it.articulo.nombre }}
+                </div>
+              {% endfor %}
+
+              {% if m.toners.count == 0 and m.articulos.count == 0 %}
+                <span class="muted">-</span>
+              {% endif %}
+            </td>
+
             <td class="muted">{{ m.servicio.nombre|default:"-" }}</td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="5" class="muted">Sin movimientos.</td>
+            <td colspan="4" class="muted">Sin movimientos.</td>
           </tr>
         {% endfor %}
       </tbody>
