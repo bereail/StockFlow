@@ -1,0 +1,86 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:12px">
+  <div>
+    <div class="page-title">{{ title|default:"Artículo" }}</div>
+    <div class="page-subtitle">Carga / edición de artículos</div>
+  </div>
+
+  <div class="row" style="gap:8px">
+    <a class="btn" href="{% url 'articulos_list' %}">
+      <span class="mi">arrow_back</span> Volver
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px">
+      <div>
+        <label>Nombre *</label>
+        {{ form.nombre }}
+        {% for e in form.nombre.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div>
+        <label>Marca</label>
+        {{ form.marca }}
+        {% for e in form.marca.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div style="grid-column: 1 / -1;">
+        <label>Descripción</label>
+        {{ form.descripcion }}
+        {% for e in form.descripcion.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div>
+        <label>Unidad</label>
+        {{ form.unidad }}
+        {% for e in form.unidad.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div>
+        <label>Categoría</label>
+        {{ form.categoria }}
+        {% for e in form.categoria.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div>
+        <label>Ubicación</label>
+        {{ form.ubicacion }}
+        {% for e in form.ubicacion.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div>
+        <label>Stock</label>
+        {{ form.stock }}
+        {% for e in form.stock.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div>
+        <label>Mínimo</label>
+        {{ form.minimo }}
+        {% for e in form.minimo.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px; gap:10px">
+      <button class="btn" type="submit">
+        <span class="mi">save</span> Guardar
+      </button>
+      <a class="btn" href="{% url 'articulos_list' %}">
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

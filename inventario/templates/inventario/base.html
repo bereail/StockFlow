@@ -22,31 +22,44 @@
         </div>
 
         <nav class="nav">
-          <a class="btn {% if request.path == '/' %}active{% endif %}" href="/">
+          <a class="btn {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard' %}">
             <span class="mi">dashboard</span> Dashboard
           </a>
 
-          <a class="btn {% if 'movimientos/nuevo' in request.path %}active{% endif %}" href="/movimientos/nuevo/">
+          <a class="btn {% if 'movimientos/nuevo' in request.path %}active{% endif %}" href="{% url 'movimiento_new' %}">
             <span class="mi">add_circle</span> Nuevo Movimiento
           </a>
 
-          <a class="btn {% if '/movimientos/' in request.path and 'nuevo' not in request.path %}active{% endif %}" href="/movimientos/">
+          <a class="btn {% if '/movimientos/' in request.path and 'nuevo' not in request.path %}active{% endif %}" href="{% url 'movimientos_list' %}">
             <span class="mi">list_alt</span> Movimientos
           </a>
 
-          <a class="btn {% if '/toners/nuevo/' in request.path %}active{% endif %}" href="/toners/nuevo/">
+          <a class="btn {% if '/toners/nuevo/' in request.path %}active{% endif %}" href="{% url 'toner_new' %}">
             <span class="mi">print</span> Nuevo Toner
           </a>
 
-          <a class="btn {% if '/servicios/' in request.path %}active{% endif %}" href="/servicios/">
+          <a class="btn {% if '/toners/' in request.path and 'nuevo' not in request.path %}active{% endif %}" href="{% url 'toner_list' %}">
+            <span class="mi">print</span> Toners
+          </a>
+
+          <!-- ARTICULOS -->
+          <a class="btn {% if '/articulos/nuevo/' in request.path %}active{% endif %}" href="{% url 'articulo_nuevo' %}">
+            <span class="mi">inventory</span> Nuevo Artículo
+          </a>
+
+          <a class="btn {% if '/articulos/' in request.path and 'nuevo' not in request.path %}active{% endif %}" href="{% url 'articulos_list' %}">
+            <span class="mi">inventory</span> Artículos
+          </a>
+
+          <a class="btn {% if '/servicios/' in request.path %}active{% endif %}" href="{% url 'servicios' %}">
             <span class="mi">business</span> Servicios
           </a>
 
-          <a class="btn {% if '/backup/' in request.path %}active{% endif %}" href="/backup/">
+          <a class="btn {% if '/backup/' in request.path %}active{% endif %}" href="{% url 'backup_db' %}">
             <span class="mi">backup</span> Backup
           </a>
 
-          <a class="btn {% if '/backups/abrir/' in request.path %}active{% endif %}" href="/backups/abrir/">
+          <a class="btn {% if '/backups/abrir/' in request.path %}active{% endif %}" href="{% url 'abrir_backups' %}">
             <span class="mi">folder_open</span> Abrir backups
           </a>
         </nav>
