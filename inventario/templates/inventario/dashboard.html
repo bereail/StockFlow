@@ -1,10 +1,11 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<!-- ================= HEADER ================= -->
+<div class="row space-between" style="margin-bottom:12px; align-items:flex-end">
   <div>
     <div class="page-title">Dashboard</div>
-    <div class="page-subtitle">Toners + Artículos + movimientos recientes</div>
+    <div class="page-subtitle">Entrega rápida de toner + actividad reciente</div>
   </div>
 
   <form method="get" class="page-actions">
@@ -13,158 +14,217 @@
   </form>
 </div>
 
-<div class="grid">
-  <!-- ================= TONERS ================= -->
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Toners</h3>
-      <div class="row" style="gap:8px">
-        <a class="btn" href="{% url 'toner_new' %}">+ Nuevo</a>
-        <a class="btn" href="{% url 'toner_list' %}">Ver todos</a>
+<!-- ================= ENTREGA RÁPIDA ================= -->
+<div class="card" style="margin-bottom:14px">
+  <div class="row" style="justify-content:space-between; align-items:center">
+    <h3 style="margin:0">🔻 Entrega rápida de toner</h3>
+    <div class="row" style="gap:8px">
+      <a class="btn" href="{% url 'movimiento_new' %}">Modo completo</a>
+      <a class="btn" href="{% url 'movimientos_list' %}?tipo=EGRESO">Ver egresos</a>
+    </div>
+  </div>
+
+  <form method="post" style="margin-top:12px">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="entregar_toner">
+
+    <div class="grid" style="grid-template-columns: 2fr 2fr 1fr 2fr; gap:12px">
+      <div>
+        <div class="label">Servicio</div>
+        {{ entrega_form.servicio }}
+        {% if entrega_form.servicio.errors %}
+          <div class="help error">{{ entrega_form.servicio.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="label">Toner</div>
+        {{ entrega_form.toner }}
+        {% if entrega_form.toner.errors %}
+          <div class="help error">{{ entrega_form.toner.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="label">Cantidad</div>
+        {{ entrega_form.cantidad }}
+        {% if entrega_form.cantidad.errors %}
+          <div class="help error">{{ entrega_form.cantidad.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="label">Documento (opcional)</div>
+        {{ entrega_form.documento }}
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Marca</th>
-          <th>Modelo</th>
-          <th>Stock</th>
-          <th>Mín.</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for t in toners %}
-        <tr>
-          <td>{{ t.marca|default:"-" }}</td>
-          <td>{{ t.modelo }}</td>
-          <td>{{ t.stock|default:"-" }}</td>
-          <td>{{ t.minimo|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No hay toners.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="grid" style="grid-template-columns: 1.2fr 2fr 1fr; gap:12px; margin-top:12px">
+      <div>
+        <div class="label">Entregado a (opcional)</div>
+        {{ entrega_form.entregado_a }}
+      </div>
 
-  <!-- ================= ARTICULOS ================= -->
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Artículos</h3>
-      <div class="row" style="gap:8px">
-        <a class="btn" href="{% url 'articulo_nuevo' %}">+ Nuevo</a>
-        <a class="btn" href="{% url 'articulos_list' %}">Ver todos</a>
+      <div>
+        <div class="label">Observaciones</div>
+        {{ entrega_form.observaciones }}
+      </div>
+
+      <div>
+        <div class="label">Fecha</div>
+        {{ entrega_form.fecha }}
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Marca</th>
-          <th>Cat.</th>
-          <th>Ubic.</th>
-          <th>Stock</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in articulos %}
-        <tr>
-          <td>{{ a.nombre }}</td>
-          <td>{{ a.marca|default:"-" }}</td>
-          <td>{{ a.categoria|default:"-" }}</td>
-          <td>{{ a.ubicacion|default:"-" }}</td>
-          <td>{{ a.stock|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5">No hay artículos.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ================= MOVIMIENTOS ================= -->
-  <div class="card" style="grid-column: 1 / -1;">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Movimientos recientes</h3>
-      <div class="row" style="gap:8px">
-        <a class="btn" href="{% url 'movimiento_new' %}">+ Nuevo movimiento</a>
-        <a class="btn" href="{% url 'movimientos_list' %}">Ver historial</a>
-      </div>
+    <div class="row" style="gap:10px; margin-top:12px">
+      <button class="btn primary" type="submit">Confirmar entrega</button>
+      <a class="btn" href="{% url 'dashboard' %}">Limpiar</a>
     </div>
+  </form>
+</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Servicio</th>
-          <th>Pedido</th>
-          <th>Nota</th>
-          <th>OP</th>
-          <th>Anulado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in movimientos %}
-        <tr>
-          <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
-          <td>{{ m.tipo }}</td>
-          <td>{{ m.servicio.nombre|default:"-" }}</td>
-          <td>{{ m.nro_pedido|default:"-" }}</td>
-          <td>{{ m.nro_nota|default:"-" }}</td>
-          <td>{{ m.nro_orden_provision|default:"-" }}</td>
-          <td>{% if m.anulado %}SI{% else %}NO{% endif %}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7">No hay movimientos.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ================= STOCK BAJO ================= -->
+<!-- ================= ACCESOS RÁPIDOS ================= -->
+<div class="grid" style="margin-bottom:14px">
   <div class="card">
-    <h3 style="margin-top:0">Stock bajo (Toners)</h3>
-    <table>
-      <thead>
-        <tr><th>Modelo</th><th>Stock</th><th>Mín.</th></tr>
-      </thead>
-      <tbody>
-        {% for t in stock_bajo_toners %}
-        <tr>
-          <td>{{ t.modelo }}</td>
-          <td>{{ t.stock }}</td>
-          <td>{{ t.minimo }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3">No hay alertas.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <h3 style="margin-top:0">Toners</h3>
+    <div class="row" style="gap:8px; flex-wrap:wrap">
+      <a class="btn" href="{% url 'movimiento_new' %}?preset=ingreso_toner">+ Ingreso</a>
+      <a class="btn" href="{% url 'toner_new' %}">+ Nuevo toner</a>
+      <a class="btn" href="{% url 'toner_list' %}">Ver lista</a>
+    </div>
+    <div style="margin-top:10px" class="muted">
+      Tip: la entrega diaria está arriba (Entrega rápida).
+    </div>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">Stock bajo (Artículos)</h3>
-    <table>
-      <thead>
-        <tr><th>Nombre</th><th>Stock</th><th>Mín.</th></tr>
-      </thead>
-      <tbody>
-        {% for a in stock_bajo_articulos %}
-        <tr>
-          <td>{{ a.nombre }}</td>
-          <td>{{ a.stock }}</td>
-          <td>{{ a.minimo }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3">No hay alertas.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <h3 style="margin-top:0">Artículos</h3>
+    <div class="row" style="gap:8px; flex-wrap:wrap">
+      <a class="btn" href="{% url 'movimiento_new' %}?preset=ingreso_articulo">+ Ingreso</a>
+      <a class="btn" href="{% url 'articulo_nuevo' %}">+ Nuevo artículo</a>
+      <a class="btn" href="{% url 'articulos_list' %}">Ver lista</a>
+    </div>
   </div>
 
+  <div class="card">
+    <h3 style="margin-top:0">Servicios</h3>
+    <div class="row" style="gap:8px; flex-wrap:wrap">
+      <a class="btn" href="{% url 'servicios' %}">Gestionar servicios</a>
+      <a class="btn" href="{% url 'movimientos_list' %}">Movimientos</a>
+      <a class="btn" href="{% url 'movimientos_export_csv' %}">Exportar CSV</a>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ÚLTIMAS ENTREGAS (DETALLES) ================= -->
+<div class="card" style="margin-bottom:14px">
+  <div class="row" style="justify-content:space-between; align-items:center">
+    <h3 style="margin:0">Últimas entregas / movimientos recientes</h3>
+    <a class="btn" href="{% url 'movimientos_list' %}">Ver historial</a>
+  </div>
+
+  <table style="margin-top:10px">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Servicio</th>
+        <th>Item</th>
+        <th>Cant.</th>
+        <th>Doc.</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in movimientos_recientes %}
+      <tr>
+        <td>{{ d.movimiento.fecha|date:"Y-m-d H:i" }}</td>
+        <td>{{ d.movimiento.tipo }}</td>
+        <td>{{ d.movimiento.servicio.nombre|default:"-" }}</td>
+
+        <td>
+          {% if d.item.tipo == "TONER" and d.item.toner %}
+            TONER — {{ d.item.toner }}
+          {% elif d.item.tipo == "ARTICULO" and d.item.articulo %}
+            ARTÍCULO — {{ d.item.articulo }}
+          {% else %}
+            {{ d.item }}
+          {% endif %}
+        </td>
+
+        <td>{{ d.cantidad }}</td>
+
+        <td>
+          {% if d.movimiento.documento %}
+            {{ d.movimiento.documento.tipo }} Nº {{ d.movimiento.documento.numero }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6">No hay movimientos recientes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ================= STOCK RÁPIDO (ITEMS) ================= -->
+<div class="card">
+  <div class="row" style="justify-content:space-between; align-items:center">
+    <h3 style="margin:0">Stock calculado (Toners + Artículos)</h3>
+    <div class="muted">Mostrando {{ items|length }} items</div>
+  </div>
+
+  <table style="margin-top:10px">
+    <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Nombre</th>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Stock</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.tipo }}</td>
+
+        <td>
+          {% if it.tipo == "TONER" and it.toner %}
+            {{ it.toner.nombre }}
+          {% elif it.tipo == "ARTICULO" and it.articulo %}
+            {{ it.articulo.nombre }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+
+        <td>
+          {% if it.tipo == "TONER" and it.toner %}
+            {{ it.toner.marca|default:"-" }}
+          {% elif it.tipo == "ARTICULO" and it.articulo %}
+            {{ it.articulo.marca|default:"-" }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+
+        <td>
+          {% if it.tipo == "TONER" and it.toner %}
+            {{ it.toner.modelo_impresora|default:"-" }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+
+        <td><b>{{ it.stock }}</b></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No hay items.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% endblock %}

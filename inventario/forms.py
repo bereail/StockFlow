@@ -1,12 +1,34 @@
 from django import forms
+from django.utils import timezone
+
 from .models import (
     Toner,
     Articulo,
     Servicio,
+    Documento,
     Movimiento,
-    MovimientoToner,
-    MovimientoArticulo,
+    MovimientoDetalle,
 )
+
+
+class EntregaRapidaTonerForm(forms.Form):
+    servicio = forms.ModelChoiceField(queryset=Servicio.objects.order_by("nombre"))
+    toner = forms.ModelChoiceField(queryset=Toner.objects.filter(activo=True).order_by("marca", "nombre"))
+    cantidad = forms.IntegerField(min_value=1, initial=1)
+
+    documento = forms.ModelChoiceField(
+        queryset=Documento.objects.order_by("-fecha", "tipo", "numero"),
+        required=False
+    )
+
+    entregado_a = forms.CharField(required=False, max_length=120)
+    observaciones = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}))
+
+    fecha = forms.DateTimeField(
+        required=False,
+        initial=timezone.now,
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
+    )
 
 # =========================
 # TONER
@@ -14,17 +36,17 @@ from .models import (
 class TonerForm(forms.ModelForm):
     class Meta:
         model = Toner
-        fields = ["marca", "modelo", "stock", "minimo"]
+        fields = ["nombre", "activo", "marca", "modelo_impresora"]
         widgets = {
-            "marca": forms.TextInput(attrs={"placeholder": "HP"}),
-            "modelo": forms.TextInput(attrs={"placeholder": "12A / Q2612A"}),
+            "nombre": forms.TextInput(attrs={"placeholder": "Ej: CE285A / 12A"}),
+            "marca": forms.TextInput(attrs={"placeholder": "HP (opcional)"}),
+            "modelo_impresora": forms.TextInput(attrs={"placeholder": "Ej: P1102 / M401 (opcional)"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["marca"].required = False
-        self.fields["stock"].required = False
-        self.fields["minimo"].required = False
+        self.fields["modelo_impresora"].required = False
 
 
 # =========================
@@ -33,35 +55,41 @@ class TonerForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = [
-            "nombre",
-            "marca",
-            "descripcion",
-            "unidad",
-            "categoria",
-            "ubicacion",
-            "stock",
-            "minimo",
-        ]
+        fields = ["nombre", "activo", "marca", "descripcion", "caracteristicas", "observaciones"]
         widgets = {
             "nombre": forms.TextInput(attrs={"placeholder": "Cable USB / Mouse / Resma A4"}),
             "marca": forms.TextInput(attrs={"placeholder": "Genérica / HP / Logitech (opcional)"}),
             "descripcion": forms.Textarea(attrs={"rows": 2, "placeholder": "Descripción (opcional)"}),
-            "unidad": forms.TextInput(attrs={"placeholder": "u / pack / caja (opcional)"}),
-            "categoria": forms.TextInput(attrs={"placeholder": "Ej: Oficina / PC / Limpieza (opcional)"}),
-            "ubicacion": forms.TextInput(attrs={"placeholder": "Ej: Depósito / Estante 3 (opcional)"}),
+            "caracteristicas": forms.Textarea(attrs={"rows": 2, "placeholder": "Características (opcional)"}),
+            "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Obs (opcional)"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Solo nombre obligatorio
         self.fields["marca"].required = False
         self.fields["descripcion"].required = False
-        self.fields["unidad"].required = False
-        self.fields["categoria"].required = False
-        self.fields["ubicacion"].required = False
-        self.fields["stock"].required = False
-        self.fields["minimo"].required = False
+        self.fields["caracteristicas"].required = False
+        self.fields["observaciones"].required = False
+
+
+# =========================
+# DOCUMENTO
+# (opcional: si lo querés CRUD separado)
+# =========================
+class DocumentoForm(forms.ModelForm):
+    class Meta:
+        model = Documento
+        fields = ["tipo", "numero", "fecha", "observaciones"]
+        widgets = {
+            "fecha": forms.DateInput(attrs={"type": "date"}),
+            "numero": forms.TextInput(attrs={"placeholder": "Ej: 1234"}),
+            "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Obs (opcional)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["fecha"].required = False
+        self.fields["observaciones"].required = False
 
 
 # =========================
@@ -70,35 +98,23 @@ class ArticuloForm(forms.ModelForm):
 class MovimientoForm(forms.ModelForm):
     class Meta:
         model = Movimiento
-        fields = [
-            "tipo",
-            "servicio",
-            "fecha",
-            "entregado_a",
-            "observaciones",
-            "nro_pedido",
-            "nro_nota",
-            "nro_orden_provision",
-        ]
+        fields = ["tipo", "servicio", "fecha", "documento", "observaciones"]
         widgets = {
             "fecha": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "entregado_a": forms.TextInput(attrs={"placeholder": "Nombre / sector (opcional)"}),
-            "nro_pedido": forms.TextInput(attrs={"placeholder": "Pedido (opcional)"}),
-            "nro_nota": forms.TextInput(attrs={"placeholder": "N° Nota (opcional)"}),
-            "nro_orden_provision": forms.TextInput(attrs={"placeholder": "Orden de provisión (opcional)"}),
             "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Observaciones (opcional)"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # En INGRESO el servicio debe quedar vacío
+
         self.fields["servicio"].required = False
         self.fields["fecha"].required = False
-        self.fields["entregado_a"].required = False
+        self.fields["documento"].required = False
         self.fields["observaciones"].required = False
-        self.fields["nro_pedido"].required = False
-        self.fields["nro_nota"].required = False
-        self.fields["nro_orden_provision"].required = False
+
+        # Default fecha
+        if not self.instance.pk and not self.initial.get("fecha"):
+            self.initial["fecha"] = timezone.now().strftime("%Y-%m-%dT%H:%M")
 
     def clean(self):
         cleaned = super().clean()
@@ -108,7 +124,7 @@ class MovimientoForm(forms.ModelForm):
         if tipo == "EGRESO" and not servicio:
             self.add_error("servicio", "En un EGRESO debe seleccionar un servicio.")
 
-        # Si es INGRESO, limpiamos servicio por las dudas
+        # Regla: en INGRESO, servicio vacío
         if tipo == "INGRESO":
             cleaned["servicio"] = None
 
@@ -116,25 +132,69 @@ class MovimientoForm(forms.ModelForm):
 
 
 # =========================
-# LINEAS (ITEMS)
+# DETALLES (formsets)
+# MovimientoDetalle -> elegís toner/articulo y cantidad
 # =========================
-class MovimientoTonerForm(forms.ModelForm):
+
+class MovimientoDetalleTonerForm(forms.ModelForm):
+    toner = forms.ModelChoiceField(
+        queryset=Toner.objects.filter(activo=True),
+        required=False,
+        empty_label="-- seleccionar toner --",
+    )
+
     class Meta:
-        model = MovimientoToner
+        model = MovimientoDetalle
         fields = ["toner", "cantidad"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # para que no moleste al crear filas vacías
         self.fields["cantidad"].required = False
 
+    def clean(self):
+        cleaned = super().clean()
+        toner = cleaned.get("toner")
+        cantidad = cleaned.get("cantidad")
 
-class MovimientoArticuloForm(forms.ModelForm):
+        # Fila vacía => OK
+        if not toner and not cantidad:
+            return cleaned
+
+        if toner and not cantidad:
+            self.add_error("cantidad", "Ingresá cantidad.")
+        if cantidad and not toner:
+            self.add_error("toner", "Seleccioná un toner.")
+
+        return cleaned
+
+
+class MovimientoDetalleArticuloForm(forms.ModelForm):
+    articulo = forms.ModelChoiceField(
+        queryset=Articulo.objects.filter(activo=True),
+        required=False,
+        empty_label="-- seleccionar artículo --",
+    )
+
     class Meta:
-        model = MovimientoArticulo
+        model = MovimientoDetalle
         fields = ["articulo", "cantidad"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # para que no moleste al crear filas vacías
         self.fields["cantidad"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        articulo = cleaned.get("articulo")
+        cantidad = cleaned.get("cantidad")
+
+        # Fila vacía => OK
+        if not articulo and not cantidad:
+            return cleaned
+
+        if articulo and not cantidad:
+            self.add_error("cantidad", "Ingresá cantidad.")
+        if cantidad and not articulo:
+            self.add_error("articulo", "Seleccioná un artículo.")
+
+        return cleaned

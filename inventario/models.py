@@ -1,258 +1,158 @@
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
+from django.db import models
 from django.utils import timezone
 
 
 # =========================
-# MAESTROS
+# CATÁLOGOS
 # =========================
 
 class Servicio(models.Model):
-    nombre = models.CharField(max_length=120, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
-
-    class Meta:
-        ordering = ["nombre"]
 
     def __str__(self):
         return self.nombre
 
 
 class Toner(models.Model):
-    modelo = models.CharField(max_length=100)
-    marca = models.CharField(max_length=100, blank=True, default="")
-
-    # stock opcional (puede ser null)
-    stock = models.IntegerField(null=True, blank=True, default=None)
-    minimo = models.IntegerField(null=True, blank=True, default=None)
-
+    nombre = models.CharField(max_length=100)
     activo = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["modelo"]
-        indexes = [
-            models.Index(fields=["modelo"]),
-        ]
+    marca = models.CharField(max_length=100, blank=True)
+    modelo_impresora = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
-        base = self.modelo
-        if self.marca:
-            base += f" ({self.marca})"
-        return base
+        return f"{self.nombre} ({self.marca})"
 
 
-# ✅ Articulo == Item
 class Articulo(models.Model):
     nombre = models.CharField(max_length=120)
-    descripcion = models.TextField(blank=True, default="")
-
-    marca = models.CharField(max_length=100, blank=True, default="")
-
-    # opcionales y pueden ser null
-    unidad = models.CharField(max_length=20, blank=True, default="u")  # u, caja, pack...
-    categoria = models.CharField(max_length=60, null=True, blank=True, default=None)
-    ubicacion = models.CharField(max_length=80, null=True, blank=True, default=None)
-
-    stock = models.IntegerField(null=True, blank=True, default=None)
-    minimo = models.IntegerField(null=True, blank=True, default=None)
-
+    descripcion = models.TextField(blank=True)
+    marca = models.CharField(max_length=100, blank=True)
+    caracteristicas = models.TextField(blank=True)
+    observaciones = models.TextField(blank=True)
     activo = models.BooleanField(default=True)
 
-    class Meta:
-        ordering = ["nombre"]
-        indexes = [
-            models.Index(fields=["nombre"]),
-            models.Index(fields=["categoria"]),
-        ]
-
     def __str__(self):
-        base = self.nombre
-        if self.marca:
-            base += f" ({self.marca})"
-        return base
+        return self.nombre
 
 
-# =========================
-# MOVIMIENTO (CABECERA)
-# =========================
-
-class Movimiento(models.Model):
-    TIPO = (
-        ("INGRESO", "Ingreso a depósito"),
-        ("EGRESO", "Egreso/Retiro para servicio"),
+class ActivoPC(models.Model):
+    nombre_pc = models.CharField(max_length=100)
+    ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
+    patrimonio = models.CharField(max_length=100, blank=True)
+    serie = models.CharField(max_length=100, blank=True)
+    caracteristicas = models.TextField(blank=True)
+    observaciones = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+    servicio = models.ForeignKey(
+        Servicio, on_delete=models.SET_NULL, null=True, blank=True
     )
 
-    tipo = models.CharField(max_length=10, choices=TIPO)
+    def __str__(self):
+        return self.nombre_pc
 
+
+class Impresora(models.Model):
+    TIPO_CONEXION = (
+        ("IP", "Red"),
+        ("USB", "USB"),
+    )
+
+    marca = models.CharField(max_length=100)
+    modelo = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=100)
+    patrimonio = models.CharField(max_length=100, blank=True)
+    estado = models.CharField(max_length=50, default="ACTIVA")
     servicio = models.ForeignKey(
-        Servicio,
-        on_delete=models.PROTECT,
-        related_name="movimientos",
-        blank=True,
-        null=True,  # null cuando es INGRESO
+        Servicio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    conexion = models.CharField(max_length=10, choices=TIPO_CONEXION)
+    ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
+    toner = models.ForeignKey(
+        Toner, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    observaciones = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.marca} {self.modelo}"
+        
+
+# =========================
+# DOCUMENTOS ADMINISTRATIVOS
+# =========================
+
+class Documento(models.Model):
+    TIPO_DOCUMENTO = (
+        ("PEDIDO", "Pedido"),
+        ("NOTA", "Nota"),
+        ("ORDEN", "Orden de Provisión"),
+    )
+
+    tipo = models.CharField(max_length=20, choices=TIPO_DOCUMENTO)
+    numero = models.CharField(max_length=100)
+    fecha = models.DateField(default=timezone.now)
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ("tipo", "numero")
+
+    def __str__(self):
+        return f"{self.tipo} Nº {self.numero}"
+
+
+# =========================
+# MOVIMIENTOS DE INVENTARIO
+# =========================
+
+class Item(models.Model):
+    TIPO_ITEM = (
+        ("TONER", "Toner"),
+        ("ARTICULO", "Artículo"),
+        ("ACTIVO_PC", "PC"),
+    )
+
+    tipo = models.CharField(max_length=20, choices=TIPO_ITEM)
+    toner = models.ForeignKey(Toner, null=True, blank=True, on_delete=models.CASCADE)
+    articulo = models.ForeignKey(Articulo, null=True, blank=True, on_delete=models.CASCADE)
+    activo_pc = models.ForeignKey(ActivoPC, null=True, blank=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        if self.toner:
+            return f"Toner: {self.toner}"
+        if self.articulo:
+            return f"Artículo: {self.articulo}"
+        if self.activo_pc:
+            return f"PC: {self.activo_pc}"
+        return "Item"
+
+
+class Movimiento(models.Model):
+    TIPO_MOVIMIENTO = (
+        ("INGRESO", "Ingreso"),
+        ("EGRESO", "Egreso"),
+        ("AJUSTE", "Ajuste"),
     )
 
     fecha = models.DateTimeField(default=timezone.now)
-
-    entregado_a = models.CharField(max_length=120, blank=True)
+    tipo = models.CharField(max_length=20, choices=TIPO_MOVIMIENTO)
+    servicio = models.ForeignKey(
+        Servicio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    documento = models.ForeignKey(
+        Documento, on_delete=models.SET_NULL, null=True, blank=True
+    )
     observaciones = models.TextField(blank=True)
 
-    # ✅ Referencias opcionales (nota/pedido/orden)
-    nro_pedido = models.CharField(max_length=50, blank=True)          # opcional
-    nro_nota = models.CharField(max_length=50, blank=True)            # opcional
-    nro_orden_provision = models.CharField(max_length=50, blank=True) # opcional
+    def __str__(self):
+        return f"{self.tipo} - {self.fecha.strftime('%d/%m/%Y')}"
 
-    anulado = models.BooleanField(default=False)
-    anulado_motivo = models.CharField(max_length=200, blank=True)
 
-    class Meta:
-        ordering = ["-fecha"]
-        indexes = [
-            models.Index(fields=["-fecha"]),
-            models.Index(fields=["tipo"]),
-            models.Index(fields=["anulado"]),
-        ]
-
-    def clean(self):
-        if self.tipo == "EGRESO" and not self.servicio:
-            raise ValidationError("En un EGRESO debe seleccionar un servicio.")
-
-        if self.tipo == "INGRESO" and self.servicio:
-            raise ValidationError("En un INGRESO no debe seleccionar servicio.")
-
-        if self.anulado and not self.anulado_motivo:
-            raise ValidationError("Si anula el movimiento, indique un motivo.")
+class MovimientoDetalle(models.Model):
+    movimiento = models.ForeignKey(
+        Movimiento, related_name="detalles", on_delete=models.CASCADE
+    )
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    cantidad = models.IntegerField()
 
     def __str__(self):
-        s = self.servicio.nombre if self.servicio else "-"
-        return f"[{self.tipo}] -> {s} {self.fecha:%Y-%m-%d %H:%M}"
-
-
-# =========================
-# LINEAS (DETALLE)
-# =========================
-
-class MovimientoToner(models.Model):
-    movimiento = models.ForeignKey(Movimiento, on_delete=models.CASCADE, related_name="toners")
-    toner = models.ForeignKey(Toner, on_delete=models.PROTECT, related_name="movimientos")
-    cantidad = models.PositiveIntegerField()
-
-    class Meta:
-        ordering = ["id"]
-
-    def clean(self):
-        if not self.movimiento_id:
-            raise ValidationError("Primero debe guardar la cabecera del movimiento.")
-
-        if self.cantidad <= 0:
-            raise ValidationError("La cantidad debe ser mayor que cero.")
-
-        if self.movimiento.anulado:
-            raise ValidationError("No se pueden agregar items a un movimiento anulado.")
-
-        # Validar stock solo en creación y solo si es EGRESO
-        if self.pk is None and self.movimiento.tipo == "EGRESO":
-            stock_actual = self.toner.stock or 0
-            if stock_actual < self.cantidad:
-                raise ValidationError(
-                    f"No hay stock suficiente de {self.toner}. (Disponible: {stock_actual})"
-                )
-
-        # Evitar ediciones peligrosas
-        if self.pk is not None:
-            old = MovimientoToner.objects.get(pk=self.pk)
-            if (
-                old.toner_id != self.toner_id
-                or old.cantidad != self.cantidad
-                or old.movimiento_id != self.movimiento_id
-            ):
-                raise ValidationError(
-                    "No se permite modificar toner/cantidad/movimiento en un item ya creado. "
-                    "Para corregir stock, genere un movimiento inverso."
-                )
-
-    def apply_to_stock(self):
-        stock_actual = self.toner.stock or 0
-
-        if self.movimiento.tipo == "INGRESO":
-            stock_nuevo = stock_actual + self.cantidad
-        else:
-            if stock_actual < self.cantidad:
-                raise ValidationError("Stock insuficiente.")
-            stock_nuevo = stock_actual - self.cantidad
-
-        self.toner.stock = stock_nuevo
-        self.toner.save(update_fields=["stock"])
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        self.full_clean()
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            if is_new:
-                self.apply_to_stock()
-
-    def __str__(self):
-        return f"{self.cantidad} x {self.toner}"
-
-
-class MovimientoArticulo(models.Model):
-    movimiento = models.ForeignKey(Movimiento, on_delete=models.CASCADE, related_name="articulos")
-    articulo = models.ForeignKey(Articulo, on_delete=models.PROTECT, related_name="movimientos")
-    cantidad = models.PositiveIntegerField()
-
-    class Meta:
-        ordering = ["id"]
-
-    def clean(self):
-        if not self.movimiento_id:
-            raise ValidationError("Primero debe guardar la cabecera del movimiento.")
-
-        if self.cantidad <= 0:
-            raise ValidationError("La cantidad debe ser mayor que cero.")
-
-        if self.movimiento.anulado:
-            raise ValidationError("No se pueden agregar items a un movimiento anulado.")
-
-        if self.pk is None and self.movimiento.tipo == "EGRESO":
-            stock_actual = self.articulo.stock or 0
-            if stock_actual < self.cantidad:
-                raise ValidationError(
-                    f"No hay stock suficiente de {self.articulo}. (Disponible: {stock_actual})"
-                )
-
-        if self.pk is not None:
-            old = MovimientoArticulo.objects.get(pk=self.pk)
-            if (
-                old.articulo_id != self.articulo_id
-                or old.cantidad != self.cantidad
-                or old.movimiento_id != self.movimiento_id
-            ):
-                raise ValidationError(
-                    "No se permite modificar artículo/cantidad/movimiento en un item ya creado. "
-                    "Para corregir stock, genere un movimiento inverso."
-                )
-
-    def apply_to_stock(self):
-        stock_actual = self.articulo.stock or 0
-
-        if self.movimiento.tipo == "INGRESO":
-            stock_nuevo = stock_actual + self.cantidad
-        else:
-            if stock_actual < self.cantidad:
-                raise ValidationError("Stock insuficiente.")
-            stock_nuevo = stock_actual - self.cantidad
-
-        self.articulo.stock = stock_nuevo
-        self.articulo.save(update_fields=["stock"])
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        self.full_clean()
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            if is_new:
-                self.apply_to_stock()
-
-    def __str__(self):
-        return f"{self.cantidad} x {self.articulo}"
+        return f"{self.item} x {self.cantidad}"

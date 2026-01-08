@@ -4,77 +4,167 @@ import csv
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q, F
+from django.db.models import Q, F, Sum, Case, When, IntegerField
+from django.db.models.functions import Coalesce
 from django.forms import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 
 from .models import (
     Toner, Articulo,
-    Movimiento, MovimientoToner, MovimientoArticulo,
-    Servicio
+    Servicio,
+    Documento,
+    Item,
+    Movimiento, MovimientoDetalle,
 )
 from .forms import (
     TonerForm,
     ArticuloForm,
     MovimientoForm,
-    MovimientoTonerForm,
-    MovimientoArticuloForm
+    MovimientoDetalleTonerForm,
+    MovimientoDetalleArticuloForm,
+    EntregaRapidaTonerForm,   # ✅ IMPORTANTE
 )
 
-print("VIEWS VERSION: 2026-01-06 10:30")
+print("VIEWS VERSION: 2026-01-08 (ITEM + DETALLE) - FIXED")
+
+
+# =========================
+# HELPERS
+# =========================
+
+def item_de_toner(toner: Toner) -> Item:
+    item, _ = Item.objects.get_or_create(tipo="TONER", toner=toner)
+    return item
+
+
+def item_de_articulo(articulo: Articulo) -> Item:
+    item, _ = Item.objects.get_or_create(tipo="ARTICULO", articulo=articulo)
+    return item
+
+
+def stock_de_item(item_id: int) -> int:
+    qs = MovimientoDetalle.objects.filter(item_id=item_id)
+    ingresos = qs.filter(movimiento__tipo="INGRESO").aggregate(s=Sum("cantidad"))["s"] or 0
+    egresos  = qs.filter(movimiento__tipo="EGRESO").aggregate(s=Sum("cantidad"))["s"] or 0
+    ajustes  = qs.filter(movimiento__tipo="AJUSTE").aggregate(s=Sum("cantidad"))["s"] or 0
+    return ingresos - egresos + ajustes
 
 
 # =========================
 # DASHBOARD
 # =========================
+
 def dashboard(request):
     q = (request.GET.get("q") or "").strip()
 
-    # -------- TONERS --------
-    toners = Toner.objects.filter(activo=True)
-    if q:
-        toners = toners.filter(
-            Q(marca__icontains=q) |
-            Q(modelo__icontains=q)
-        )
-    toners = toners.order_by("marca", "modelo")[:50]
+    # =========================
+    # POST: ENTREGA RÁPIDA TONER
+    # =========================
+    if request.method == "POST" and request.POST.get("action") == "entregar_toner":
+        entrega_form = EntregaRapidaTonerForm(request.POST)
 
-    # -------- ARTICULOS --------
-    articulos = Articulo.objects.filter(activo=True)
-    if q:
-        articulos = articulos.filter(
-            Q(nombre__icontains=q) |
-            Q(marca__icontains=q) |
-            Q(categoria__icontains=q) |
-            Q(ubicacion__icontains=q)
-        )
-    articulos = articulos.order_by("nombre")[:50]
+        if entrega_form.is_valid():
+            servicio = entrega_form.cleaned_data["servicio"]
+            toner = entrega_form.cleaned_data["toner"]
+            cantidad = entrega_form.cleaned_data["cantidad"]
+            documento = entrega_form.cleaned_data.get("documento")
+            entregado_a = entrega_form.cleaned_data.get("entregado_a") or ""
+            observaciones = entrega_form.cleaned_data.get("observaciones") or ""
+            fecha = entrega_form.cleaned_data.get("fecha") or timezone.now()
 
-    # -------- MOVIMIENTOS --------
-    movimientos = Movimiento.objects.select_related("servicio").order_by("-fecha")[:20]
+            try:
+                with transaction.atomic():
+                    it = item_de_toner(toner)
+                    stock_actual = stock_de_item(it.id)
 
-    # -------- ALERTAS STOCK BAJO --------
-    stock_bajo_toners = (
-        Toner.objects
-        .filter(activo=True, minimo__isnull=False, stock__isnull=False)
-        .filter(minimo__gt=0, stock__lte=F("minimo"))
-        .order_by("stock")[:50]
+                    if stock_actual < cantidad:
+                        raise ValueError(f"Stock insuficiente. Stock actual: {stock_actual}")
+
+                    mov = Movimiento.objects.create(
+                        fecha=fecha,
+                        tipo="EGRESO",
+                        servicio=servicio,
+                        documento=documento,
+                        observaciones=(
+                            f"Entrega rápida. {('Entregado a: ' + entregado_a + '. ') if entregado_a else ''}{observaciones}"
+                        ).strip()
+                    )
+
+                    MovimientoDetalle.objects.create(
+                        movimiento=mov,
+                        item=it,
+                        cantidad=cantidad
+                    )
+
+                messages.success(request, f"Entrega registrada: {toner} x{cantidad} → {servicio}")
+                return redirect("dashboard")
+
+            except Exception as e:
+                messages.error(request, f"No se pudo registrar la entrega: {e}")
+        else:
+            messages.error(request, "Revisá los datos de la entrega rápida.")
+
+    else:
+        entrega_form = EntregaRapidaTonerForm()
+
+    # =========================
+    # GET: DATOS PARA HOME
+    # =========================
+
+    items = (
+        Item.objects
+        .select_related("toner", "articulo")
+        .filter(Q(tipo="TONER") | Q(tipo="ARTICULO"))
     )
 
-    stock_bajo_articulos = (
-        Articulo.objects
-        .filter(activo=True, minimo__isnull=False, stock__isnull=False)
-        .filter(minimo__gt=0, stock__lte=F("minimo"))
-        .order_by("stock")[:50]
+    if q:
+        items = items.filter(
+            Q(toner__nombre__icontains=q) |
+            Q(toner__marca__icontains=q) |
+            Q(toner__modelo_impresora__icontains=q) |
+            Q(articulo__nombre__icontains=q) |
+            Q(articulo__marca__icontains=q)
+        )
+
+    items = items.annotate(
+        ing=Coalesce(Sum(Case(
+            When(movimientodetalle__movimiento__tipo="INGRESO",
+                 then=F("movimientodetalle__cantidad")),
+            default=0, output_field=IntegerField(),
+        )), 0),
+        egr=Coalesce(Sum(Case(
+            When(movimientodetalle__movimiento__tipo="EGRESO",
+                 then=F("movimientodetalle__cantidad")),
+            default=0, output_field=IntegerField(),
+        )), 0),
+        aj=Coalesce(Sum(Case(
+            When(movimientodetalle__movimiento__tipo="AJUSTE",
+                 then=F("movimientodetalle__cantidad")),
+            default=0, output_field=IntegerField(),
+        )), 0),
+    ).annotate(
+        stock=F("ing") - F("egr") + F("aj")
+    ).order_by("tipo", "id")[:80]
+
+    movimientos = (
+        Movimiento.objects
+        .select_related("servicio", "documento")
+        .order_by("-fecha")[:15]
+    )
+
+    movimientos_recientes = (
+        MovimientoDetalle.objects
+        .select_related("movimiento", "item", "item__toner", "item__articulo")
+        .order_by("-movimiento__fecha")[:15]
     )
 
     return render(request, "inventario/dashboard.html", {
-        "toners": toners,
-        "articulos": articulos,
+        "entrega_form": entrega_form,
+        "items": items,
         "movimientos": movimientos,
-        "stock_bajo_toners": stock_bajo_toners,
-        "stock_bajo_articulos": stock_bajo_articulos,
+        "movimientos_recientes": movimientos_recientes,
         "q": q,
     })
 
@@ -82,21 +172,20 @@ def dashboard(request):
 # =========================
 # TONER CRUD
 # =========================
+
 def toner_new(request):
     if request.method == "POST":
         form = TonerForm(request.POST)
         if form.is_valid():
             toner = form.save()
+            Item.objects.get_or_create(tipo="TONER", toner=toner)
             messages.success(request, f"Toner guardado: {toner}")
             return redirect("dashboard")
         messages.error(request, "Revisá los errores del formulario.")
     else:
         form = TonerForm()
 
-    return render(request, "inventario/toner_form.html", {
-        "form": form,
-        "title": "Nuevo toner"
-    })
+    return render(request, "inventario/toner_form.html", {"form": form, "title": "Nuevo toner"})
 
 
 def toner_list(request):
@@ -105,16 +194,13 @@ def toner_list(request):
 
     if q:
         toners = toners.filter(
-            Q(marca__icontains=q) | Q(modelo__icontains=q)
+            Q(nombre__icontains=q) |
+            Q(marca__icontains=q) |
+            Q(modelo_impresora__icontains=q)
         )
 
-    toners = toners.order_by("marca", "modelo")
-
-    return render(request, "inventario/toner_list.html", {
-        "toners": toners,
-        "q": q,
-        "title": "Toners",
-    })
+    toners = toners.order_by("marca", "nombre")
+    return render(request, "inventario/toner_list.html", {"toners": toners, "q": q, "title": "Toners"})
 
 
 def toner_edit(request, pk):
@@ -123,17 +209,15 @@ def toner_edit(request, pk):
     if request.method == "POST":
         form = TonerForm(request.POST, instance=toner)
         if form.is_valid():
-            form.save()
+            toner = form.save()
+            Item.objects.get_or_create(tipo="TONER", toner=toner)
             messages.success(request, "Toner actualizado.")
             return redirect("toner_list")
         messages.error(request, "Revisá los errores del formulario.")
     else:
         form = TonerForm(instance=toner)
 
-    return render(request, "inventario/toner_form.html", {
-        "form": form,
-        "title": f"Editar toner #{toner.id}",
-    })
+    return render(request, "inventario/toner_form.html", {"form": form, "title": f"Editar toner #{toner.id}"})
 
 
 def toner_toggle_active(request, pk):
@@ -151,25 +235,16 @@ def toner_toggle_active(request, pk):
 # =========================
 # ARTICULOS CRUD
 # =========================
+
 def articulos_list(request):
     q = (request.GET.get("q") or "").strip()
     qs = Articulo.objects.all()
 
     if q:
-        qs = qs.filter(
-            Q(nombre__icontains=q) |
-            Q(marca__icontains=q) |
-            Q(categoria__icontains=q) |
-            Q(ubicacion__icontains=q)
-        )
+        qs = qs.filter(Q(nombre__icontains=q) | Q(marca__icontains=q))
 
     qs = qs.order_by("nombre")
-
-    return render(request, "inventario/articulos_list.html", {
-        "articulos": qs,
-        "q": q,
-        "title": "Artículos",
-    })
+    return render(request, "inventario/articulos_list.html", {"articulos": qs, "q": q, "title": "Artículos"})
 
 
 def articulo_nuevo(request):
@@ -177,16 +252,14 @@ def articulo_nuevo(request):
         form = ArticuloForm(request.POST)
         if form.is_valid():
             art = form.save()
+            Item.objects.get_or_create(tipo="ARTICULO", articulo=art)
             messages.success(request, f"Artículo guardado: {art}")
             return redirect("dashboard")
         messages.error(request, "Revisá los errores del formulario.")
     else:
         form = ArticuloForm()
 
-    return render(request, "inventario/articulo_form.html", {
-        "form": form,
-        "title": "Nuevo artículo"
-    })
+    return render(request, "inventario/articulo_form.html", {"form": form, "title": "Nuevo artículo"})
 
 
 def articulo_editar(request, pk):
@@ -195,17 +268,15 @@ def articulo_editar(request, pk):
     if request.method == "POST":
         form = ArticuloForm(request.POST, instance=art)
         if form.is_valid():
-            form.save()
+            art = form.save()
+            Item.objects.get_or_create(tipo="ARTICULO", articulo=art)
             messages.success(request, "Artículo actualizado.")
             return redirect("articulos_list")
         messages.error(request, "Revisá los errores del formulario.")
     else:
         form = ArticuloForm(instance=art)
 
-    return render(request, "inventario/articulo_form.html", {
-        "form": form,
-        "title": f"Editar artículo #{art.id}",
-    })
+    return render(request, "inventario/articulo_form.html", {"form": form, "title": f"Editar artículo #{art.id}"})
 
 
 def articulo_toggle_active(request, pk):
@@ -221,19 +292,20 @@ def articulo_toggle_active(request, pk):
 
 
 # =========================
-# MOVIMIENTOS (CABECERA + ITEMS)
+# MOVIMIENTOS (CABECERA + 2 FORMSETS)
 # =========================
-MovimientoTonerFormSet = modelformset_factory(
-    MovimientoToner,
-    form=MovimientoTonerForm,
-    extra=3,
+
+DetalleTonerFormSet = modelformset_factory(
+    MovimientoDetalle,
+    form=MovimientoDetalleTonerForm,
+    extra=0,
     can_delete=True
 )
 
-MovimientoArticuloFormSet = modelformset_factory(
-    MovimientoArticulo,
-    form=MovimientoArticuloForm,
-    extra=3,
+DetalleArticuloFormSet = modelformset_factory(
+    MovimientoDetalle,
+    form=MovimientoDetalleArticuloForm,
+    extra=0,
     can_delete=True
 )
 
@@ -242,15 +314,15 @@ def movimiento_new(request):
     if request.method == "POST":
         mov_form = MovimientoForm(request.POST)
 
-        toner_fs = MovimientoTonerFormSet(
+        toner_fs = DetalleTonerFormSet(
             request.POST,
             prefix="toner",
-            queryset=MovimientoToner.objects.none()
+            queryset=MovimientoDetalle.objects.none()
         )
-        art_fs = MovimientoArticuloFormSet(
+        art_fs = DetalleArticuloFormSet(
             request.POST,
             prefix="art",
-            queryset=MovimientoArticulo.objects.none()
+            queryset=MovimientoDetalle.objects.none()
         )
 
         if mov_form.is_valid() and toner_fs.is_valid() and art_fs.is_valid():
@@ -270,21 +342,30 @@ def movimiento_new(request):
                     with transaction.atomic():
                         movimiento = mov_form.save()
 
+                        if movimiento.tipo == "EGRESO":
+                            for cd in toner_items:
+                                it = item_de_toner(cd["toner"])
+                                if stock_de_item(it.id) < cd["cantidad"]:
+                                    raise ValueError(f"Stock insuficiente para toner: {cd['toner']}")
+                            for cd in art_items:
+                                it = item_de_articulo(cd["articulo"])
+                                if stock_de_item(it.id) < cd["cantidad"]:
+                                    raise ValueError(f"Stock insuficiente para artículo: {cd['articulo']}")
+
                         for cd in toner_items:
-                            MovimientoToner.objects.create(
+                            MovimientoDetalle.objects.create(
                                 movimiento=movimiento,
-                                toner=cd["toner"],
+                                item=item_de_toner(cd["toner"]),
                                 cantidad=cd["cantidad"],
                             )
-
                         for cd in art_items:
-                            MovimientoArticulo.objects.create(
+                            MovimientoDetalle.objects.create(
                                 movimiento=movimiento,
-                                articulo=cd["articulo"],
+                                item=item_de_articulo(cd["articulo"]),
                                 cantidad=cd["cantidad"],
                             )
 
-                    messages.success(request, "Movimiento registrado y stock actualizado.")
+                    messages.success(request, "Movimiento registrado.")
                     return redirect("dashboard")
 
                 except Exception as e:
@@ -295,8 +376,8 @@ def movimiento_new(request):
 
     else:
         mov_form = MovimientoForm()
-        toner_fs = MovimientoTonerFormSet(prefix="toner", queryset=MovimientoToner.objects.none())
-        art_fs = MovimientoArticuloFormSet(prefix="art", queryset=MovimientoArticulo.objects.none())
+        toner_fs = DetalleTonerFormSet(prefix="toner", queryset=MovimientoDetalle.objects.none())
+        art_fs = DetalleArticuloFormSet(prefix="art", queryset=MovimientoDetalle.objects.none())
 
     return render(request, "inventario/movimiento_form.html", {
         "form": mov_form,
@@ -312,17 +393,14 @@ def movimientos_list(request):
     desde = request.GET.get("desde", "")
     hasta = request.GET.get("hasta", "")
 
-    qs = Movimiento.objects.select_related("servicio").order_by("-fecha")
+    qs = Movimiento.objects.select_related("servicio", "documento").order_by("-fecha")
 
     if tipo:
         qs = qs.filter(tipo=tipo)
-
     if servicio_id:
         qs = qs.filter(servicio_id=servicio_id)
-
     if desde:
         qs = qs.filter(fecha__date__gte=desde)
-
     if hasta:
         qs = qs.filter(fecha__date__lte=hasta)
 
@@ -341,7 +419,7 @@ def movimientos_export_csv(request):
     desde = request.GET.get("desde", "")
     hasta = request.GET.get("hasta", "")
 
-    qs = Movimiento.objects.select_related("servicio").order_by("-fecha")
+    qs = Movimiento.objects.select_related("servicio", "documento").order_by("-fecha")
 
     if tipo:
         qs = qs.filter(tipo=tipo)
@@ -357,52 +435,52 @@ def movimientos_export_csv(request):
     writer = csv.writer(response)
 
     writer.writerow([
-        "fecha", "tipo", "item_tipo", "marca", "nombre_modelo", "cantidad",
-        "servicio", "entregado_a", "observaciones", "anulado", "anulado_motivo",
-        "nro_pedido", "nro_nota", "nro_orden_provision"
+        "fecha", "tipo", "item_tipo",
+        "nombre", "marca", "modelo_impresora",
+        "cantidad",
+        "servicio",
+        "documento_tipo", "documento_numero",
+        "observaciones",
     ])
 
     for m in qs:
         servicio = m.servicio.nombre if m.servicio else ""
-        anulado = "SI" if m.anulado else "NO"
+        doc_tipo = m.documento.tipo if m.documento else ""
+        doc_num = m.documento.numero if m.documento else ""
 
-        for it in m.toners.select_related("toner").all():
-            t = it.toner
-            writer.writerow([
-                m.fecha.strftime("%Y-%m-%d %H:%M:%S"),
-                m.tipo,
-                "TONER",
-                t.marca,
-                t.modelo,
-                it.cantidad,
-                servicio,
-                m.entregado_a or "",
-                (m.observaciones or "").replace("\n", " ").strip(),
-                anulado,
-                m.anulado_motivo or "",
-                m.nro_pedido or "",
-                m.nro_nota or "",
-                m.nro_orden_provision or "",
-            ])
+        detalles = m.detalles.select_related("item", "item__toner", "item__articulo").all()
 
-        for it in m.articulos.select_related("articulo").all():
-            a = it.articulo
-            writer.writerow([
-                m.fecha.strftime("%Y-%m-%d %H:%M:%S"),
-                m.tipo,
-                "ARTICULO",
-                a.marca,
-                a.nombre,
-                it.cantidad,
-                servicio,
-                m.entregado_a or "",
-                (m.observaciones or "").replace("\n", " ").strip(),
-                anulado,
-                m.anulado_motivo or "",
-                m.nro_pedido or "",
-                m.nro_nota or "",
-                m.nro_orden_provision or "",
-            ])
+        for d in detalles:
+            if d.item.tipo == "TONER" and d.item.toner:
+                t = d.item.toner
+                writer.writerow([
+                    m.fecha.strftime("%Y-%m-%d %H:%M:%S"),
+                    m.tipo,
+                    "TONER",
+                    t.nombre,
+                    t.marca,
+                    t.modelo_impresora,
+                    d.cantidad,
+                    servicio,
+                    doc_tipo,
+                    doc_num,
+                    (m.observaciones or "").replace("\n", " ").strip(),
+                ])
+            elif d.item.tipo == "ARTICULO" and d.item.articulo:
+                a = d.item.articulo
+                writer.writerow([
+                    m.fecha.strftime("%Y-%m-%d %H:%M:%S"),
+                    m.tipo,
+                    "ARTICULO",
+                    a.nombre,
+                    a.marca,
+                    "",
+                    d.cantidad,
+                    servicio,
+                    doc_tipo,
+                    doc_num,
+                    (m.observaciones or "").replace("\n", " ").strip(),
+                ])
 
     return response
 
@@ -410,7 +488,7 @@ def movimientos_export_csv(request):
 def movimiento_anular(request, mov_id):
     mov = get_object_or_404(Movimiento, id=mov_id)
 
-    if mov.anulado:
+    if hasattr(mov, "anulado") and mov.anulado:
         messages.info(request, "Este movimiento ya fue anulado.")
         return redirect("movimientos_list")
 
@@ -422,32 +500,25 @@ def movimiento_anular(request, mov_id):
                 tipo_inverso = "INGRESO" if mov.tipo == "EGRESO" else "EGRESO"
 
                 nuevo = Movimiento.objects.create(
+                    fecha=timezone.now(),
                     tipo=tipo_inverso,
                     servicio=mov.servicio if tipo_inverso == "EGRESO" else None,
-                    entregado_a="ANULACIÓN",
+                    documento=mov.documento,
                     observaciones=f"Anula movimiento #{mov.id}. Motivo: {motivo}",
-                    nro_pedido=mov.nro_pedido,
-                    nro_nota=mov.nro_nota,
-                    nro_orden_provision=getattr(mov, "nro_orden_provision", "") or "",
                 )
 
-                for it in mov.toners.select_related("toner").all():
-                    MovimientoToner.objects.create(
+                for d in mov.detalles.select_related("item").all():
+                    MovimientoDetalle.objects.create(
                         movimiento=nuevo,
-                        toner=it.toner,
-                        cantidad=it.cantidad,
+                        item=d.item,
+                        cantidad=d.cantidad,
                     )
 
-                for it in mov.articulos.select_related("articulo").all():
-                    MovimientoArticulo.objects.create(
-                        movimiento=nuevo,
-                        articulo=it.articulo,
-                        cantidad=it.cantidad,
-                    )
-
-                mov.anulado = True
-                mov.anulado_motivo = motivo
-                mov.save(update_fields=["anulado", "anulado_motivo"])
+                if hasattr(mov, "anulado"):
+                    mov.anulado = True
+                    mov.anulado_motivo = motivo
+                    mov.contramovimiento = nuevo
+                    mov.save(update_fields=["anulado", "anulado_motivo", "contramovimiento"])
 
             messages.success(request, "Movimiento anulado correctamente (se generó el contramovimiento).")
 
@@ -462,6 +533,7 @@ def movimiento_anular(request, mov_id):
 # =========================
 # SERVICIOS
 # =========================
+
 def servicios(request):
     if request.method == "POST":
         nombre = (request.POST.get("nombre") or "").strip()
@@ -478,6 +550,7 @@ def servicios(request):
 # =========================
 # BACKUPS
 # =========================
+
 def backup_db(request):
     return HttpResponse("Backup endpoint OK")
 
