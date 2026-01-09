@@ -3,14 +3,14 @@
 
 <div class="row space-between" style="margin-bottom:12px">
   <div>
-    <div class="page-title">{{ title|default:"Artículo" }}</div>
-    <div class="page-subtitle">Carga / edición de artículos</div>
+    <div class="page-title">
+      {% if mode == "edit" %}Editar artículo{% else %}Nuevo artículo{% endif %}
+    </div>
+    <div class="page-subtitle">Completar datos</div>
   </div>
 
-  <div class="row" style="gap:8px">
-    <a class="btn" href="{% url 'articulos_list' %}">
-      <span class="mi">arrow_back</span> Volver
-    </a>
+  <div class="row" style="gap:10px">
+    <a class="btn2" href="{% url 'articulos_page' %}"><span class="mi"></span> Volver</a>
   </div>
 </div>
 
@@ -18,67 +18,45 @@
   <form method="post">
     {% csrf_token %}
 
-    {% if form.non_field_errors %}
-      <div class="alert">{{ form.non_field_errors }}</div>
-    {% endif %}
-
-    <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px">
-      <div>
-        <label>Nombre *</label>
+    <div class="formgrid">
+      <div class="field">
+        <div class="label">Nombre</div>
         {{ form.nombre }}
-        {% for e in form.nombre.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+        {% for e in form.nombre.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
-      <div>
-        <label>Marca</label>
+      <div class="field">
+        <div class="label">Marca</div>
         {{ form.marca }}
-        {% for e in form.marca.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+        {% for e in form.marca.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
-      <div style="grid-column: 1 / -1;">
-        <label>Descripción</label>
+      <div class="field" style="grid-column: 1 / -1;">
+        <div class="label">Descripción</div>
         {{ form.descripcion }}
-        {% for e in form.descripcion.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
       </div>
 
-      <div>
-        <label>Unidad</label>
-        {{ form.unidad }}
-        {% for e in form.unidad.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      <div class="field" style="grid-column: 1 / -1;">
+        <div class="label">Características</div>
+        {{ form.caracteristicas }}
       </div>
 
-      <div>
-        <label>Categoría</label>
-        {{ form.categoria }}
-        {% for e in form.categoria.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      <div class="field" style="grid-column: 1 / -1;">
+        <div class="label">Observaciones</div>
+        {{ form.observaciones }}
       </div>
 
-      <div>
-        <label>Ubicación</label>
-        {{ form.ubicacion }}
-        {% for e in form.ubicacion.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-      </div>
-
-      <div>
-        <label>Stock</label>
-        {{ form.stock }}
-        {% for e in form.stock.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-      </div>
-
-      <div>
-        <label>Mínimo</label>
-        {{ form.minimo }}
-        {% for e in form.minimo.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      <div class="field">
+        <div class="label">Activo</div>
+        {{ form.activo }}
       </div>
     </div>
 
-    <div class="row" style="margin-top:14px; gap:10px">
-      <button class="btn" type="submit">
-        <span class="mi">save</span> Guardar
+    <div class="row" style="gap:10px; margin-top:14px;">
+      <button class="btn primary" type="submit">
+        <span class="mi"></span> Guardar
       </button>
-      <a class="btn" href="{% url 'articulos_list' %}">
-        Cancelar
-      </a>
+      <a class="btn2" href="{% url 'articulos_page' %}">Cancelar</a>
     </div>
   </form>
 </div>

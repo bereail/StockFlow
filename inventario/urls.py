@@ -2,31 +2,31 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Dashboard
     path("", views.dashboard, name="dashboard"),
 
-    # Toners
-    path("toners/", views.toner_list, name="toner_list"),
-    path("toners/nuevo/", views.toner_new, name="toner_new"),
-    path("toners/<int:pk>/editar/", views.toner_edit, name="toner_edit"),
-    path("toners/<int:pk>/toggle/", views.toner_toggle_active, name="toner_toggle_active"),
+    # TONER #
+    path("toner/", views.toner_page, name="toner_page"),
+    path("toner/lista/", views.toner_list, name="toner_list"),  
+    path("toner/entrega/", views.toner_entrega, name="toner_entrega"),
+    path("toner/nuevo/", views.toner_create, name="toner_create"),
+    path("toner/<int:pk>/editar/", views.toner_edit, name="toner_edit"),
+    path("toner/<int:pk>/toggle/", views.toner_toggle, name="toner_toggle"),
+    path("toner/historial/", views.toner_historial, name="toner_historial"),
 
-    # Artículos
-    path("articulos/", views.articulos_list, name="articulos_list"),
-    path("articulos/nuevo/", views.articulo_nuevo, name="articulo_nuevo"),
-    path("articulos/<int:pk>/editar/", views.articulo_editar, name="articulo_editar"),
-    path("articulos/<int:pk>/toggle/", views.articulo_toggle_active, name="articulo_toggle_active"),
+    path("toner/backup/entregas.csv", views.backup_entregas_csv, name="backup_entregas_csv"),
 
-    # Movimientos
-    path("movimientos/", views.movimientos_list, name="movimientos_list"),
-    path("movimientos/nuevo/", views.movimiento_new, name="movimiento_new"),
-    path("movimientos/export/csv/", views.movimientos_export_csv, name="movimientos_export_csv"),
-    path("movimientos/<int:mov_id>/anular/", views.movimiento_anular, name="movimiento_anular"),
+    # ARTICULOS # 
+    path("articulos/", views.articulos_page, name="articulos_page"),
+    path("articulos/", views.articulos_page, name="articulos_page"),
+    path("articulos/nuevo/", views.articulo_create, name="articulo_create"),
+    path("articulos/<int:pk>/editar/", views.articulo_edit, name="articulo_edit"),
+    path("articulos/<int:pk>/toggle/", views.articulo_toggle, name="articulo_toggle"),
+    path("articulos/entrega/", views.articulo_entrega, name="articulo_entrega"),
+    path("articulos/historial/", views.articulos_historial, name="articulos_historial"),
+    path("articulos/backup/entregas.csv", views.backup_articulos_csv, name="backup_articulos_csv"),
 
-    # Servicios
-    path("servicios/", views.servicios, name="servicios"),
 
-    # Backup / Backups
-    path("backup/", views.backup_db, name="backup_db"),
-    path("backups/abrir/", views.abrir_backups, name="abrir_backups"),
+    path("pcs/", views.pcs_page, name="pcs_page"),
+    path("servicios/", views.servicios_page, name="servicios_page"),
 ]
+

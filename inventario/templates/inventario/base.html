@@ -2,109 +2,34 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}StockToner{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v=999">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap">
 
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=22">
-  <title>Stock Toner</title>
 </head>
 
-<body>
-  <div class="app-shell">
-    <div class="topbar">
-      <div class="topbar-inner topbar-min">
+<body class="app">
 
-        <!-- IZQUIERDA -->
-        <a class="brand" href="{% url 'dashboard' %}" style="text-decoration:none">
-          <div class="brand-badge"><span class="mi">inventory_2</span></div>
-          Stock Toner
-        </a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{% url 'dashboard' %}">Registro</a>
 
-        <!-- CENTRO: SECCIONES PRINCIPALES -->
-       <nav class="nav nav-main">
-  <a class="navlink {% if '/toners/' in request.path %}active{% endif %}" href="{% url 'toner_list' %}">
-    <span class="mi">print</span> Toners
-  </a>
-
-  <a class="navlink {% if '/articulos/' in request.path %}active{% endif %}" href="{% url 'articulos_list' %}">
-    <span class="mi">inventory</span> Artículos
-  </a>
-
-  {# ===== PCs (solo si existe la URL) ===== #}
-  {% url 'pcs_list' as pcs_url %}
-  {% if pcs_url %}
-    <a class="navlink {% if '/pcs/' in request.path %}active{% endif %}" href="{{ pcs_url }}">
-      <span class="mi">computer</span> PCs
-    </a>
-  {% endif %}
-
-  {# ===== Impresoras (solo si existe la URL) ===== #}
-  {% url 'impresoras_list' as imp_url %}
-  {% if imp_url %}
-    <a class="navlink {% if '/impresoras/' in request.path %}active{% endif %}" href="{{ imp_url }}">
-      <span class="mi">local_printshop</span> Impresoras
-    </a>
-  {% endif %}
-</nav>
-
-        <!-- DERECHA: ACCIÓN + MENÚ -->
-        <div class="topbar-actions">
-          <a class="btn primary {% if 'movimientos/nuevo' in request.path %}active{% endif %}" href="{% url 'movimiento_new' %}">
-            <span class="mi">add_circle</span> Movimiento
-          </a>
-
-          <div class="menu">
-            <button class="btn icon" type="button" onclick="toggleMoreMenu()" aria-label="Más opciones">
-              <span class="mi">more_horiz</span>
-            </button>
-
-            <div id="moreMenu" class="menu-panel">
-              <a class="menu-item {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard' %}">
-                <span class="mi">dashboard</span> Dashboard
-              </a>
-
-              <a class="menu-item {% if '/movimientos/' in request.path and 'nuevo' not in request.path %}active{% endif %}" href="{% url 'movimientos_list' %}">
-                <span class="mi">list_alt</span> Movimientos
-              </a>
-
-              <a class="menu-item {% if '/servicios/' in request.path %}active{% endif %}" href="{% url 'servicios' %}">
-                <span class="mi">business</span> Servicios
-              </a>
-
-              <div class="menu-sep"></div>
-
-              <a class="menu-item {% if '/backup/' in request.path %}active{% endif %}" href="{% url 'backup_db' %}">
-                <span class="mi">backup</span> Backup
-              </a>
-
-              <a class="menu-item {% if '/backups/abrir/' in request.path %}active{% endif %}" href="{% url 'abrir_backups' %}">
-                <span class="mi">folder_open</span> Abrir backups
-              </a>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      <nav class="nav">
+        {% with name=request.resolver_match.url_name %}
+          <a class="navlink {% if name == 'toner_page' %}active{% endif %}" href="{% url 'toner_page' %}">Toner</a>
+          <a class="navlink {% if name == 'articulos_page' %}active{% endif %}" href="{% url 'articulos_page' %}">Artículos</a>
+          <a class="navlink {% if name == 'pcs_page' %}active{% endif %}" href="{% url 'pcs_page' %}">PC</a>
+          <a class="navlink {% if name == 'servicios_page' %}active{% endif %}" href="{% url 'servicios_page' %}">Servicios</a>
+        {% endwith %}
+      </nav>
     </div>
+  </header>
 
-    <main class="main">
-      {% block content %}{% endblock %}
-    </main>
-  </div>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
 
-  <script>
-    function toggleMoreMenu(){
-      const el = document.getElementById("moreMenu");
-      if (!el) return;
-      el.classList.toggle("open");
-    }
-    document.addEventListener("click", (e) => {
-      const panel = document.getElementById("moreMenu");
-      if (!panel) return;
-      const inside = e.target.closest(".menu");
-      if (!inside) panel.classList.remove("open");
-    });
-  </script>
 </body>
 </html>

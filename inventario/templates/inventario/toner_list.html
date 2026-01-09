@@ -8,9 +8,9 @@
   </div>
 
   <form method="get" class="page-actions">
-    <input name="q" value="{{ q }}" placeholder="Buscar (marca/modelo/código)" style="width:320px">
+    <input name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)" style="width:320px">
     <button class="btn" type="submit">Buscar</button>
-    <a class="btn2" href="{% url 'toner_new' %}">+ Nuevo</a>
+    <a class="btn2" href="{% url 'toner_create' %}">+ Nuevosss</a>
   </form>
 </div>
 
@@ -19,10 +19,8 @@
     <thead>
       <tr>
         <th>Marca</th>
-        <th>Modelo</th>
-        <th>Código</th>
-        <th>Stock</th>
-        <th>Mínimo</th>
+        <th>Nombre</th>
+        <th>Modelo impresora</th>
         <th>Estado</th>
         <th style="width:240px">Acciones</th>
       </tr>
@@ -32,10 +30,8 @@
       {% for t in toners %}
         <tr>
           <td>{{ t.marca|default:"-" }}</td>
-          <td><strong>{{ t.modelo }}</strong></td>
-          <td class="muted">{{ t.codigo|default:"-" }}</td>
-          <td>{{ t.stock }}</td>
-          <td>{{ t.minimo }}</td>
+          <td><strong>{{ t.nombre }}</strong></td>
+          <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
 
           <td>
             {% if t.activo %}
@@ -48,21 +44,17 @@
           <td>
             <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
 
-            <form method="post" action="{% url 'toner_toggle_active' t.id %}" style="display:inline">
+            <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
               {% csrf_token %}
               <button class="btn2 {% if t.activo %}danger{% endif %}" type="submit">
-                {% if t.activo %}
-                  Desactivar
-                {% else %}
-                  Activar
-                {% endif %}
+                {% if t.activo %}Desactivar{% else %}Activar{% endif %}
               </button>
             </form>
           </td>
         </tr>
       {% empty %}
         <tr>
-          <td colspan="7" class="muted">No hay toners cargados.</td>
+          <td colspan="5" class="muted">No hay toners cargados.</td>
         </tr>
       {% endfor %}
     </tbody>

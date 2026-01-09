@@ -1,230 +1,42 @@
 {% extends "inventario/base.html" %}
+{% block title %}Registrar Movimiento{% endblock %}
+
 {% block content %}
+<section class="hero">
+  <h1 class="hero-title">Registrar Movimiento</h1>
+  <p class="hero-sub">Gestión rápida de movimientos de inventario</p>
 
-<!-- ================= HEADER ================= -->
-<div class="row space-between" style="margin-bottom:12px; align-items:flex-end">
-  <div>
-    <div class="page-title">Dashboard</div>
-    <div class="page-subtitle">Entrega rápida de toner + actividad reciente</div>
-  </div>
-
-  <form method="get" class="page-actions">
-    <input name="q" value="{{ q }}" placeholder="Buscar (toner/artículo)" style="width:320px">
-    <button class="btn" type="submit">Buscar</button>
-  </form>
-</div>
-
-<!-- ================= ENTREGA RÁPIDA ================= -->
-<div class="card" style="margin-bottom:14px">
-  <div class="row" style="justify-content:space-between; align-items:center">
-    <h3 style="margin:0">🔻 Entrega rápida de toner</h3>
-    <div class="row" style="gap:8px">
-      <a class="btn" href="{% url 'movimiento_new' %}">Modo completo</a>
-      <a class="btn" href="{% url 'movimientos_list' %}?tipo=EGRESO">Ver egresos</a>
-    </div>
-  </div>
-
-  <form method="post" style="margin-top:12px">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="entregar_toner">
-
-    <div class="grid" style="grid-template-columns: 2fr 2fr 1fr 2fr; gap:12px">
-      <div>
-        <div class="label">Servicio</div>
-        {{ entrega_form.servicio }}
-        {% if entrega_form.servicio.errors %}
-          <div class="help error">{{ entrega_form.servicio.errors }}</div>
-        {% endif %}
+  <div class="cards">
+    <a class="card" href="{% url 'toner_page' %}">
+      <div class="icon">
+        <!-- icon toner -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 7h12v10H6zM5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>
+          <path d="M7 9h10v2H7zm0 4h10v2H7z"/>
+        </svg>
       </div>
+      <div class="card-label">Entregar Tóner</div>
+    </a>
 
-      <div>
-        <div class="label">Toner</div>
-        {{ entrega_form.toner }}
-        {% if entrega_form.toner.errors %}
-          <div class="help error">{{ entrega_form.toner.errors }}</div>
-        {% endif %}
+    <a class="card" href="{% url 'articulos_page' %}">
+      <div class="icon">
+        <!-- icon box -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2 3 6.5V17.5L12 22l9-4.5V6.5L12 2zm0 2.2L18.7 7 12 10.4 5.3 7 12 4.2zM5 9l6 3v7.6l-6-3V9zm14 0v7.6l-6 3V12l6-3z"/>
+        </svg>
       </div>
+      <div class="card-label">Entregar Artículo</div>
+    </a>
 
-      <div>
-        <div class="label">Cantidad</div>
-        {{ entrega_form.cantidad }}
-        {% if entrega_form.cantidad.errors %}
-          <div class="help error">{{ entrega_form.cantidad.errors }}</div>
-        {% endif %}
+    <a class="card" href="{% url 'servicios_page' %}">
+      <div class="icon">
+        <!-- icon pc -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v8h16V7H4z"/>
+        </svg>
       </div>
-
-      <div>
-        <div class="label">Documento (opcional)</div>
-        {{ entrega_form.documento }}
-      </div>
-    </div>
-
-    <div class="grid" style="grid-template-columns: 1.2fr 2fr 1fr; gap:12px; margin-top:12px">
-      <div>
-        <div class="label">Entregado a (opcional)</div>
-        {{ entrega_form.entregado_a }}
-      </div>
-
-      <div>
-        <div class="label">Observaciones</div>
-        {{ entrega_form.observaciones }}
-      </div>
-
-      <div>
-        <div class="label">Fecha</div>
-        {{ entrega_form.fecha }}
-      </div>
-    </div>
-
-    <div class="row" style="gap:10px; margin-top:12px">
-      <button class="btn primary" type="submit">Confirmar entrega</button>
-      <a class="btn" href="{% url 'dashboard' %}">Limpiar</a>
-    </div>
-  </form>
-</div>
-
-<!-- ================= ACCESOS RÁPIDOS ================= -->
-<div class="grid" style="margin-bottom:14px">
-  <div class="card">
-    <h3 style="margin-top:0">Toners</h3>
-    <div class="row" style="gap:8px; flex-wrap:wrap">
-      <a class="btn" href="{% url 'movimiento_new' %}?preset=ingreso_toner">+ Ingreso</a>
-      <a class="btn" href="{% url 'toner_new' %}">+ Nuevo toner</a>
-      <a class="btn" href="{% url 'toner_list' %}">Ver lista</a>
-    </div>
-    <div style="margin-top:10px" class="muted">
-      Tip: la entrega diaria está arriba (Entrega rápida).
-    </div>
+      <div class="card-label">Registrar Servicio</div>
+    </a>
   </div>
-
-  <div class="card">
-    <h3 style="margin-top:0">Artículos</h3>
-    <div class="row" style="gap:8px; flex-wrap:wrap">
-      <a class="btn" href="{% url 'movimiento_new' %}?preset=ingreso_articulo">+ Ingreso</a>
-      <a class="btn" href="{% url 'articulo_nuevo' %}">+ Nuevo artículo</a>
-      <a class="btn" href="{% url 'articulos_list' %}">Ver lista</a>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-top:0">Servicios</h3>
-    <div class="row" style="gap:8px; flex-wrap:wrap">
-      <a class="btn" href="{% url 'servicios' %}">Gestionar servicios</a>
-      <a class="btn" href="{% url 'movimientos_list' %}">Movimientos</a>
-      <a class="btn" href="{% url 'movimientos_export_csv' %}">Exportar CSV</a>
-    </div>
-  </div>
-</div>
-
-<!-- ================= ÚLTIMAS ENTREGAS (DETALLES) ================= -->
-<div class="card" style="margin-bottom:14px">
-  <div class="row" style="justify-content:space-between; align-items:center">
-    <h3 style="margin:0">Últimas entregas / movimientos recientes</h3>
-    <a class="btn" href="{% url 'movimientos_list' %}">Ver historial</a>
-  </div>
-
-  <table style="margin-top:10px">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Tipo</th>
-        <th>Servicio</th>
-        <th>Item</th>
-        <th>Cant.</th>
-        <th>Doc.</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in movimientos_recientes %}
-      <tr>
-        <td>{{ d.movimiento.fecha|date:"Y-m-d H:i" }}</td>
-        <td>{{ d.movimiento.tipo }}</td>
-        <td>{{ d.movimiento.servicio.nombre|default:"-" }}</td>
-
-        <td>
-          {% if d.item.tipo == "TONER" and d.item.toner %}
-            TONER — {{ d.item.toner }}
-          {% elif d.item.tipo == "ARTICULO" and d.item.articulo %}
-            ARTÍCULO — {{ d.item.articulo }}
-          {% else %}
-            {{ d.item }}
-          {% endif %}
-        </td>
-
-        <td>{{ d.cantidad }}</td>
-
-        <td>
-          {% if d.movimiento.documento %}
-            {{ d.movimiento.documento.tipo }} Nº {{ d.movimiento.documento.numero }}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6">No hay movimientos recientes.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- ================= STOCK RÁPIDO (ITEMS) ================= -->
-<div class="card">
-  <div class="row" style="justify-content:space-between; align-items:center">
-    <h3 style="margin:0">Stock calculado (Toners + Artículos)</h3>
-    <div class="muted">Mostrando {{ items|length }} items</div>
-  </div>
-
-  <table style="margin-top:10px">
-    <thead>
-      <tr>
-        <th>Tipo</th>
-        <th>Nombre</th>
-        <th>Marca</th>
-        <th>Modelo</th>
-        <th>Stock</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for it in items %}
-      <tr>
-        <td>{{ it.tipo }}</td>
-
-        <td>
-          {% if it.tipo == "TONER" and it.toner %}
-            {{ it.toner.nombre }}
-          {% elif it.tipo == "ARTICULO" and it.articulo %}
-            {{ it.articulo.nombre }}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-
-        <td>
-          {% if it.tipo == "TONER" and it.toner %}
-            {{ it.toner.marca|default:"-" }}
-          {% elif it.tipo == "ARTICULO" and it.articulo %}
-            {{ it.articulo.marca|default:"-" }}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-
-        <td>
-          {% if it.tipo == "TONER" and it.toner %}
-            {{ it.toner.modelo_impresora|default:"-" }}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-
-        <td><b>{{ it.stock }}</b></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="5">No hay items.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
+</section>
 {% endblock %}
