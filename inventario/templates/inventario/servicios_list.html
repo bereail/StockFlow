@@ -1,7 +1,6 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<!-- ================= HEADER ================= -->
 <div class="row space-between" style="margin-bottom:12px">
   <div>
     <div class="page-title">Servicios</div>
@@ -9,13 +8,8 @@
   </div>
 
   <div class="page-actions" style="display:flex; gap:10px; align-items:center;">
-    <form method="get" class="row" style="gap:8px">
-      <input
-        name="q"
-        value="{{ q }}"
-        placeholder="Buscar por nombre o descripción"
-        style="width:320px"
-      >
+    <form method="get" class="page-actions">
+      <input name="q" value="{{ q }}" placeholder="Buscar por nombre o descripción" style="width:320px">
       <button class="btn" type="submit">Buscar</button>
     </form>
 
@@ -23,10 +17,9 @@
   </div>
 </div>
 
-<!-- ================= LISTADO ================= -->
 <div class="card">
   <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
-    <h3 style="margin:0">Servicios</h3>
+    <h3 style="margin:0">Listado</h3>
     <div class="muted">Total: {{ servicios|length }}</div>
   </div>
 
@@ -35,34 +28,19 @@
       <tr>
         <th>Nombre</th>
         <th>Descripción</th>
-        <th style="width:220px">Acciones</th>
+        <th style="width:140px">Acciones</th>
       </tr>
     </thead>
-
     <tbody>
       {% for s in servicios %}
         <tr>
           <td><strong>{{ s.nombre }}</strong></td>
-
-          <td class="muted">
-            {{ s.descripcion|default:"-" }}
-          </td>
-
-          <td>
-            <a class="btn2" href="{% url 'servicio_edit' s.id %}">
-              Editar
-            </a>
-
-            <a class="btn2" href="{% url 'movimientos_list' %}?servicio={{ s.id }}">
-              Movimientos
-            </a>
-          </td>
+          <td class="muted">{% if s.descripcion %}{{ s.descripcion }}{% else %}-{% endif %}</td>
+          <td><a class="btn" href="{% url 'servicio_edit' s.id %}">Editar</a></td>
         </tr>
       {% empty %}
         <tr>
-          <td colspan="3" class="muted" style="padding:16px">
-            No hay servicios cargados.
-          </td>
+          <td colspan="3" class="muted" style="padding:16px">No hay servicios cargados.</td>
         </tr>
       {% endfor %}
     </tbody>

@@ -1,0 +1,58 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:12px">
+  <div>
+    <div class="page-title">Historial de impresoras</div>
+    <div class="page-subtitle">Movimientos (INGRESO / EGRESO / AJUSTE)</div>
+  </div>
+
+  <form method="get" class="page-actions">
+    <input name="q" value="{{ q }}" placeholder="Buscar impresora / servicio / obs / IP / patrimonio" style="width:360px">
+    <button class="btn" type="submit">Buscar</button>
+    <a class="btn" href="{% url 'impresoras_page' %}">← Volver</a>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Servicio</th>
+        <th>Impresora</th>
+        <th>Documento</th>
+        <th>Obs</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detalles %}
+        <tr>
+          <td class="muted">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
+          <td><strong>{{ d.movimiento.tipo }}</strong></td>
+          <td class="muted">{% if d.movimiento.servicio %}{{ d.movimiento.servicio.nombre }}{% else %}-{% endif %}</td>
+          <td>
+            {% if d.item.impresora %}
+              <strong>{{ d.item.impresora.marca }} {{ d.item.impresora.modelo }}</strong>
+              <div class="muted" style="font-size:12px">
+                {% if d.item.impresora.patrimonio %}Pat: {{ d.item.impresora.patrimonio }}{% endif %}
+                {% if d.item.impresora.ip %} · IP: {{ d.item.impresora.ip }}{% endif %}
+              </div>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td class="muted">{% if d.movimiento.documento %}{{ d.movimiento.documento }}{% else %}-{% endif %}</td>
+          <td class="muted">{{ d.movimiento.observaciones|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="muted" style="padding:16px">No hay historial todavía.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

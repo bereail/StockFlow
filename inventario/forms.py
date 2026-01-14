@@ -8,6 +8,9 @@ from .models import (
     Documento,
     Movimiento,
     MovimientoDetalle,
+    ActivoPC,
+    Impresora,
+    PrestamoProyector
 )
 
 
@@ -303,3 +306,130 @@ class MovimientoDetalleArticuloForm(forms.ModelForm):
             self.add_error("articulo", "Seleccioná un artículo.")
 
         return cleaned
+    
+# SERVICIOS #
+class ServicioForm(forms.ModelForm):
+    class Meta:
+        model = Servicio
+        fields = ["nombre", "descripcion"]
+        widgets = {
+            "nombre": forms.TextInput(attrs={"placeholder": "Ej: Terapia Intensiva"}),
+            "descripcion": forms.Textarea(attrs={"rows": 3, "placeholder": "Opcional"}),
+        }
+
+# PCS #
+
+class ActivoPCForm(forms.ModelForm):
+    class Meta:
+        model = ActivoPC
+        fields = [
+            "nombre_pc",
+            "activo",
+            "ip",
+            "patrimonio",
+            "serie",
+            "caracteristicas",
+            "observaciones",
+            "servicio",
+        ]
+        widgets = {
+            "nombre_pc": forms.TextInput(attrs={"placeholder": "Ej: PC Guardia 1 / PC Administración"}),
+            "ip": forms.TextInput(attrs={"placeholder": "192.168.1.50 (opcional)"}),
+            "patrimonio": forms.TextInput(attrs={"placeholder": "N° Patrimonio (opcional)"}),
+            "serie": forms.TextInput(attrs={"placeholder": "N° Serie (opcional)"}),
+            "caracteristicas": forms.Textarea(attrs={"rows": 2, "placeholder": "Características (opcional)"}),
+            "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Observaciones (opcional)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["ip"].required = False
+        self.fields["patrimonio"].required = False
+        self.fields["serie"].required = False
+        self.fields["caracteristicas"].required = False
+        self.fields["observaciones"].required = False
+        self.fields["servicio"].required = False
+
+# IMPRESORAS #
+class ImpresoraForm(forms.ModelForm):
+    class Meta:
+        model = Impresora
+        fields = [
+            "marca",
+            "modelo",
+            "tipo",
+            "patrimonio",
+            "activo",
+            "estado",
+            "servicio",
+            "conexion",
+            "ip",
+            "toner",
+            "observaciones",
+        ]
+        widgets = {
+            "marca": forms.TextInput(attrs={"placeholder": "Ej: Ricoh / HP"}),
+            "modelo": forms.TextInput(attrs={"placeholder": "Ej: MP 301"}),
+            "tipo": forms.TextInput(attrs={"placeholder": "Ej: Multifunción"}),
+            "patrimonio": forms.TextInput(attrs={"placeholder": "N° patrimonio (opcional)"}),
+            "estado": forms.TextInput(attrs={"placeholder": "ACTIVA / BAJA / REPARACIÓN"}),
+            "ip": forms.TextInput(attrs={"placeholder": "192.168.1.20"}),
+            "observaciones": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # campos opcionales
+        self.fields["patrimonio"].required = False
+        self.fields["estado"].required = False
+        self.fields["servicio"].required = False
+        self.fields["ip"].required = False
+        self.fields["toner"].required = False
+        self.fields["observaciones"].required = False
+
+
+class EntregaRapidaImpresoraForm(forms.Form):
+    servicio = forms.ModelChoiceField(
+        queryset=Servicio.objects.order_by("nombre"),
+        label="Servicio"
+    )
+    impresora = forms.ModelChoiceField(
+        queryset=Impresora.objects.order_by("marca", "modelo"),
+        label="Impresora"
+    )
+    observaciones = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2})
+    )
+    fecha = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # default para datetime-local
+        if not self.initial.get("fecha"):
+            self.initial["fecha"] = timezone.localtime(timezone.now()).strftime("%Y-%m-%dT%H:%M")
+
+
+# PROYECTOR #
+class PrestamoProyectorForm(forms.ModelForm):
+    class Meta:
+        model = PrestamoProyector
+        fields = [
+            "servicio",
+            "telefono_contacto",
+            "fecha_retiro",
+            "fecha_devolucion_estimada",
+            "incluye_prolongacion",
+            "incluye_pc",
+            "incluye_notebook",
+            "observaciones",
+        ]
+        widgets = {
+            "fecha_retiro": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "fecha_devolucion_estimada": forms.DateInput(attrs={"type": "date"}),
+            "observaciones": forms.Textarea(attrs={"rows": 2}),
+            "telefono_contacto": forms.TextInput(attrs={"placeholder": "Ej: 381-xxxxxxx"}),
+        }

@@ -7,7 +7,6 @@
   <title>{% block title %}StockToner{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v=999">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap">
-
 </head>
 
 <body class="app">
@@ -19,10 +18,20 @@
       <nav class="nav">
         {% with name=request.resolver_match.url_name %}
           <a class="navlink {% if name == 'toner_page' %}active{% endif %}" href="{% url 'toner_page' %}">Toner</a>
-          <a class="navlink {% if name == 'articulos_page' %}active{% endif %}" href="{% url 'articulos_page' %}">Artículos</a>
           <a class="navlink {% if name == 'pcs_page' %}active{% endif %}" href="{% url 'pcs_page' %}">PC</a>
-          <a class="navlink {% if name == 'servicios_page' %}active{% endif %}" href="{% url 'servicios_page' %}">Servicios</a>
+          <a class="navlink {% if name == 'articulos_page' %}active{% endif %}" href="{% url 'articulos_page' %}">Artículos</a>
+          <a class="navlink {% if name == 'impresoras_page' %}active{% endif %}" href="{% url 'impresoras_page' %}">Impresoras</a>
+          <a class="navlink {% if name == 'servicios_page' or name == 'servicio_create' or name == 'servicio_edit' %}active{% endif %}"
+   href="{% url 'servicios_page' %}">Servicios</a>
+
         {% endwith %}
+        <div class="nav-more">
+  <button class="navlink" type="button">Más ▾</button>
+  <div class="nav-more-menu">
+    <a class="navlink" href="{% url 'proyector_prestamos_page' %}">Proyector</a>
+  </div>
+</div>
+
       </nav>
     </div>
   </header>

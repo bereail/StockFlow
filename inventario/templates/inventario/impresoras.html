@@ -1,0 +1,123 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:12px">
+  <div>
+    <div class="page-title">Impresoras</div>
+    <div class="page-subtitle">Alta, edición, activación y movimientos</div>
+  </div>
+
+  <div class="page-actions" style="display:flex; gap:10px; align-items:center;">
+    <form method="get" class="page-actions">
+      <input name="q" value="{{ q }}" placeholder="Buscar por marca / modelo / IP / patrimonio / servicio" style="width:360px">
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+
+    <a class="btn" href="{% url 'impresora_entrega' %}">Registrar movimiento</a>
+    <a class="btn" href="{% url 'impresora_historial' %}">Historial</a>
+    <a class="btn" href="{% url 'impresora_create' %}">+ Nueva</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
+    <h3 style="margin:0">Listado</h3>
+    <div class="muted">Total: {{ impresoras|length }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Tipo</th>
+        <th>Conexión</th>
+        <th>IP</th>
+        <th>Patrimonio</th>
+        <th>Servicio</th>
+        <th>Estado</th>
+        <th style="width:220px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in impresoras %}
+        <tr>
+          <td><strong>{{ i.marca }}</strong></td>
+          <td>{{ i.modelo }}</td>
+          <td class="muted">{% if i.tipo %}{{ i.tipo }}{% else %}-{% endif %}</td>
+          <td class="muted">{{ i.get_conexion_display }}</td>
+          <td class="muted">{% if i.ip %}{{ i.ip }}{% else %}-{% endif %}</td>
+          <td class="muted">{% if i.patrimonio %}{{ i.patrimonio }}{% else %}-{% endif %}</td>
+          <td class="muted">{% if i.servicio %}{{ i.servicio.nombre }}{% else %}-{% endif %}</td>
+          <td>
+            {% if i.estado|upper == "ACTIVA" %}
+              <span class="muted">ACTIVA</span>
+            {% else %}
+              <span class="muted">{{ i.estado|default:"INACTIVA" }}</span>
+            {% endif %}
+          </td>
+          <td style="display:flex; gap:8px;">
+            <a class="btn" href="{% url 'impresora_edit' i.id %}">Editar</a>
+            {% if i.estado|upper == "ACTIVA" %}
+              <a class="btn" href="{% url 'impresora_toggle' i.id %}">Desactivar</a>
+            {% else %}
+              <a class="btn" href="{% url 'impresora_toggle' i.id %}">Activar</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="9" class="muted" style="padding:16px">No hay impresoras cargadas.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
+    <h3 style="margin:0">Movimientos recientes (Impresoras)</h3>
+    <div class="muted">Últimos 10</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Servicio</th>
+        <th>Impresora</th>
+        <th>Documento</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in movimientos %}
+        <tr>
+          <td class="muted">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
+          <td><strong>{{ d.movimiento.tipo }}</strong></td>
+          <td class="muted">{% if d.movimiento.servicio %}{{ d.movimiento.servicio.nombre }}{% else %}-{% endif %}</td>
+          <td>
+            {% if d.item.impresora %}
+              <strong>{{ d.item.impresora.marca }} {{ d.item.impresora.modelo }}</strong>
+              <div class="muted" style="font-size:12px">
+                {% if d.item.impresora.patrimonio %}Pat: {{ d.item.impresora.patrimonio }}{% endif %}
+                {% if d.item.impresora.ip %} · IP: {{ d.item.impresora.ip }}{% endif %}
+              </div>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td class="muted">{% if d.movimiento.documento %}{{ d.movimiento.documento }}{% else %}-{% endif %}</td>
+          <td class="muted">{{ d.movimiento.observaciones|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="muted" style="padding:16px">Todavía no hay movimientos de impresoras.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

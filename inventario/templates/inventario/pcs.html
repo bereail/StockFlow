@@ -1,6 +1,56 @@
 {% extends "inventario/base.html" %}
-{% block title %}PC{% endblock %}
 {% block content %}
-  <h2 style="margin-top:10px">PC</h2>
-  <p>Acá va el módulo de PCs.</p>
+
+<div class="row space-between" style="margin-bottom:12px">
+  <div>
+    <div class="page-title">PCs</div>
+    <div class="page-subtitle">Alta, listado y edición</div>
+  </div>
+
+  <div class="page-actions" style="display:flex; gap:10px; align-items:center;">
+    <form method="get" class="page-actions">
+      <input name="q" value="{{ q }}" placeholder="Buscar por nombre / IP / servicio" style="width:320px">
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+
+    <a class="btn" href="{% url 'pcs_create' %}">+ Nuevo</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
+    <h3 style="margin:0">Listado</h3>
+    <div class="muted">Total: {{ pcs|length }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>IP</th>
+        <th>Servicio</th>
+        <th>Activo</th>
+        <th style="width:140px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pc in pcs %}
+        <tr>
+          <td><strong>{{ pc.nombre_pc }}</strong></td>
+          <td class="muted">{{ pc.ip|default:"-" }}</td>
+          <td class="muted">{% if pc.servicio %}{{ pc.servicio.nombre }}{% else %}-{% endif %}</td>
+          <td>{% if pc.activo %}Sí{% else %}No{% endif %}</td>
+          <td>
+            <a class="btn" href="{% url 'pcs_edit' pc.id %}">Editar</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="muted" style="padding:16px">No hay PCs cargadas.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 {% endblock %}
