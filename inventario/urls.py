@@ -50,7 +50,13 @@ urlpatterns = [
     path("mas/proyector/<int:pk>/devolver/", views.proyector_prestamo_devolver, name="proyector_prestamo_devolver"),
 
     # PENDIeNTES #
-     path("pendientes/", views.pendientes_page, name="pendientes_page"),
+    path("pendientes/", views.pendientes_page, name="pendientes_page"),
     path("pendientes/<int:pk>/toggle/", views.pendiente_toggle, name="pendiente_toggle"),
     path("pendientes/<int:pk>/delete/", views.pendiente_delete, name="pendiente_delete"),
+
+    # REPARACIONES #
+    path("reparaciones/", views.reparaciones_list, name="reparaciones_list"),
+    path("reparaciones/nueva/", views.reparacion_create, name="reparacion_create"),
+    path("reparaciones/<int:pk>/editar/", views.reparacion_edit, name="reparacion_edit"),
+
 ]

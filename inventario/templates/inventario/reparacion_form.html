@@ -1,0 +1,60 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:14px">
+  <div>
+    <div class="page-title">{{ title }}</div>
+    <div class="page-subtitle muted">Registro simple de diagnóstico y seguimiento</div>
+  </div>
+
+  <a class="btn" href="{% url 'reparaciones_list' %}">Volver</a>
+</div>
+
+<div class="card">
+  <form method="post" style="display:grid; gap:12px">
+    {% csrf_token %}
+
+    <div>
+      <label class="label">Item</label>
+      {{ form.item }}
+    </div>
+
+    <div>
+      <label class="label">Proveedor (opcional)</label>
+      {{ form.proveedor }}
+    </div>
+
+    <div class="row" style="gap:12px; flex-wrap:wrap">
+      <div style="min-width:220px">
+        <label class="label">Estado</label>
+        {{ form.estado }}
+      </div>
+
+      <div style="min-width:220px">
+        <label class="label">Fecha envío</label>
+        {{ form.fecha_envio }}
+      </div>
+
+      <div style="min-width:220px">
+        <label class="label">Fecha retorno</label>
+        {{ form.fecha_retorno }}
+      </div>
+    </div>
+
+    <div>
+      <label class="label">Diagnóstico</label>
+      {{ form.diagnostico }}
+    </div>
+
+    <div>
+      <label class="label">Seguimiento</label>
+      {{ form.seguimiento }}
+    </div>
+
+    <div class="row" style="justify-content:flex-end; margin-top:6px">
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

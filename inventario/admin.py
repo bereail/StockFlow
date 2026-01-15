@@ -8,6 +8,7 @@ from .models import (
     Movimiento,
     MovimientoDetalle,
     Item,
+    Proveedor
 )
 
 
@@ -54,3 +55,14 @@ class MovimientoAdmin(admin.ModelAdmin):
     search_fields = ("servicio__nombre", "observaciones")
     inlines = [MovimientoDetalleInline]
     ordering = ("-fecha",)
+
+
+# =========================
+# PROVEEDORES
+# =========================
+@admin.register(Proveedor)
+class ProveedorAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "telefono", "email", "activo")
+    search_fields = ("nombre", "telefono", "email")
+    list_filter = ("activo",)
+    ordering = ("nombre",)

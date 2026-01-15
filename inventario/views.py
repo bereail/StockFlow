@@ -5,8 +5,8 @@ from django.db import transaction
 from django.db.models import Q
 import csv
 from django.contrib import messages
-from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector, Pendiente
-from .forms import TonerForm, EntregaRapidaTonerForm, ArticuloForm, EntregaRapidaArticuloForm, ServicioForm, ActivoPCForm, ImpresoraForm, EntregaRapidaImpresoraForm, PrestamoProyectorForm, PendienteForm
+from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector, Pendiente,Reparacion
+from .forms import TonerForm, EntregaRapidaTonerForm, ArticuloForm, EntregaRapidaArticuloForm, ServicioForm, ActivoPCForm, ImpresoraForm, EntregaRapidaImpresoraForm, PrestamoProyectorForm, PendienteForm, ReparacionForm
 from django.utils.timezone import is_naive, make_aware
 from django.views.decorators.http import require_POST
 
@@ -682,3 +682,63 @@ def pendiente_delete(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
     p.delete()
     return redirect("pendientes_page")
+
+# REPARACIONES #
+def reparaciones_list(request):
+    estado = (request.GET.get("estado") or "").strip()
+    q = (request.GET.get("q") or "").strip()
+
+    reparaciones = Reparacion.objects.select_related("item").all()
+
+    if estado:
+        reparaciones = reparaciones.filter(estado=estado)
+
+    if q:
+        # búsqueda simple: proveedor + diagnostico + seguimiento
+        reparaciones = reparaciones.filter(
+            proveedor_nombre__icontains=q
+        ) | reparaciones.filter(
+            diagnostico__icontains=q
+        ) | reparaciones.filter(
+            seguimiento__icontains=q
+        )
+
+    return render(request, "inventario/reparaciones_list.html", {
+        "reparaciones": reparaciones,
+        "estado": estado,
+        "q": q,
+        "estados": Reparacion.ESTADOS,
+    })
+
+
+def reparacion_create(request):
+    if request.method == "POST":
+        form = ReparacionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("reparaciones_list")
+    else:
+        form = ReparacionForm()
+
+    return render(request, "inventario/reparacion_form.html", {
+        "form": form,
+        "title": "Nueva reparación",
+    })
+
+
+def reparacion_edit(request, pk):
+    rep = get_object_or_404(Reparacion, pk=pk)
+
+    if request.method == "POST":
+        form = ReparacionForm(request.POST, instance=rep)
+        if form.is_valid():
+            form.save()
+            return redirect("reparaciones_list")
+    else:
+        form = ReparacionForm(instance=rep)
+
+    return render(request, "inventario/reparacion_form.html", {
+        "form": form,
+        "title": f"Editar reparación #{rep.id}",
+        "rep": rep,
+    })

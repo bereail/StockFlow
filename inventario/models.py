@@ -200,3 +200,59 @@ class Pendiente(models.Model):
 
     def __str__(self):
         return self.texto
+    
+# =========================
+# REPARACIONES
+# =========================
+
+class Reparacion(models.Model):
+    ESTADOS = [
+        ("RECIBIDO", "Recibido"),
+        ("ENVIADO", "Enviado"),
+        ("EN_REPARACION", "En reparación"),
+        ("LISTO", "Listo"),
+        ("RETIRADO", "Retirado"),
+        ("CERRADO", "Cerrado"),
+    ]
+
+    item = models.ForeignKey("Item", on_delete=models.PROTECT, related_name="reparaciones")
+    proveedor = models.ForeignKey(
+        "Proveedor",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reparaciones",
+    )
+
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="RECIBIDO")
+    fecha_envio = models.DateField(null=True, blank=True)
+    fecha_retorno = models.DateField(null=True, blank=True)
+
+    diagnostico = models.CharField(max_length=255, blank=True)
+    seguimiento = models.TextField(blank=True)
+
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-creado"]
+
+    def __str__(self):
+        return f"Reparación #{self.id} - {self.item}"
+
+# =========================
+# PROVEEDORES
+# =========================
+
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=120)
+    telefono = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(blank=True)
+    observaciones = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre

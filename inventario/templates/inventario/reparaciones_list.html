@@ -1,0 +1,104 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:14px">
+  <div>
+    <div class="page-title">Reparaciones</div>
+    <div class="page-subtitle muted">Registro simple de envíos / diagnósticos / seguimiento</div>
+  </div>
+
+  <a class="btn primary" href="{% url 'reparacion_create' %}">+ Nueva</a>
+</div>
+
+<!-- ================= FILTROS ================= -->
+<div class="card" style="margin-bottom:16px">
+  <form method="get" class="row" style="gap:12px; align-items:flex-end; flex-wrap:wrap">
+    <div style="min-width:220px">
+      <label class="label">Estado</label>
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for key, label in estados %}
+          <option value="{{ key }}" {% if estado == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:1; min-width:260px">
+      <label class="label">Buscar</label>
+      <input name="q" value="{{ q }}" placeholder="Proveedor / diagnóstico / seguimiento">
+    </div>
+
+    <div>
+      <button class="btn" type="submit">Filtrar</button>
+      <a class="btn" href="{% url 'reparaciones_list' %}">Limpiar</a>
+    </div>
+  </form>
+</div>
+
+<!-- ================= LISTA ================= -->
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:110px">Estado</th>
+        <th>Item</th>
+        <th style="width:220px">Proveedor</th>
+        <th style="width:120px">Envío</th>
+        <th style="width:120px">Retorno</th>
+        <th>Diagnóstico</th>
+        <th style="width:90px"></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for r in reparaciones %}
+      <tr>
+        <td>
+          {% if r.estado == "CERRADO" or r.estado == "RETIRADO" %}
+            <span class="chip ok">{{ r.get_estado_display }}</span>
+          {% elif r.estado == "ENVIADO" or r.estado == "EN_REPARACION" %}
+            <span class="chip warn">{{ r.get_estado_display }}</span>
+          {% else %}
+            <span class="chip">{{ r.get_estado_display }}</span>
+          {% endif %}
+        </td>
+
+        <td>
+          <div style="font-weight:800">{{ r.item }}</div>
+          {% if r.seguimiento %}
+            <div class="muted" style="margin-top:4px; font-size:12px">
+              {{ r.seguimiento|truncatechars:80 }}
+            </div>
+          {% endif %}
+        </td>
+
+        <td>
+  {% if r.proveedor %}
+    {{ r.proveedor }}
+  {% else %}
+    <span class="muted">-</span>
+  {% endif %}
+</td>
+
+
+        <td>{{ r.fecha_envio|date:"d/m/Y"|default:"-" }}</td>
+        <td>{{ r.fecha_retorno|date:"d/m/Y"|default:"-" }}</td>
+
+        <td>{{ r.diagnostico|default:"-" }}</td>
+
+        <td style="text-align:right; white-space:nowrap">
+          <a class="btn" href="{% url 'reparacion_edit' r.pk %}">Editar</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="muted" style="padding:18px; text-align:center">
+          No hay reparaciones registradas todavía.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
