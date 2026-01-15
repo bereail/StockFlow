@@ -5,9 +5,10 @@ from django.db import transaction
 from django.db.models import Q
 import csv
 from django.contrib import messages
-from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector
-from .forms import TonerForm, EntregaRapidaTonerForm, ArticuloForm, EntregaRapidaArticuloForm, ServicioForm, ActivoPCForm, ImpresoraForm, EntregaRapidaImpresoraForm, PrestamoProyectorForm
+from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector, Pendiente
+from .forms import TonerForm, EntregaRapidaTonerForm, ArticuloForm, EntregaRapidaArticuloForm, ServicioForm, ActivoPCForm, ImpresoraForm, EntregaRapidaImpresoraForm, PrestamoProyectorForm, PendienteForm
 from django.utils.timezone import is_naive, make_aware
+from django.views.decorators.http import require_POST
 
 
 def dashboard(request):
@@ -649,3 +650,35 @@ def proyector_prestamo_devolver(request, pk):
         p.fecha_devolucion_real = timezone.now()
         p.save()
     return redirect("proyector_prestamos_page")
+
+
+# PENDIENTES #
+def pendientes_page(request):
+    form = PendienteForm()
+
+    if request.method == "POST":
+        form = PendienteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("pendientes_page")
+
+    pendientes = Pendiente.objects.select_related("servicio").all()
+    return render(request, "inventario/pendientes.html", {
+        "form": form,
+        "pendientes": pendientes,
+    })
+
+
+@require_POST
+def pendiente_toggle(request, pk):
+    p = get_object_or_404(Pendiente, pk=pk)
+    p.completado = not p.completado
+    p.save(update_fields=["completado"])
+    return redirect("pendientes_page")
+
+
+@require_POST
+def pendiente_delete(request, pk):
+    p = get_object_or_404(Pendiente, pk=pk)
+    p.delete()
+    return redirect("pendientes_page")

@@ -49,4 +49,8 @@ urlpatterns = [
     path("mas/proyector/nuevo/", views.proyector_prestamo_create, name="proyector_prestamo_create"),
     path("mas/proyector/<int:pk>/devolver/", views.proyector_prestamo_devolver, name="proyector_prestamo_devolver"),
 
+    # PENDIeNTES #
+     path("pendientes/", views.pendientes_page, name="pendientes_page"),
+    path("pendientes/<int:pk>/toggle/", views.pendiente_toggle, name="pendiente_toggle"),
+    path("pendientes/<int:pk>/delete/", views.pendiente_delete, name="pendiente_delete"),
 ]

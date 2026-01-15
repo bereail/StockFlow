@@ -10,7 +10,8 @@ from .models import (
     MovimientoDetalle,
     ActivoPC,
     Impresora,
-    PrestamoProyector
+    PrestamoProyector,
+    Pendiente
 )
 
 
@@ -432,4 +433,16 @@ class PrestamoProyectorForm(forms.ModelForm):
             "fecha_devolucion_estimada": forms.DateInput(attrs={"type": "date"}),
             "observaciones": forms.Textarea(attrs={"rows": 2}),
             "telefono_contacto": forms.TextInput(attrs={"placeholder": "Ej: 381-xxxxxxx"}),
+        }
+
+# PENDIENTES #
+class PendienteForm(forms.ModelForm):
+    class Meta:
+        model = Pendiente
+        fields = ["texto", "servicio"]
+        widgets = {
+            "texto": forms.TextInput(attrs={
+                "placeholder": "Anotar pendiente…",
+                "autofocus": True,
+            }),
         }

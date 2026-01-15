@@ -153,7 +153,9 @@ class MovimientoDetalle(models.Model):
     def __str__(self):
         return f"{self.item} x {self.cantidad}"
 
-# PROYECTOR #
+# =========================
+# PROYECTOR
+# =========================
 class PrestamoProyector(models.Model):
     servicio = models.ForeignKey("Servicio", on_delete=models.PROTECT)
     telefono_contacto = models.CharField(max_length=50, blank=True, default="")
@@ -175,3 +177,26 @@ class PrestamoProyector(models.Model):
     @property
     def devuelto(self):
         return self.fecha_devolucion_real is not None
+    
+
+# =========================
+# PENDIENTES
+# =========================
+
+class Pendiente(models.Model):
+    texto = models.CharField(max_length=255)
+    completado = models.BooleanField(default=False)
+    servicio = models.ForeignKey(
+        "Servicio",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pendientes",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["completado", "-creado"]
+
+    def __str__(self):
+        return self.texto
