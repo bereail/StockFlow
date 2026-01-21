@@ -1,30 +1,48 @@
+
 from django.db import models
 from django.utils import timezone
+from django.core.validators import MinValueValidator
+from django.db.models import Q
 
 
 # =========================
-# CATÁLOGOS
+# MAESTROS / CATÁLOGOS
 # =========================
-
 class Servicio(models.Model):
+    """
+    Sector/servicio del hospital (ej: Terapia Intensiva).
+    """
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["nombre"]
 
     def __str__(self):
         return self.nombre
 
 
 class Toner(models.Model):
+    """
+    Catálogo de toners.
+    """
     nombre = models.CharField(max_length=100)
     activo = models.BooleanField(default=True)
     marca = models.CharField(max_length=100, blank=True)
     modelo_impresora = models.CharField(max_length=100, blank=True)
 
+    class Meta:
+        ordering = ["nombre", "marca"]
+
     def __str__(self):
-        return f"{self.nombre} ({self.marca})"
+        # Evita "CE285A ()" cuando no hay marca
+        return f"{self.nombre}" + (f" ({self.marca})" if self.marca else "")
 
 
 class Articulo(models.Model):
+    """
+    Catálogo de artículos (insumos varios).
+    """
     nombre = models.CharField(max_length=120)
     descripcion = models.TextField(blank=True)
     marca = models.CharField(max_length=100, blank=True)
@@ -32,11 +50,17 @@ class Articulo(models.Model):
     observaciones = models.TextField(blank=True)
     activo = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["nombre"]
+
     def __str__(self):
         return self.nombre
 
 
 class ActivoPC(models.Model):
+    """
+    Activos de informática (PCs, etc).
+    """
     nombre_pc = models.CharField(max_length=100)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
     patrimonio = models.CharField(max_length=100, blank=True)
@@ -44,15 +68,23 @@ class ActivoPC(models.Model):
     caracteristicas = models.TextField(blank=True)
     observaciones = models.TextField(blank=True)
     activo = models.BooleanField(default=True)
+
+    # Servicio opcional (puede no estar asignado)
     servicio = models.ForeignKey(
-        Servicio, on_delete=models.SET_NULL, null=True, blank=True
+        Servicio, on_delete=models.SET_NULL, null=True, blank=True, related_name="activos_pc"
     )
+
+    class Meta:
+        ordering = ["nombre_pc"]
 
     def __str__(self):
         return self.nombre_pc
 
 
 class Impresora(models.Model):
+    """
+    Impresoras del sistema.
+    """
     TIPO_CONEXION = (
         ("IP", "Red"),
         ("USB", "USB"),
@@ -60,6 +92,9 @@ class Impresora(models.Model):
 
     marca = models.CharField(max_length=100)
     modelo = models.CharField(max_length=100)
+
+    # 'tipo' te lo dejo, pero ojo: es muy genérico.
+    # Si lo usás para "Laser / Inkjet / Multifunción", conviene choices.
     tipo = models.CharField(max_length=100)
 
     patrimonio = models.CharField(max_length=100, blank=True)
@@ -67,23 +102,42 @@ class Impresora(models.Model):
     activo = models.BooleanField(default=True)
     estado = models.CharField(max_length=50, default="ACTIVA")
 
-    servicio = models.ForeignKey("Servicio", on_delete=models.SET_NULL, null=True, blank=True)
+    servicio = models.ForeignKey(
+        Servicio, on_delete=models.SET_NULL, null=True, blank=True, related_name="impresoras"
+    )
+
     conexion = models.CharField(max_length=10, choices=TIPO_CONEXION)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
 
-    toner = models.ForeignKey("Toner", on_delete=models.SET_NULL, null=True, blank=True)
+    toner = models.ForeignKey(
+        Toner, on_delete=models.SET_NULL, null=True, blank=True, related_name="impresoras"
+    )
+
     observaciones = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["marca", "modelo"]
 
     def __str__(self):
         return f"{self.marca} {self.modelo}"
-        
-        
+
+    def clean(self):
+        """
+        Validación básica: si la conexión es IP, debería tener IP.
+        """
+        from django.core.exceptions import ValidationError
+
+        if self.conexion == "IP" and not self.ip:
+            raise ValidationError({"ip": "Si la conexión es por red (IP), debés cargar la IP."})
+
 
 # =========================
-# DOCUMENTOS ADMINISTRATIVOS
+# DOCUMENTOS
 # =========================
-
 class Documento(models.Model):
+    """
+    Documento asociado a un movimiento (pedido, nota, orden, etc).
+    """
     TIPO_DOCUMENTO = (
         ("PEDIDO", "Pedido"),
         ("NOTA", "Nota"),
@@ -96,17 +150,28 @@ class Documento(models.Model):
     observaciones = models.TextField(blank=True)
 
     class Meta:
-        unique_together = ("tipo", "numero")
+        constraints = [
+            models.UniqueConstraint(fields=["tipo", "numero"], name="uniq_documento_tipo_numero")
+        ]
+        ordering = ["-fecha", "tipo", "numero"]
 
     def __str__(self):
         return f"{self.tipo} Nº {self.numero}"
 
 
 # =========================
-# MOVIMIENTOS DE INVENTARIO
+# ITEM (POLIMÓRFICO)
 # =========================
-
 class Item(models.Model):
+    """
+    Unifica distintas entidades como "Item" para movimientos:
+    - TONER
+    - ARTICULO
+    - ACTIVO_PC
+    - IMPRESORA
+
+    Regla: según 'tipo', SOLO 1 FK debe estar seteada.
+    """
     TIPO_CHOICES = [
         ("TONER", "Toner"),
         ("ARTICULO", "Artículo"),
@@ -116,19 +181,69 @@ class Item(models.Model):
 
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
 
-    toner = models.ForeignKey("Toner", null=True, blank=True, on_delete=models.CASCADE)
-    articulo = models.ForeignKey("Articulo", null=True, blank=True, on_delete=models.CASCADE)
-    activo_pc = models.ForeignKey("ActivoPC", null=True, blank=True, on_delete=models.CASCADE)
-    impresora = models.ForeignKey("Impresora", null=True, blank=True, on_delete=models.CASCADE)
+    # IMPORTANTE:
+    # Usamos PROTECT para NO romper históricos (movimientos) si alguien intenta borrar un catálogo.
+    toner = models.ForeignKey(Toner, null=True, blank=True, on_delete=models.PROTECT)
+    articulo = models.ForeignKey(Articulo, null=True, blank=True, on_delete=models.PROTECT)
+    activo_pc = models.ForeignKey(ActivoPC, null=True, blank=True, on_delete=models.PROTECT)
+    impresora = models.ForeignKey(Impresora, null=True, blank=True, on_delete=models.PROTECT)
+
+    class Meta:
+        constraints = [
+            # Asegura 1 sola FK seteada (XOR simple a nivel DB)
+            models.CheckConstraint(
+                check=(
+                    (Q(toner__isnull=False) & Q(articulo__isnull=True) & Q(activo_pc__isnull=True) & Q(impresora__isnull=True)) |
+                    (Q(toner__isnull=True) & Q(articulo__isnull=False) & Q(activo_pc__isnull=True) & Q(impresora__isnull=True)) |
+                    (Q(toner__isnull=True) & Q(articulo__isnull=True) & Q(activo_pc__isnull=False) & Q(impresora__isnull=True)) |
+                    (Q(toner__isnull=True) & Q(articulo__isnull=True) & Q(activo_pc__isnull=True) & Q(impresora__isnull=False))
+                ),
+                name="chk_item_exactamente_un_fk",
+            ),
+
+            # Evita duplicados por tipo+objeto
+            models.UniqueConstraint(
+                fields=["tipo", "toner"],
+                condition=Q(toner__isnull=False),
+                name="uniq_item_toner",
+            ),
+            models.UniqueConstraint(
+                fields=["tipo", "articulo"],
+                condition=Q(articulo__isnull=False),
+                name="uniq_item_articulo",
+            ),
+            models.UniqueConstraint(
+                fields=["tipo", "activo_pc"],
+                condition=Q(activo_pc__isnull=False),
+                name="uniq_item_activo_pc",
+            ),
+            models.UniqueConstraint(
+                fields=["tipo", "impresora"],
+                condition=Q(impresora__isnull=False),
+                name="uniq_item_impresora",
+            ),
+        ]
 
     def __str__(self):
-        if self.toner: return f"TONER: {self.toner}"
-        if self.articulo: return f"ARTICULO: {self.articulo}"
-        if self.activo_pc: return f"ACTIVO_PC: {self.activo_pc}"
-        if self.impresora: return f"IMPRESORA: {self.impresora}"
+        if self.toner:
+            return f"TONER: {self.toner}"
+        if self.articulo:
+            return f"ARTICULO: {self.articulo}"
+        if self.activo_pc:
+            return f"ACTIVO_PC: {self.activo_pc}"
+        if self.impresora:
+            return f"IMPRESORA: {self.impresora}"
         return f"Item #{self.pk}"
 
+
+# =========================
+# MOVIMIENTOS
+# =========================
 class Movimiento(models.Model):
+    """
+    Movimiento de stock: Ingreso / Egreso / Ajuste.
+    Puede estar asociado a un servicio y/o un documento.
+    """
     TIPO_CHOICES = [
         ("INGRESO", "Ingreso"),
         ("EGRESO", "Egreso"),
@@ -137,39 +252,55 @@ class Movimiento(models.Model):
 
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     fecha = models.DateTimeField(default=timezone.now)
-    servicio = models.ForeignKey("Servicio", null=True, blank=True, on_delete=models.SET_NULL)
-    documento = models.ForeignKey("Documento", null=True, blank=True, on_delete=models.SET_NULL)
+
+    servicio = models.ForeignKey(
+        Servicio, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos"
+    )
+    documento = models.ForeignKey(
+        Documento, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos"
+    )
+
     observaciones = models.TextField(blank=True, default="")
     anulado = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-fecha"]
 
     def __str__(self):
         return f"{self.tipo} {self.fecha:%Y-%m-%d %H:%M}"
 
+
 class MovimientoDetalle(models.Model):
+    """
+    Detalle de movimiento: item + cantidad.
+    """
     movimiento = models.ForeignKey(Movimiento, related_name="detalles", on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
-    cantidad = models.IntegerField()
+    cantidad = models.IntegerField(validators=[MinValueValidator(1)])
 
     def __str__(self):
         return f"{self.item} x {self.cantidad}"
 
+
 # =========================
-# PROYECTOR
+# PROYECTOR (PRÉSTAMOS)
 # =========================
 class PrestamoProyector(models.Model):
-    servicio = models.ForeignKey("Servicio", on_delete=models.PROTECT)
+    servicio = models.ForeignKey(Servicio, on_delete=models.PROTECT, related_name="prestamos_proyector")
     telefono_contacto = models.CharField(max_length=50, blank=True, default="")
 
     fecha_retiro = models.DateTimeField(default=timezone.now)
     fecha_devolucion_estimada = models.DateField(null=True, blank=True)
     fecha_devolucion_real = models.DateTimeField(null=True, blank=True)
 
-    # items incluidos (checklist simple)
     incluye_prolongacion = models.BooleanField(default=False)
     incluye_pc = models.BooleanField(default=False)
     incluye_notebook = models.BooleanField(default=False)
 
     observaciones = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-fecha_retiro"]
 
     def __str__(self):
         return f"Proyector -> {self.servicio.nombre} ({self.fecha_retiro:%Y-%m-%d})"
@@ -177,22 +308,23 @@ class PrestamoProyector(models.Model):
     @property
     def devuelto(self):
         return self.fecha_devolucion_real is not None
-    
+
 
 # =========================
 # PENDIENTES
 # =========================
-
 class Pendiente(models.Model):
     texto = models.CharField(max_length=255)
     completado = models.BooleanField(default=False)
+
     servicio = models.ForeignKey(
-        "Servicio",
+        Servicio,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="pendientes",
     )
+
     creado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -200,10 +332,24 @@ class Pendiente(models.Model):
 
     def __str__(self):
         return self.texto
-    
+
+
 # =========================
-# REPARACIONES
+# PROVEEDORES / REPARACIONES
 # =========================
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=120)
+    telefono = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(blank=True)
+    observaciones = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
 
 class Reparacion(models.Model):
     ESTADOS = [
@@ -215,9 +361,10 @@ class Reparacion(models.Model):
         ("CERRADO", "Cerrado"),
     ]
 
-    item = models.ForeignKey("Item", on_delete=models.PROTECT, related_name="reparaciones")
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="reparaciones")
+
     proveedor = models.ForeignKey(
-        "Proveedor",
+        Proveedor,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -239,20 +386,3 @@ class Reparacion(models.Model):
 
     def __str__(self):
         return f"Reparación #{self.id} - {self.item}"
-
-# =========================
-# PROVEEDORES
-# =========================
-
-class Proveedor(models.Model):
-    nombre = models.CharField(max_length=120)
-    telefono = models.CharField(max_length=50, blank=True)
-    email = models.EmailField(blank=True)
-    observaciones = models.TextField(blank=True)
-    activo = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["nombre"]
-
-    def __str__(self):
-        return self.nombre

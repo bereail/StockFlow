@@ -5,12 +5,19 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{% block title %}StockToner{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v=999">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap">
+
+  {# Cache-busting para que pywebview no te cachee el CSS #}
+  {% now "U" as cachebust %}
+<link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}&r={{ request.resolver_match.url_name }}">
+
+  {# Fuente (opcional) #}
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap">
 </head>
 
 <body class="app">
 
+  <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="{% url 'dashboard' %}">Registro</a>
@@ -22,22 +29,32 @@
           <a class="navlink {% if name == 'articulos_page' %}active{% endif %}" href="{% url 'articulos_page' %}">Artículos</a>
           <a class="navlink {% if name == 'impresoras_page' %}active{% endif %}" href="{% url 'impresoras_page' %}">Impresoras</a>
           <a class="navlink {% if name == 'servicios_page' or name == 'servicio_create' or name == 'servicio_edit' %}active{% endif %}"
-   href="{% url 'servicios_page' %}">Servicios</a>
-
+             href="{% url 'servicios_page' %}">Servicios</a>
         {% endwith %}
-        <div class="nav-more">
-  <button class="navlink" type="button">Más ▾</button>
-  <div class="nav-more-menu">
-    <a class="navlink" href="{% url 'proyector_prestamos_page' %}">Proyector</a>
-    <a class="btn" href="{% url 'pendientes_page' %}">Pendientes</a>
-    <a class="btn" href="{% url 'reparaciones_list' %}">Reparaciones</a>
-  </div>
-</div>
 
+        <div class="nav-more">
+          <button class="navlink" type="button">Más ▾</button>
+          <div class="nav-more-menu">
+            <a class="navlink" href="{% url 'proyector_prestamos_page' %}">Proyector</a>
+            <a class="btn" href="{% url 'pendientes_page' %}">Pendientes</a>
+            <a class="btn" href="{% url 'reparaciones_list' %}">Reparaciones</a>
+          </div>
+        </div>
       </nav>
+
+      {# Botón recargar solo en DEBUG (requiere context_processor debug) #}
+      {% if settings.DEBUG %}
+  <button class="btn2" type="button" onclick="window.location.href = window.location.href.split('#')[0] + '?_=' + Date.now()">
+  🔄 Recargar
+</button>
+
+{% endif %}
+
+
     </div>
   </header>
 
+  <!-- CONTENIDO -->
   <main class="container">
     {% block content %}{% endblock %}
   </main>

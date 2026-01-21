@@ -2,42 +2,49 @@
 {% block title %}Registrar entrega{% endblock %}
 
 {% block content %}
-<div class="panel" style="max-width:820px;margin:0 auto;">
-  <h2 style="margin:0 0 10px">Registrar entrega (Toner)</h2>
-  <p class="muted" style="margin-top:0">Crea un EGRESO con detalle de toner.</p>
+<section class="page entrega">
+  <div class="panel panel--narrow">
+    <header class="page-header">
+      <h2 class="page-title">Registrar entrega (Toner)</h2>
+      <p class="page-subtitle muted">Crea un EGRESO con detalle de toner.</p>
+    </header>
 
-  <form method="post" class="formgrid">
-    {% csrf_token %}
+    <form method="post" class="formgrid">
+      {% csrf_token %}
 
-    <label class="field">
-      <span class="label">Servicio</span>
-      {{ form.servicio }}
-    </label>
+      <!-- Fila 1: 4 columnas -->
+      <label class="field col-3">
+        <span class="label">Servicio</span>
+        {{ form.servicio }}
+      </label>
 
-    <label class="field">
-      <span class="label">Toner</span>
-      {{ form.toner }}
-    </label>
+      <label class="field col-3">
+        <span class="label">Toner</span>
+        {{ form.toner }}
+      </label>
 
-    <label class="field">
-      <span class="label">Cantidad</span>
-      {{ form.cantidad }}
-    </label>
+      <label class="field col-3">
+        <span class="label">Cantidad</span>
+        {{ form.cantidad }}
+      </label>
 
-    <label class="field">
-      <span class="label">Fecha (opcional)</span>
-      {{ form.fecha }}
-    </label>
+      <label class="field col-3">
+        <span class="label">Fecha (opcional)</span>
+        {{ form.fecha }}
+      </label>
 
-    <label class="field" style="grid-column:1/-1;">
-      <span class="label">Observaciones</span>
-      {{ form.observaciones }}
-    </label>
+      <!-- Fila completa -->
+      <label class="field col-12">
+        <span class="label">Observaciones</span>
+        {{ form.observaciones }}
+      </label>
 
-    <div style="display:flex;gap:10px;margin-top:10px;">
-      <button class="btn btn-primary" type="submit">Guardar entrega</button>
-      <a class="btn" href="{% url 'toner_page' %}">Cancelar</a>
-    </div>
-  </form>
-</div>
+      <!-- Acciones -->
+      <div class="form-actions col-12">
+        <button class="btn2 primary" type="submit">Guardar entrega</button>
+        <a class="btn2" href="{% url 'toner_page' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

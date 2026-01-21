@@ -5,15 +5,23 @@ from django.db import transaction
 from django.db.models import Q
 import csv
 from django.contrib import messages
-from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector, Pendiente,Reparacion
-from .forms import TonerForm, EntregaRapidaTonerForm, ArticuloForm, EntregaRapidaArticuloForm, ServicioForm, ActivoPCForm, ImpresoraForm, EntregaRapidaImpresoraForm, PrestamoProyectorForm, PendienteForm, ReparacionForm
+from django.forms import formset_factory
+from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector, Pendiente,Reparacion, Movimiento, MovimientoDetalle, Item
+from .forms.toner import TonerForm, EntregaRapidaTonerForm
+from .forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
+from .forms.servicios import ServicioForm
+from .forms.pcs import ActivoPCForm
+from .forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
+from .forms.proyector import PrestamoProyectorForm
+from .forms.pendientes import PendienteForm
+from .forms.reparaciones import ReparacionForm
 from django.utils.timezone import is_naive, make_aware
 from django.views.decorators.http import require_POST
+from .forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
 
 
 def dashboard(request):
     return render(request, "inventario/dashboard.html")
-
 
   ### TONER ####
 def toner_page(request):
@@ -27,17 +35,23 @@ def toner_page(request):
             Q(modelo_impresora__icontains=q)
         )
 
-    # Últimos EGRESOS de toner
-    movimientos = (MovimientoDetalle.objects
+    # Traemos 4 para saber si hay "más de 3"
+    movimientos_qs = (
+        MovimientoDetalle.objects
         .select_related("movimiento", "item", "item__toner", "movimiento__servicio")
         .filter(movimiento__tipo="EGRESO", item__tipo="TONER")
-        .order_by("-movimiento__fecha")[:10]
+        .order_by("-movimiento__fecha")[:4]
     )
+
+    movimientos = list(movimientos_qs)
+    mostrar_ver_todo = len(movimientos) > 3
+    movimientos = movimientos[:3]
 
     return render(request, "inventario/toner.html", {
         "q": q,
         "toners": toners,
         "movimientos": movimientos,
+        "mostrar_ver_todo": mostrar_ver_todo,
     })
 
 def toner_list(request):
@@ -58,7 +72,6 @@ def toner_list(request):
         "q": q,
         "title": "Toners",
     })
-
 
 def toner_entrega(request):
     if request.method == "POST":
@@ -103,7 +116,6 @@ def toner_entrega(request):
 
     return render(request, "inventario/toner_entrega.html", {"form": form})
 
-
 def toner_create(request):
     if request.method == "POST":
         form = TonerForm(request.POST)
@@ -131,13 +143,11 @@ def toner_edit(request, pk: int):
 
     return render(request, "inventario/toner_form.html", {"form": form, "mode": "edit", "toner": toner})
 
-
 def toner_toggle(request, pk: int):
     toner = get_object_or_404(Toner, pk=pk)
     toner.activo = not toner.activo
     toner.save(update_fields=["activo"])
     return redirect("toner_page")
-
 
 def toner_historial(request):
     q = (request.GET.get("q") or "").strip()
@@ -158,7 +168,6 @@ def toner_historial(request):
         )
 
     return render(request, "inventario/toner_historial.html", {"detalles": detalles, "q": q})
-
 
 # BACKUP #
 def backup_entregas_csv(request):
@@ -234,7 +243,6 @@ def articulos_page(request):
         "articulos": articulos,
     })
 
-
 def articulo_create(request):
     if request.method == "POST":
         form = ArticuloForm(request.POST)
@@ -247,7 +255,6 @@ def articulo_create(request):
         form = ArticuloForm()
 
     return render(request, "inventario/articulo_form.html", {"form": form, "mode": "create"})
-
 
 def articulo_edit(request, pk: int):
     articulo = get_object_or_404(Articulo, pk=pk)
@@ -267,7 +274,6 @@ def articulo_edit(request, pk: int):
         "mode": "edit",
         "articulo": articulo
     })
-
 
 def articulo_toggle(request, pk: int):
     articulo = get_object_or_404(Articulo, pk=pk)
@@ -311,7 +317,6 @@ def articulo_entrega(request):
 
     return render(request, "inventario/articulo_entrega.html", {"form": form})
 
-
 def articulos_historial(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -332,10 +337,7 @@ def articulos_historial(request):
     return render(request, "inventario/articulos_historial.html", {"detalles": detalles, "q": q})
 
 
-
 # PC #
-
-
 def pcs_page(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -351,7 +353,6 @@ def pcs_page(request):
 
     return render(request, "inventario/pcs.html", {"q": q, "pcs": pcs})
 
-
 def pcs_create(request):
     if request.method == "POST":
         form = ActivoPCForm(request.POST)
@@ -364,7 +365,6 @@ def pcs_create(request):
         form = ActivoPCForm()
 
     return render(request, "inventario/pc_form.html", {"form": form, "mode": "create"})
-
 
 def pcs_edit(request, pk):
     pc = get_object_or_404(ActivoPC, pk=pk)
@@ -381,10 +381,7 @@ def pcs_edit(request, pk):
 
     return render(request, "inventario/pc_form.html", {"form": form, "mode": "edit", "pc": pc})
 
-
-
 # SERVICIOS #
-
 def servicios_page(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -400,7 +397,6 @@ def servicios_page(request):
         "servicios": servicios,
     })
 
-
 def servicio_create(request):
     if request.method == "POST":
         form = ServicioForm(request.POST)
@@ -414,7 +410,6 @@ def servicio_create(request):
 
     # igual a toner_form.html: usa mode
     return render(request, "inventario/servicio_form.html", {"form": form, "mode": "create"})
-
 
 def servicio_edit(request, pk: int):
     servicio = get_object_or_404(Servicio, pk=pk)
@@ -434,7 +429,6 @@ def servicio_edit(request, pk: int):
         "mode": "edit",
         "servicio": servicio
     })
-
 
 # IMPRESORA #
 def impresoras_page(request):
@@ -457,7 +451,6 @@ def impresoras_page(request):
 
     return render(request, "inventario/impresoras.html", {"impresoras": impresoras, "q": q})
 
-
 def impresora_create(request):
     if request.method == "POST":
         form = ImpresoraForm(request.POST)
@@ -470,7 +463,6 @@ def impresora_create(request):
         form = ImpresoraForm()
 
     return render(request, "inventario/impresora_form.html", {"form": form, "mode": "create"})
-
 
 def impresora_edit(request, pk):
     impresora = get_object_or_404(Impresora, pk=pk)
@@ -487,13 +479,11 @@ def impresora_edit(request, pk):
 
     return render(request, "inventario/impresora_form.html", {"form": form, "mode": "edit", "impresora": impresora})
 
-
 def impresora_toggle(request, pk):
     impresora = get_object_or_404(Impresora, pk=pk)
     impresora.estado = "INACTIVA" if impresora.estado == "ACTIVA" else "ACTIVA"
     impresora.save(update_fields=["estado"])
     return redirect("impresoras_page")
-
 
 def impresora_entrega(request):
     if request.method == "POST":
@@ -544,7 +534,6 @@ def impresora_entrega(request):
 
     return render(request, "inventario/impresora_entrega.html", {"form": form})
 
-
 def impresora_historial(request):
     """Listado simple de movimientos (EGRESO) de impresoras."""
     q = (request.GET.get("q") or "").strip()
@@ -566,10 +555,88 @@ def impresora_historial(request):
 
     return render(request, "inventario/impresoras_historial.html", {"detalles": detalles, "q": q})
 
-
 # MOVIMIENTOS #
-from django.db.models import Q
-from .models import Movimiento, Servicio, Toner
+TonerFormSet = formset_factory(MovimientoDetalleTonerForm, extra=1, can_delete=True)
+ArtFormSet   = formset_factory(MovimientoDetalleArticuloForm, extra=1, can_delete=True)
+
+def movimiento_create(request):
+    if request.method == "POST":
+        form = MovimientoForm(request.POST)
+        toner_formset = TonerFormSet(request.POST, prefix="toner")
+        art_formset   = ArtFormSet(request.POST, prefix="art")
+
+        if form.is_valid() and toner_formset.is_valid() and art_formset.is_valid():
+
+            def tiene_detalles():
+                for f in toner_formset:
+                    if f.cleaned_data and not f.cleaned_data.get("DELETE", False):
+                        if f.cleaned_data.get("toner") and f.cleaned_data.get("cantidad"):
+                            return True
+                for f in art_formset:
+                    if f.cleaned_data and not f.cleaned_data.get("DELETE", False):
+                        if f.cleaned_data.get("articulo") and f.cleaned_data.get("cantidad"):
+                            return True
+                return False
+
+            if not tiene_detalles():
+                messages.error(request, "Agregá al menos un detalle (toner o artículo).")
+                return render(request, "inventario/movimiento_form.html", {
+                    "title": "Nuevo Movimiento",
+                    "form": form,
+                    "toner_formset": toner_formset,
+                    "art_formset": art_formset,
+                })
+
+            with transaction.atomic():
+                movimiento = form.save()
+
+                for f in toner_formset:
+                    if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
+                        continue
+                    toner = f.cleaned_data.get("toner")
+                    cantidad = f.cleaned_data.get("cantidad")
+                    if not toner or not cantidad:
+                        continue
+
+                    item, _ = Item.objects.get_or_create(
+                        tipo="TONER",
+                        toner=toner,
+                        defaults={"articulo": None, "activo_pc": None, "impresora": None},
+                    )
+                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
+
+                for f in art_formset:
+                    if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
+                        continue
+                    articulo = f.cleaned_data.get("articulo")
+                    cantidad = f.cleaned_data.get("cantidad")
+                    if not articulo or not cantidad:
+                        continue
+
+                    item, _ = Item.objects.get_or_create(
+                        tipo="ARTICULO",
+                        articulo=articulo,
+                        defaults={"toner": None, "activo_pc": None, "impresora": None},
+                    )
+                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
+
+            messages.success(request, "✅ Movimiento guardado.")
+            return redirect("movimientos_list")
+
+        messages.error(request, "❌ Revisá el formulario, hay errores.")
+
+    else:
+        form = MovimientoForm(initial={"fecha": timezone.now().strftime("%Y-%m-%dT%H:%M")})
+        toner_formset = TonerFormSet(prefix="toner")
+        art_formset   = ArtFormSet(prefix="art")
+
+    return render(request, "inventario/movimiento_form.html", {
+        "title": "Nuevo Movimiento",
+        "form": form,
+        "toner_formset": toner_formset,
+        "art_formset": art_formset,
+    })
+
 
 def movimientos_list(request):
     servicio_id = request.GET.get("servicio") or ""
@@ -618,6 +685,42 @@ def movimientos_list(request):
         "filtros": filtros,
     })
 
+def movimientos_export_csv(request):
+    servicio_id = request.GET.get("servicio")
+
+    qs = (MovimientoDetalle.objects
+          .select_related("movimiento", "movimiento__servicio", "item", "item__toner", "item__articulo", "item__activo_pc", "item__impresora")
+          .order_by("-movimiento__fecha"))
+
+    if servicio_id:
+        qs = qs.filter(movimiento__servicio_id=servicio_id)
+
+    resp = HttpResponse(content_type="text/csv; charset=utf-8")
+    filename = f"movimientos_{timezone.now():%Y%m%d_%H%M}.csv"
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(resp)
+    writer.writerow(["Fecha", "Tipo", "Servicio", "Item", "Cantidad", "Observaciones"])
+
+    for d in qs:
+        mov = d.movimiento
+        servicio = mov.servicio.nombre if mov.servicio else "-"
+        # nombre “humano” del item
+        item_str = str(d.item)
+
+        writer.writerow([
+            mov.fecha.strftime("%Y-%m-%d %H:%M"),
+            mov.tipo,
+            servicio,
+            item_str,
+            d.cantidad,
+            mov.observaciones or "",
+        ])
+
+    return resp
+
+
+
 
 # PROYECTOR #
 def proyector_prestamos_page(request):
@@ -651,7 +754,6 @@ def proyector_prestamo_devolver(request, pk):
         p.save()
     return redirect("proyector_prestamos_page")
 
-
 # PENDIENTES #
 def pendientes_page(request):
     form = PendienteForm()
@@ -668,14 +770,12 @@ def pendientes_page(request):
         "pendientes": pendientes,
     })
 
-
 @require_POST
 def pendiente_toggle(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
     p.completado = not p.completado
     p.save(update_fields=["completado"])
     return redirect("pendientes_page")
-
 
 @require_POST
 def pendiente_delete(request, pk):
@@ -688,19 +788,16 @@ def reparaciones_list(request):
     estado = (request.GET.get("estado") or "").strip()
     q = (request.GET.get("q") or "").strip()
 
-    reparaciones = Reparacion.objects.select_related("item").all()
+    reparaciones = Reparacion.objects.select_related("item", "proveedor").all()
 
     if estado:
         reparaciones = reparaciones.filter(estado=estado)
 
     if q:
-        # búsqueda simple: proveedor + diagnostico + seguimiento
         reparaciones = reparaciones.filter(
-            proveedor_nombre__icontains=q
-        ) | reparaciones.filter(
-            diagnostico__icontains=q
-        ) | reparaciones.filter(
-            seguimiento__icontains=q
+            Q(proveedor__nombre__icontains=q) |
+            Q(diagnostico__icontains=q) |
+            Q(seguimiento__icontains=q)
         )
 
     return render(request, "inventario/reparaciones_list.html", {
@@ -709,7 +806,6 @@ def reparaciones_list(request):
         "q": q,
         "estados": Reparacion.ESTADOS,
     })
-
 
 def reparacion_create(request):
     if request.method == "POST":
@@ -724,7 +820,6 @@ def reparacion_create(request):
         "form": form,
         "title": "Nueva reparación",
     })
-
 
 def reparacion_edit(request, pk):
     rep = get_object_or_404(Reparacion, pk=pk)

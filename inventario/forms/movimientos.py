@@ -1,13 +1,8 @@
 from django import forms
 from django.utils import timezone
 
-from .models import (
-    Toner,
-    Articulo,
-    Documento,
-    Movimiento,
-    MovimientoDetalle
-)
+from inventario.models import Toner, Articulo, Documento, Movimiento, MovimientoDetalle
+
 
 class DocumentoForm(forms.ModelForm):
     class Meta:
@@ -24,20 +19,6 @@ class DocumentoForm(forms.ModelForm):
         self.fields["fecha"].required = False
         self.fields["observaciones"].required = False
 
-class DocumentoForm(forms.ModelForm):
-    class Meta:
-        model = Documento
-        fields = ["tipo", "numero", "fecha", "observaciones"]
-        widgets = {
-            "fecha": forms.DateInput(attrs={"type": "date"}),
-            "numero": forms.TextInput(attrs={"placeholder": "Ej: 1234"}),
-            "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Obs (opcional)"}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["fecha"].required = False
-        self.fields["observaciones"].required = False
 
 class MovimientoForm(forms.ModelForm):
     class Meta:
@@ -50,12 +31,10 @@ class MovimientoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.fields["servicio"].required = False
         self.fields["fecha"].required = False
         self.fields["observaciones"].required = False
 
-        # Default fecha
         if not self.instance.pk and not self.initial.get("fecha"):
             self.initial["fecha"] = timezone.now().strftime("%Y-%m-%dT%H:%M")
 
@@ -67,11 +46,11 @@ class MovimientoForm(forms.ModelForm):
         if tipo == "EGRESO" and not servicio:
             self.add_error("servicio", "En un EGRESO debe seleccionar un servicio.")
 
-        # Regla: en INGRESO, servicio vacío
         if tipo == "INGRESO":
             cleaned["servicio"] = None
 
         return cleaned
+
 
 class MovimientoDetalleTonerForm(forms.ModelForm):
     toner = forms.ModelChoiceField(
@@ -93,7 +72,6 @@ class MovimientoDetalleTonerForm(forms.ModelForm):
         toner = cleaned.get("toner")
         cantidad = cleaned.get("cantidad")
 
-        # Fila vacía => OK
         if not toner and not cantidad:
             return cleaned
 
@@ -103,6 +81,7 @@ class MovimientoDetalleTonerForm(forms.ModelForm):
             self.add_error("toner", "Seleccioná un toner.")
 
         return cleaned
+
 
 class MovimientoDetalleArticuloForm(forms.ModelForm):
     articulo = forms.ModelChoiceField(
@@ -124,7 +103,6 @@ class MovimientoDetalleArticuloForm(forms.ModelForm):
         articulo = cleaned.get("articulo")
         cantidad = cleaned.get("cantidad")
 
-        # Fila vacía => OK
         if not articulo and not cantidad:
             return cleaned
 
@@ -134,4 +112,3 @@ class MovimientoDetalleArticuloForm(forms.ModelForm):
             self.add_error("articulo", "Seleccioná un artículo.")
 
         return cleaned
-

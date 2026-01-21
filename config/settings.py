@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 # =========================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -57,6 +58,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "inventario.context_processors.global_settings",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
@@ -93,10 +95,8 @@ USE_TZ = True
 # STATIC FILES
 # =========================
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [
-    BASE_DIR / "inventario" / "static",
-]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
+STATICFILES_DIRS = [] 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

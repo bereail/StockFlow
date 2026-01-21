@@ -1,137 +1,78 @@
-# desktop_app.py
 import os
+os.environ["PYWEBVIEW_GUI"] = "edgechromium"
+
 import sys
 import threading
 import time
 import socket
-import shutil
-import traceback
+import urllib.request
+import urllib.error
+
 import webview
-
-APP_NAME = "StockToner"
-
-# Ruta base (PyInstaller o normal)
-BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
-os.chdir(BASE_DIR)
+from waitress import serve
 
 
-
-# Determina dónde guardar datos persistentes (AppData)
-def get_data_dir():
-    appdata = os.environ.get("APPDATA")
-    if not appdata:
-        return os.path.join(BASE_DIR, APP_NAME)
-    return os.path.join(appdata, APP_NAME)
+def get_free_port() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
 
 
-def log(msg: str):
-    """Log simple a AppData para debug en EXE."""
-    try:
-        data_dir = get_data_dir()
-        os.makedirs(data_dir, exist_ok=True)
-        log_path = os.path.join(data_dir, "app.log")
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
-    except Exception:
-        pass
-
-
-def ensure_appdata_db():
-    data_dir = get_data_dir()
-    os.makedirs(data_dir, exist_ok=True)
-
-    dst = os.path.join(data_dir, "db.sqlite3")
-    src = os.path.join(BASE_DIR, "db.sqlite3")
-
-    if not os.path.exists(dst) and os.path.exists(src):
-        shutil.copy2(src, dst)
-        log("DB copiada a AppData.")
-
-
-def seed_if_needed():
-    """Corre seed en-proceso (NO subprocess)."""
-    try:
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-        import django
-        django.setup()
-        from django.core.management import call_command
-        log("Ejecutando seed...")
-        call_command("seed")
-        log("Seed terminado.")
-    except Exception:
-        log("Seed falló:\n" + traceback.format_exc())
-
-
-def find_free_port(host="127.0.0.1"):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host, 0))
-    port = s.getsockname()[1]
-    s.close()
-    return port
-
-
-def run_django(port: int):
-    """Arranca Django en thread y loguea cualquier crash."""
-    try:
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-        from django.core.management import execute_from_command_line
-        log(f"Arrancando Django en puerto {port}...")
-        execute_from_command_line(["manage.py", "runserver", f"0.0.0.0:{port}", "--noreload"])
-    except Exception:
-        log("Django crasheó:\n" + traceback.format_exc())
-
-
-def wait_for_server(url, timeout=35.0):
-    import urllib.request
+def wait_for_server(url: str, timeout_seconds: float = 15.0) -> None:
     start = time.time()
-    while time.time() - start < timeout:
+    last_error = None
+
+    while True:
         try:
-            with urllib.request.urlopen(url, timeout=2) as resp:
-                if resp.status in (200, 301, 302, 403, 404):
-                    return True
-        except Exception:
-            time.sleep(0.25)
-    return False
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=2) as r:
+                # Django puede responder 200 o redirigir (301/302) si no estás logueada
+                if r.status in (200, 301, 302, 403):
+                    return
+        except Exception as e:
+            last_error = e
+
+        if time.time() - start > timeout_seconds:
+            raise RuntimeError(f"El servidor Django no respondió a tiempo. Último error: {last_error}")
+
+        time.sleep(0.15)
+
+
+def run_server(port: int) -> None:
+    # Soporta PyInstaller (cuando corre desde el EXE)
+    BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(BASE_DIR)
+    sys.path.insert(0, BASE_DIR)
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+    import django
+    django.setup()
+
+    from django.core.wsgi import get_wsgi_application
+    app = get_wsgi_application()
+
+    # Waitress bloquea, por eso corre en thread
+    serve(app, host="127.0.0.1", port=port, threads=8)
+
+
+def main():
+    port = get_free_port()
+    url = f"http://127.0.0.1:{port}/"
+
+    t = threading.Thread(target=run_server, args=(port,), daemon=True)
+    t.start()
+
+    wait_for_server(url)
+
+    webview.create_window(
+        "StockToner",
+        url,
+        width=1200,
+        height=800,
+    )
+    webview.start()
 
 
 if __name__ == "__main__":
-    log("DESKTOP VERSION: 2025-12-23 08:50")
-    log("=== INICIO APP ===")
-    log(f"BASE_DIR={BASE_DIR}")
-
-    # 1) persistencia: DB en AppData
-    ensure_appdata_db()
-
-    # 2) seed
-    seed_if_needed()
-
-    # 3) puerto libre + server
-    port = find_free_port()
-    url = f"http://127.0.0.1:{port}/"
-    log(f"URL={url}")
-
-    t = threading.Thread(target=run_django, args=(port,), daemon=True)
-    t.start()
-
-    ok = wait_for_server(url, timeout=35)
-
-    if not ok:
-        log("Servidor NO respondió a tiempo.")
-        webview.create_window(
-            "Stock Toner - Error",
-            html="""
-            <html>
-            <body style="font-family:sans-serif">
-                <h2>No se pudo iniciar el servidor</h2>
-                <p>Django no respondió a tiempo.</p>
-                <p>Revisá el log: <b>%APPDATA%\\StockToner\\app.log</b></p>
-            </body>
-            </html>
-            """
-        )
-        webview.start()
-        sys.exit(1)
-
-    log("Servidor OK. Abriendo UI...")
-    webview.create_window("Stock Toner", url)
-    webview.start()
+    main()

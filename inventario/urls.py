@@ -43,6 +43,8 @@ urlpatterns = [
 
     # MOVIMIENTOS
     path("movimientos/", views.movimientos_list, name="movimientos_list"),
+    path("movimientos/export/csv/", views.movimientos_export_csv, name="movimientos_export_csv"),
+    path("movimientos/nuevo/", views.movimiento_create, name="movimiento_create"),
 
     # PROYECTOR #
     path("mas/proyector/", views.proyector_prestamos_page, name="proyector_prestamos_page"),

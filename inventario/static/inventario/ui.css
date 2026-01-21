@@ -1,29 +1,40 @@
-/* =========================
-   THEME
-========================= */
+/* =========================================================
+   1) THEME / VARIABLES GLOBALES
+========================================================= */
 :root{
-  --bg: #0b1220;
+  /* Colores base */
+  --bg: #1a1b19;
   --panel: rgba(255,255,255,.05);
   --panel2: rgba(255,255,255,.07);
   --text: #e7eefc;
   --muted: #9fb0d0;
+
   --primary: #4f8cff;
   --danger: #ff5b6e;
   --ok: #35d07f;
   --warn: #ffcc66;
 
+  /* Layout */
   --radius: 16px;
+  --gap: 16px;
+
+  /* Bordes y sombras */
+  --border-color: rgba(255,255,255,.10);
+  --border: 1px solid var(--border-color);
   --shadow: 0 14px 34px rgba(0,0,0,.42);
   --shadow-soft: 0 10px 26px rgba(0,0,0,.30);
-  --border: 1px solid rgba(255,255,255,.10);
   --ring: 0 0 0 3px rgba(79,140,255,.18);
 
-  --gap: 16px;
+  /* Tamaños */
+  --icon: 16px;        /* nav/botones */
+  --dash-icon: 56px;   /* iconos dashboard */
 }
 
+/* =========================================================
+   2) RESET / BASE
+========================================================= */
 *{ box-sizing: border-box; }
-
-html, body { height: 100%; }
+html, body{ height: 100%; }
 
 body.app{
   margin: 0;
@@ -40,9 +51,17 @@ body.app{
 a{ color: inherit; text-decoration: none; }
 .muted{ color: var(--muted); }
 
-/* =========================
-   TOPBAR / NAV
-========================= */
+/* Helpers (layout rápido) */
+.row{ display:flex; gap:10px; align-items:center; }
+.space-between{ justify-content:space-between; }
+.mono{
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* =========================================================
+   3) TOPBAR / NAV
+========================================================= */
 .topbar{
   position: sticky;
   top: 0;
@@ -59,6 +78,7 @@ a{ color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 14px;
+  justify-content: space-between;
 }
 
 .brand{
@@ -77,9 +97,9 @@ a{ color: inherit; text-decoration: none; }
   gap: 8px;
   flex-wrap: wrap;
   margin-left: 4px;
+  flex: 1;
 }
 
-/* tus links reales */
 .navlink{
   display: inline-flex;
   align-items: center;
@@ -88,7 +108,8 @@ a{ color: inherit; text-decoration: none; }
   border-radius: 12px;
   color: var(--muted);
   border: 1px solid transparent;
-  transition: background .12s ease, border-color .12s ease, transform .08s ease;
+  font-size: 14px;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
 .navlink:hover{
   color: var(--text);
@@ -101,11 +122,8 @@ a{ color: inherit; text-decoration: none; }
   border-color: rgba(255,255,255,.10);
 }
 
-/* =========================
-   DROPDOWN "MÁS"
-========================= */
+/* Dropdown "Más" */
 .nav-more{ position: relative; }
-
 .nav-more-menu{
   position: absolute;
   top: 42px;
@@ -118,96 +136,12 @@ a{ color: inherit; text-decoration: none; }
   padding: 6px;
   display: none;
 }
-
 .nav-more:hover .nav-more-menu{ display:block; }
-.nav-more-menu .navlink{ display:flex; width:100%; }
+.nav-more-menu .navlink{ width:100%; }
 
-/* =========================
-   CONTAINER
-========================= */
-.container{
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 18px 14px 26px;
-}
-
-/* =========================
-   HELPERS
-========================= */
-.row{ display:flex; align-items:center; gap:10px; }
-.space-between{ justify-content: space-between; }
-
-/* =========================
-   DASHBOARD
-========================= */
-.dashboard-header h1{
-  margin: 0;
-  font-size: 26px;
-  font-weight: 950;
-  letter-spacing: .2px;
-}
-.dashboard-header p{ margin: 4px 0 0; }
-
-.cards-grid{
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: var(--gap);
-  margin-top: 14px;
-}
-
-/* =========================
-   CARD
-========================= */
-.card{
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-  border: var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
-  padding: 14px;
-}
-
-/* dashboard click */
-.card.clickable{
-  cursor: pointer;
-  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
-}
-.card.clickable:hover{
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  border-color: rgba(79,140,255,.22);
-  background: linear-gradient(180deg, rgba(79,140,255,.09), rgba(255,255,255,.03));
-}
-.card.clickable:active{ transform: translateY(0); }
-
-/* icon */
-.icon{
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(79,140,255,.10);
-  display: grid;
-  place-items: center;
-  box-shadow: 0 8px 18px rgba(0,0,0,.28);
-  margin-bottom: 10px;
-}
-.icon svg{
-  width: 26px;
-  height: 26px;
-  fill: currentColor;
-  opacity: .95;
-}
-
-.card-label{
-  font-weight: 900;
-  letter-spacing: .2px;
-  margin-bottom: 6px;
-}
-
-/* =========================
-   BUTTONS
-========================= */
+/* =========================================================
+   4) BOTONES
+========================================================= */
 .btn, .btn2{
   background: rgba(255,255,255,.06);
   color: var(--text);
@@ -218,11 +152,9 @@ a{ color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  user-select: none;
   white-space: nowrap;
-  transition: transform .08s ease, background .12s ease, border-color .12s ease;
+  transition: background .12s ease, transform .08s ease, border-color .12s ease;
 }
-
 .btn:hover, .btn2:hover{ background: rgba(255,255,255,.09); }
 .btn:active, .btn2:active{ transform: translateY(1px); }
 
@@ -230,126 +162,357 @@ a{ color: inherit; text-decoration: none; }
   background: rgba(79,140,255,.18);
   border: 1px solid rgba(79,140,255,.38);
 }
-.btn.primary:hover, .btn2.primary:hover{ background: rgba(79,140,255,.24); }
-
-/* danger: soporta btn y btn2 */
 .btn.danger, .btn2.danger{
   background: rgba(255,91,110,.12);
-  border: 1px solid rgba(255,91,110,.35);
+  border: 1px solid rgba(255,91,110,.28);
 }
-.btn.danger:hover, .btn2.danger:hover{ background: rgba(255,91,110,.18); }
 
-/* =========================
-   INPUTS
-========================= */
+/* Iconos nav/botones */
+.navlink svg, .navlink img,
+.btn svg, .btn img,
+.btn2 svg, .btn2 img{
+  width: var(--icon);
+  height: var(--icon);
+  flex: 0 0 var(--icon);
+  object-fit: contain;
+}
+.navlink i, .btn i, .btn2 i{
+  font-size: var(--icon);
+  line-height: 1;
+}
+
+/* =========================================================
+   5) ESTRUCTURA / TITULOS DE PÁGINA
+========================================================= */
+.container{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 14px 26px;
+}
+
+/* Header de página (reutilizable, sin duplicar) */
+.page-header{
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.page-title{
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.page-subtitle{
+  font-size: 13px;
+  margin: 0;
+}
+
+.page-actions{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.search{
+  width: 320px;
+  max-width: 100%;
+}
+
+/* =========================================================
+   6) CARDS / PANELES
+========================================================= */
+.card, .panel{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 14px;
+}
+
+.card{
+  transition: transform .15s ease, box-shadow .2s ease, border-color .2s, background .2s;
+}
+.card:hover{
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0,0,0,.55);
+}
+.card.clickable{ cursor: pointer; }
+
+/* Header dentro de una card */
+.card-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.card-header h3{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* Panel angosto (formularios centrados) */
+.panel--narrow{
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   7) INPUTS
+========================================================= */
 input, select, textarea{
   background: rgba(255,255,255,.04);
   color: var(--text);
   border: var(--border);
   border-radius: 12px;
   padding: 10px 12px;
-  outline: none;
+  min-height: 40px;
 }
-input::placeholder, textarea::placeholder{ color: rgba(159,176,208,.8); }
+input::placeholder{ color: rgba(159,176,208,.8); }
+
 input:focus, select:focus, textarea:focus{
   border-color: rgba(79,140,255,.55);
   box-shadow: var(--ring);
-}
-
-/* focus visible general */
-:where(a, button, input, select, textarea):focus-visible{
   outline: none;
-  box-shadow: var(--ring);
-  border-color: rgba(79,140,255,.55);
 }
 
-/* =========================
-   TABLES (si las usás)
-========================= */
+textarea{ min-height: 92px; resize: vertical; }
+
+/* =========================================================
+   8) TABLAS (ÚNICA definición)
+========================================================= */
 table{
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
-  font-size: 14px;
+  font-size: 13px;
 }
+
 thead th{
-  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
   color: rgba(159,176,208,.92);
-  font-weight: 700;
+  font-weight: 800;
   padding: 10px 8px;
   border-bottom: 1px solid rgba(255,255,255,.10);
 }
+
 tbody td{
   padding: 10px 8px;
   border-bottom: 1px solid rgba(255,255,255,.06);
-  vertical-align: top;
+  vertical-align: middle;
 }
+
 tbody tr:hover{ background: rgba(255,255,255,.03); }
 
-/* =========================
-   CHIPS
-========================= */
-.chip{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:5px 10px;
-  border-radius:999px;
-  border: var(--border);
-  background: rgba(255,255,255,.04);
-  font-size:12px;
-  color: var(--muted);
-}
-.chip.ok{
-  border-color: rgba(53,208,127,.35);
-  color:#bdf4d6;
-  background: rgba(53,208,127,.10);
-}
-.chip.danger{
-  border-color: rgba(255,91,110,.35);
-  color:#ffd0d6;
-  background: rgba(255,91,110,.10);
-}
-.chip.warn{
-  border-color: rgba(255,204,102,.35);
-  color:#ffe6b8;
-  background: rgba(255,204,102,.10);
-}
-.chip.muted{
-  opacity: .75;
-  color: var(--muted);
-}
+/* Variante compacta */
+.table-compact tbody td{ padding: 8px 8px; }
 
-/* =========================
-   LABELS
-========================= */
-.label{
-  display:block;
+/* =========================================================
+   9) CHIPS / BADGES
+========================================================= */
+.chip, .badge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
   font-size: 12px;
-  opacity:.7;
-  margin-bottom:6px;
+  color: var(--muted);
 }
 
+.chip.ok, .badge.ok{
+  border-color: rgba(53,208,127,.35);
+  background: rgba(53,208,127,.10);
+  color: #bdf4d6;
+}
 
-/* =========================
-   PENDIENTES: ESTADOS
-========================= */
+.badge.off{
+  border-color: rgba(255,91,110,.25);
+  background: rgba(255,91,110,.10);
+  color: #ffd0d6;
+}
 
-/* Fila pendiente (no hecho) */
-tr.todo-open td{
+/* =========================================================
+   10) DASHBOARD
+========================================================= */
+.dashboard .cards-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--gap);
+  margin-top: 16px;
+}
+
+.dashboard .cards-grid .card{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* Icono grande */
+.dashboard .icon{
+  width: var(--dash-icon);
+  height: var(--dash-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+/* ====== FIX DE COLORES (A PRUEBA DE BALAS) ======
+   Esto fuerza a que cualquier path dentro del svg use currentColor,
+   evitando que te quede todo blanco/gris por overrides.
+*/
+.dashboard .icon svg{
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.dashboard .icon svg *{
+  fill: currentColor !important;
+}
+
+/* Botón “Nueva entrega” al fondo */
+.dashboard .card .btn2{
+  margin-top: auto;
+  align-self: stretch;
+  justify-content: center;
+  font-size: 13px;
+}
+
+/* Acentos por card usando clases, NO nth-child */
+.dashboard .card.p-toners .icon{ color: var(--primary); }
+.dashboard .card.p-pcs .icon{ color: #aeb7c9; }
+.dashboard .card.p-articulos .icon{ color: var(--warn); }
+.dashboard .card.p-servicios .icon{ color: var(--ok); }
+
+/* Destacar Toners (opcional) */
+.dashboard .card.p-toners{
+  background: linear-gradient(180deg, rgba(79,140,255,.12), rgba(255,255,255,.04));
+  border-color: rgba(79,140,255,.35);
+}
+
+/* =========================================================
+   11) FORM GRID (reutilizable)
+========================================================= */
+.formgrid{
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+}
+
+.field{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label{
+  font-size: 12px;
+  color: rgba(159,176,208,.92);
+  font-weight: 800;
+}
+
+.col-3{ grid-column: span 3; }
+.col-4{ grid-column: span 4; }
+.col-6{ grid-column: span 6; }
+.col-12{ grid-column: 1 / -1; }
+
+.form-actions{
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* Checkboxes */
+.formgrid input[type="checkbox"]{
+  min-height: auto;
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================================================
+   12) SERVICIOS: descripción con ellipsis
+========================================================= */
+.td-ellipsis{
+  max-width: 520px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   13) RESPONSIVE
+========================================================= */
+@media (max-width: 820px){
+  .page-actions{ width: 100%; }
+  .search{ width: 100%; }
+
+  .col-3, .col-4, .col-6{
+    grid-column: 1 / -1;
+  }
+
+  .td-ellipsis{
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+/* =========================================================
+   14) DEBUG VISUAL (opcional)
+========================================================= */
+body.app::before{
+  content: "CSS RECARGADO";
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(79,140,255,.18);
+  border: 1px solid rgba(79,140,255,.35);
+  color: #e7eefc;
+  z-index: 99999;
+}
+
+/* ================================
+   FIX SELECT / OPTIONS (Windows)
+================================ */
+
+/* Select cerrado */
+select{
+  background: rgba(255,255,255,.06);
   color: var(--text);
+  border: var(--border);
 }
 
-/* Fila hecho: baja opacidad + fondo sutil */
-tr.todo-done{
-  opacity: .72;
-}
-tr.todo-done td{
-  background: rgba(53,208,127,.04); /* verde suave */
+/* Opciones desplegadas */
+select option{
+  background-color: #1a1b19; /* mismo fondo que la app */
+  color: #e7eefc;            /* texto claro */
 }
 
-/* Texto tachado cuando está hecho */
-.todo-text.is-done{
-  text-decoration: line-through;
-  color: rgba(159,176,208,.85);
+/* Opción seleccionada */
+select option:checked{
+  background-color: #2b6cff;
+  color: #ffffff;
+}
+
+/* Hover (al pasar el mouse) */
+select option:hover{
+  background-color: rgba(79,140,255,.35);
+  color: #ffffff;
 }

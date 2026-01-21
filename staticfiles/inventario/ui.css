@@ -102,6 +102,27 @@ a{ color: inherit; text-decoration: none; }
 }
 
 /* =========================
+   DROPDOWN "MÁS"
+========================= */
+.nav-more{ position: relative; }
+
+.nav-more-menu{
+  position: absolute;
+  top: 42px;
+  right: 0;
+  min-width: 180px;
+  background: rgba(15,26,46,.95);
+  border: var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  padding: 6px;
+  display: none;
+}
+
+.nav-more:hover .nav-more-menu{ display:block; }
+.nav-more-menu .navlink{ display:flex; width:100%; }
+
+/* =========================
    CONTAINER
 ========================= */
 .container{
@@ -211,11 +232,12 @@ a{ color: inherit; text-decoration: none; }
 }
 .btn.primary:hover, .btn2.primary:hover{ background: rgba(79,140,255,.24); }
 
-.btn2.danger{
+/* danger: soporta btn y btn2 */
+.btn.danger, .btn2.danger{
   background: rgba(255,91,110,.12);
   border: 1px solid rgba(255,91,110,.35);
 }
-.btn2.danger:hover{ background: rgba(255,91,110,.18); }
+.btn.danger:hover, .btn2.danger:hover{ background: rgba(255,91,110,.18); }
 
 /* =========================
    INPUTS
@@ -278,6 +300,64 @@ tbody tr:hover{ background: rgba(255,255,255,.03); }
   font-size:12px;
   color: var(--muted);
 }
-.chip.ok{ border-color: rgba(53,208,127,.35); color:#bdf4d6; background: rgba(53,208,127,.10); }
-.chip.danger{ border-color: rgba(255,91,110,.35); color:#ffd0d6; background: rgba(255,91,110,.10); }
-.chip.warn{ border-color: rgba(255,204,102,.35); color:#ffe6b8; background: rgba(255,204,102,.10); }
+.chip.ok{
+  border-color: rgba(53,208,127,.35);
+  color:#bdf4d6;
+  background: rgba(53,208,127,.10);
+}
+.chip.danger{
+  border-color: rgba(255,91,110,.35);
+  color:#ffd0d6;
+  background: rgba(255,91,110,.10);
+}
+.chip.warn{
+  border-color: rgba(255,204,102,.35);
+  color:#ffe6b8;
+  background: rgba(255,204,102,.10);
+}
+.chip.muted{
+  opacity: .75;
+  color: var(--muted);
+}
+
+/* =========================
+   LABELS
+========================= */
+.label{
+  display:block;
+  font-size: 12px;
+  opacity:.7;
+  margin-bottom:6px;
+}
+
+
+/* =========================
+   PENDIENTES: ESTADOS
+========================= */
+
+/* Fila pendiente (no hecho) */
+tr.todo-open td{
+  color: var(--text);
+}
+
+/* Fila hecho: baja opacidad + fondo sutil */
+tr.todo-done{
+  opacity: .72;
+}
+tr.todo-done td{
+  background: rgba(53,208,127,.04); /* verde suave */
+}
+
+/* Texto tachado cuando está hecho */
+.todo-text.is-done{
+  text-decoration: line-through;
+  color: rgba(159,176,208,.85);
+}
+
+/* FORCE DARK (debug) */
+html, body, body.app {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+
