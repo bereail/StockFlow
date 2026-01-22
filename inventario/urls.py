@@ -61,4 +61,10 @@ urlpatterns = [
     path("reparaciones/nueva/", views.reparacion_create, name="reparacion_create"),
     path("reparaciones/<int:pk>/editar/", views.reparacion_edit, name="reparacion_edit"),
 
+    # PEDIDOS #
+      path("pedidos/", views.pedidos_list, name="pedidos_list"),
+    path("pedidos/nuevo/", views.pedido_create, name="pedido_create"),
+    path("pedidos/<int:pk>/", views.pedido_detail, name="pedido_detail"),
+    path("pedidos/<int:pk>/editar/", views.pedido_edit, name="pedido_edit"),
+    path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create"),
 ]

@@ -18,7 +18,13 @@ from .forms.reparaciones import ReparacionForm
 from django.utils.timezone import is_naive, make_aware
 from django.views.decorators.http import require_POST
 from .forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 
+from .models import Pedido, PedidoDetalle
+from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
 
 def dashboard(request):
     return render(request, "inventario/dashboard.html")
@@ -836,4 +842,132 @@ def reparacion_edit(request, pk):
         "form": form,
         "title": f"Editar reparación #{rep.id}",
         "rep": rep,
+    })
+
+# PEDIDOS #
+@login_required
+def pedidos_list(request):
+    q = request.GET.get("q", "").strip()
+    servicio_id = request.GET.get("servicio")
+
+    pedidos = Pedido.objects.select_related("servicio_solicitante", "solicitado_por").order_by("-creado")
+
+    if q:
+        pedidos = pedidos.filter(
+            Q(numero__icontains=q) |
+            Q(numero_nota__icontains=q) |
+            Q(para_que__icontains=q)
+        )
+
+    if servicio_id:
+        pedidos = pedidos.filter(servicio_solicitante_id=servicio_id)
+
+    # si querés pasar lista de servicios para un <select>, traela acá
+    # servicios = Servicio.objects.all().order_by("nombre")
+
+    return render(request, "inventario/pedidos/list.html", {
+        "pedidos": pedidos,
+        "q": q,
+        "servicio_id": servicio_id,
+        # "servicios": servicios
+    })
+
+@login_required
+def pedido_create(request):
+    if request.method == "POST":
+        form = PedidoForm(request.POST)
+        formset = PedidoDetalleFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            pedido = form.save(commit=False)
+            pedido.solicitado_por = request.user
+            pedido.save()
+            formset.instance = pedido
+            formset.save()
+            messages.success(request, "Pedido creado.")
+            return redirect("pedido_detail", pk=pedido.pk)
+    else:
+        form = PedidoForm()
+        formset = PedidoDetalleFormSet()
+
+    return render(request, "inventario/pedidos/form.html", {
+        "form": form,
+        "formset": formset,
+        "is_edit": False,
+    })
+
+@login_required
+def pedido_edit(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+
+    # Si querés bloqueo: solo editar en HECHO (o BORRADOR si lo llamaras así)
+    if pedido.estado not in ("HECHO",):
+        messages.error(request, "Este pedido no se puede editar en este estado.")
+        return redirect("pedido_detail", pk=pedido.pk)
+
+    if request.method == "POST":
+        form = PedidoForm(request.POST, instance=pedido)
+        formset = PedidoDetalleFormSet(request.POST, instance=pedido)
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            messages.success(request, "Pedido actualizado.")
+            return redirect("pedido_detail", pk=pedido.pk)
+    else:
+        form = PedidoForm(instance=pedido)
+        formset = PedidoDetalleFormSet(instance=pedido)
+
+    return render(request, "inventario/pedidos/form.html", {
+        "form": form,
+        "formset": formset,
+        "is_edit": True,
+        "pedido": pedido,
+    })
+
+@login_required
+def pedido_detail(request, pk):
+    pedido = get_object_or_404(
+        Pedido.objects.select_related("servicio_solicitante", "solicitado_por"),
+        pk=pk
+    )
+
+    detalles = (PedidoDetalle.objects
+                .select_related("item")
+                .prefetch_related("patrimonios")
+                .filter(pedido=pedido))
+
+    return render(request, "inventario/pedidos/detail.html", {
+        "pedido": pedido,
+        "detalles": detalles,
+    })
+
+
+@login_required
+def patrimonio_create(request, detalle_id):
+    detalle = get_object_or_404(
+        PedidoDetalle.objects.select_related("pedido", "item"),
+        pk=detalle_id
+    )
+    pedido = detalle.pedido
+
+    # Regla: solo cargar patrimonio desde RECIBIDO en adelante (si querés)
+    if pedido.estado not in ("RECIBIDO", "ENTREGADO", "CERRADO"):
+        messages.error(request, "Solo podés cargar patrimonio cuando el pedido esté RECIBIDO (o más).")
+        return redirect("pedido_detail", pk=pedido.pk)
+
+    if request.method == "POST":
+        form = PatrimonioUnidadForm(request.POST, pedido_detalle=detalle, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Patrimonio cargado.")
+            return redirect("pedido_detail", pk=pedido.pk)
+    else:
+        form = PatrimonioUnidadForm(pedido_detalle=detalle, user=request.user)
+
+    return render(request, "inventario/pedidos/patrimonio_form.html", {
+        "form": form,
+        "detalle": detalle,
+        "pedido": pedido,
+        "cargados": detalle.patrimonios.count(),
+        "maximo": detalle.cantidad,
     })

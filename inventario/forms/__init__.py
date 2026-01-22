@@ -22,6 +22,8 @@ from .pendientes import PendienteForm
 # Reparaciones
 from .reparaciones import ReparacionForm
 
+# pedidos
+from .pedidos import Pedido, PedidoDetalle, PedidoDetalleFormSet
 
 from .movimientos import (
     DocumentoForm,

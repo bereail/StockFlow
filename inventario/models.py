@@ -3,7 +3,8 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.db.models import Q
-
+from django.conf import settings
+from django.core.validators import MinValueValidator
 
 # =========================
 # MAESTROS / CATÁLOGOS
@@ -386,3 +387,109 @@ class Reparacion(models.Model):
 
     def __str__(self):
         return f"Reparación #{self.id} - {self.item}"
+
+
+# =========================
+# PEDIDO / PATRIMONIO
+# =========================
+class Pedido(models.Model):
+    ESTADOS = [
+        ("HECHO", "Hecho"),
+        ("APROBADO", "Aprobado"),
+        ("RECIBIDO", "Recibido"),
+        ("ENTREGADO", "Entregado"),
+        ("CANCELADO", "Cancelado"),
+    ]
+
+    numero = models.CharField(max_length=40, unique=True)  # ej: PED-2026-0001
+
+    servicio_solicitante = models.ForeignKey(
+        "Servicio",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pedidos",
+        db_index=True
+    )
+
+    numero_nota = models.CharField(max_length=50, blank=True)
+    observaciones = models.TextField(blank=True)
+    para_que = models.CharField(max_length=255, blank=True)
+
+    solicitado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="pedidos_creados"
+    )
+
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="HECHO", db_index=True)
+
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.numero} - {self.get_estado_display()}"
+
+
+class PedidoDetalle(models.Model):
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="detalles")
+    item = models.ForeignKey("Item", on_delete=models.PROTECT, db_index=True)
+
+    cantidad = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    detalle = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["pedido", "item"], name="uniq_pedido_item"),
+        ]
+        indexes = [
+            models.Index(fields=["pedido"]),
+            models.Index(fields=["item"]),
+        ]
+
+    def __str__(self):
+        return f"{self.pedido.numero} - {self.item} x {self.cantidad}"
+
+
+class PatrimonioUnidad(models.Model):
+    """
+    1 fila = 1 unidad patrimonial.
+    Cuelga de PedidoDetalle (Opción A).
+    """
+    pedido_detalle = models.ForeignKey(
+        PedidoDetalle,
+        on_delete=models.CASCADE,
+        related_name="patrimonios",
+        db_index=True
+    )
+
+    numero_patrimonio = models.CharField(max_length=50, unique=True)
+    detalle_item = models.CharField(max_length=255, blank=True)
+
+    serial = models.CharField(max_length=80, blank=True)
+    observaciones = models.TextField(blank=True)
+
+    # Si querés registrar a qué servicio quedó asignado el patrimonio (opcional)
+    servicio_asignado = models.ForeignKey(
+        "Servicio",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="patrimonios_asignados",
+        db_index=True
+    )
+
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="patrimonios_creados"
+    )
+
+    fecha = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["pedido_detalle"]),
+            models.Index(fields=["servicio_asignado"]),
+        ]
+
+    def __str__(self):
+        return f"Patrimonio {self.numero_patrimonio}"
