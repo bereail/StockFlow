@@ -1,0 +1,33 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<h2>Préstamo #{{ prestamo.id }}</h2>
+
+<p><b>Servicio:</b> {{ prestamo.servicio }}</p>
+<p><b>Entregado a:</b> {{ prestamo.entregado_a }}</p>
+<p><b>Teléfono:</b> {{ prestamo.telefono_contacto }}</p>
+<p><b>Retiro:</b> {{ prestamo.fecha_retiro }}</p>
+<p><b>Dev. estimada:</b> {{ prestamo.fecha_devolucion_estimada }}</p>
+<p><b>Dev. real:</b> {{ prestamo.fecha_devolucion_real|default:"-" }}</p>
+
+<h3>Items</h3>
+<ul>
+  {% for d in prestamo.detalles.all %}
+    <li>{{ d.item }} x{{ d.cantidad }} {% if d.detalle %}({{ d.detalle }}){% endif %}</li>
+  {% empty %}
+    <li>Sin detalles.</li>
+  {% endfor %}
+</ul>
+
+<a class="btn" href="{% url 'prestamo_edit' prestamo.id %}">Editar</a>
+
+{% if not prestamo.devuelto %}
+<form method="post" action="{% url 'prestamo_devolver' prestamo.id %}" style="display:inline">
+  {% csrf_token %}
+  <button class="btn primary" type="submit">Marcar devuelto</button>
+</form>
+{% endif %}
+
+<a class="btn" href="{% url 'prestamos_page' %}">Volver</a>
+
+{% endblock %}

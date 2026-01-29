@@ -6,6 +6,7 @@ class ReparacionForm(forms.ModelForm):
         model = Reparacion
         fields = [
             "item",
+            "servicio",
             "proveedor",
             "estado",
             "fecha_envio",

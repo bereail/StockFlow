@@ -8,7 +8,7 @@
 
   {# Cache-busting para que pywebview no te cachee el CSS #}
   {% now "U" as cachebust %}
-<link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}&r={{ request.resolver_match.url_name }}">
+  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}&r={{ request.resolver_match.url_name }}">
 
   {# Fuente (opcional) #}
   <link rel="stylesheet"
@@ -35,21 +35,23 @@
         <div class="nav-more">
           <button class="navlink" type="button">Más ▾</button>
           <div class="nav-more-menu">
-            <a class="navlink" href="{% url 'proyector_prestamos_page' %}">Proyector</a>
-            <a class="btn" href="{% url 'pendientes_page' %}">Pendientes</a>
-            <a class="btn" href="{% url 'reparaciones_list' %}">Reparaciones</a>
+
+            {# ✅ CORRECCIÓN: "Préstamos" debe ir al LISTADO (prestamos_list), no al create #}
+            <a class="navlink" href="{% url 'prestamos_list' %}">Préstamos</a>
+            <a class="navlink" href="{% url 'pendientes_page' %}">Pendientes</a>
+            <a class="navlink" href="{% url 'reparaciones_list' %}">Reparaciones</a>
+            <a class="navlink" href="{% url 'pedidos_list' %}">Pedidos</a>
           </div>
         </div>
       </nav>
 
-      {# Botón recargar solo en DEBUG (requiere context_processor debug) #}
+      {# Botón recargar solo en DEBUG (requiere context_processor settings) #}
       {% if settings.DEBUG %}
-  <button class="btn2" type="button" onclick="window.location.href = window.location.href.split('#')[0] + '?_=' + Date.now()">
-  🔄 Recargar
-</button>
-
-{% endif %}
-
+        <button class="btn2" type="button"
+                onclick="window.location.href = window.location.href.split('#')[0] + '?_=' + Date.now()">
+          🔄 Recargar
+        </button>
+      {% endif %}
 
     </div>
   </header>

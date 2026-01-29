@@ -4,42 +4,64 @@ from .models import (
     Articulo,
     Servicio,
     Impresora,
-    PrestamoProyector,
     Movimiento,
     MovimientoDetalle,
     Item,
-    Proveedor
+    Proveedor,
+    Prestamo,
+    PrestamoDetalle,
 )
 
-
+# =========================
+# TONER
+# =========================
+@admin.register(Toner)
 class TonerAdmin(admin.ModelAdmin):
     list_display = ("id", "marca", "nombre", "modelo_impresora", "activo")
     search_fields = ("marca", "nombre", "modelo_impresora")
     list_filter = ("activo",)
+
+
 # =========================
 # MODELOS SIMPLES
 # =========================
-admin.site.register(Toner)
 admin.site.register(Articulo)
 admin.site.register(Servicio)
 admin.site.register(Impresora)
-admin.site.register(Item)
+
 
 # =========================
-# PROYECTOR
+# ITEM (con PRÉSTAMOS)
 # =========================
-@admin.register(PrestamoProyector)
-class PrestamoProyectorAdmin(admin.ModelAdmin):
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "tipo", "prestable", "categoria_prestamo")
+    list_filter = ("tipo", "prestable", "categoria_prestamo")
+    search_fields = ("id",)
+    list_editable = ("prestable", "categoria_prestamo")  # opcional, cómodo
+
+
+# =========================
+# PRESTAMOS (GENÉRICO)
+# =========================
+class PrestamoDetalleInline(admin.TabularInline):
+    model = PrestamoDetalle
+    extra = 0
+
+
+@admin.register(Prestamo)
+class PrestamoAdmin(admin.ModelAdmin):
     list_display = (
-        "servicio",
-        "fecha_retiro",
-        "fecha_devolucion_estimada",
-        "fecha_devolucion_real",
-        "telefono_contacto",
+    "id", "servicio", "fecha_retiro", "fecha_devolucion_estimada", "fecha_devolucion_real",
+    "proyector", "camara_web", "prolongacion", "notebook",
+    "telefono_contacto",
     )
-    list_filter = ("fecha_devolucion_real", "servicio")
-    search_fields = ("servicio__nombre", "telefono_contacto")
+    list_filter = ("fecha_devolucion_real", "servicio", "proyector", "camara_web", "prolongacion", "notebook")
+
+    search_fields = ("servicio__nombre", "telefono_contacto", "entregado_a", "observaciones")
     ordering = ("-fecha_retiro",)
+    inlines = [PrestamoDetalleInline]
+
 
 # =========================
 # MOVIMIENTOS
@@ -47,6 +69,7 @@ class PrestamoProyectorAdmin(admin.ModelAdmin):
 class MovimientoDetalleInline(admin.TabularInline):
     model = MovimientoDetalle
     extra = 0
+
 
 @admin.register(Movimiento)
 class MovimientoAdmin(admin.ModelAdmin):

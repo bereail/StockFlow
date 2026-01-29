@@ -1,29 +1,36 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
-from django.utils import timezone
+import csv
+from django.forms import formset_factory
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
-import csv
-from django.contrib import messages
-from django.forms import formset_factory
-from .models import Toner, Item, Movimiento, MovimientoDetalle, Articulo, Servicio, ActivoPC, Impresora, PrestamoProyector, Pendiente,Reparacion, Movimiento, MovimientoDetalle, Item
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.timezone import is_naive, make_aware
+from django.views.decorators.http import require_POST
+from .models import (
+    Toner, Articulo, Servicio, ActivoPC, Impresora,
+    Item, Movimiento, MovimientoDetalle,
+    Pendiente, Reparacion,
+    Prestamo, 
+    Pedido, PedidoDetalle,
+)
+from .forms import (
+    MovimientoForm,
+    MovimientoDetalleTonerForm,
+    MovimientoDetalleArticuloForm,
+)
 from .forms.toner import TonerForm, EntregaRapidaTonerForm
 from .forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
 from .forms.servicios import ServicioForm
 from .forms.pcs import ActivoPCForm
 from .forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
-from .forms.proyector import PrestamoProyectorForm
+from .forms.prestamos import PrestamoForm
+
+
 from .forms.pendientes import PendienteForm
 from .forms.reparaciones import ReparacionForm
-from django.utils.timezone import is_naive, make_aware
-from django.views.decorators.http import require_POST
-from .forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
-from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-
-from .models import Pedido, PedidoDetalle
 from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
 
 def dashboard(request):
@@ -53,7 +60,7 @@ def toner_page(request):
     mostrar_ver_todo = len(movimientos) > 3
     movimientos = movimientos[:3]
 
-    return render(request, "inventario/toner.html", {
+    return render(request, "inventario/toner/toner.html", {
         "q": q,
         "toners": toners,
         "movimientos": movimientos,
@@ -73,7 +80,7 @@ def toner_list(request):
 
     toners = toners.order_by("marca", "nombre")
 
-    return render(request, "inventario/toner_list.html", {
+    return render(request, "inventario/toner/toner_list.html", {
         "toners": toners,
         "q": q,
         "title": "Toners",
@@ -120,7 +127,7 @@ def toner_entrega(request):
     else:
         form = EntregaRapidaTonerForm()
 
-    return render(request, "inventario/toner_entrega.html", {"form": form})
+    return render(request, "inventario/toner/toner_entrega.html", {"form": form})
 
 def toner_create(request):
     if request.method == "POST":
@@ -134,7 +141,7 @@ def toner_create(request):
     else:
         form = TonerForm()
 
-    return render(request, "inventario/toner_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/toner/toner_form.html", {"form": form, "mode": "create"})
 
 def toner_edit(request, pk: int):
     toner = get_object_or_404(Toner, pk=pk)
@@ -147,7 +154,7 @@ def toner_edit(request, pk: int):
     else:
         form = TonerForm(instance=toner)
 
-    return render(request, "inventario/toner_form.html", {"form": form, "mode": "edit", "toner": toner})
+    return render(request, "inventario/toner/toner_form.html", {"form": form, "mode": "edit", "toner": toner})
 
 def toner_toggle(request, pk: int):
     toner = get_object_or_404(Toner, pk=pk)
@@ -173,7 +180,7 @@ def toner_historial(request):
             Q(movimiento__observaciones__icontains=q)
         )
 
-    return render(request, "inventario/toner_historial.html", {"detalles": detalles, "q": q})
+    return render(request, "inventario/toner/toner_historial.html", {"detalles": detalles, "q": q})
 
 # BACKUP #
 def backup_entregas_csv(request):
@@ -244,7 +251,7 @@ def articulos_page(request):
             Q(descripcion__icontains=q)
         )
 
-    return render(request, "inventario/articulos.html", {
+    return render(request, "inventario/articulos/articulos.html", {
         "q": q,
         "articulos": articulos,
     })
@@ -260,7 +267,7 @@ def articulo_create(request):
     else:
         form = ArticuloForm()
 
-    return render(request, "inventario/articulo_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/articulos/articulo_form.html", {"form": form, "mode": "create"})
 
 def articulo_edit(request, pk: int):
     articulo = get_object_or_404(Articulo, pk=pk)
@@ -275,7 +282,7 @@ def articulo_edit(request, pk: int):
     else:
         form = ArticuloForm(instance=articulo)
 
-    return render(request, "inventario/articulo_form.html", {
+    return render(request, "inventario/articulos/articulo_form.html", {
         "form": form,
         "mode": "edit",
         "articulo": articulo
@@ -321,7 +328,7 @@ def articulo_entrega(request):
     else:
         form = EntregaRapidaArticuloForm()
 
-    return render(request, "inventario/articulo_entrega.html", {"form": form})
+    return render(request, "inventario/articulos/articulo_entrega.html", {"form": form})
 
 def articulos_historial(request):
     q = (request.GET.get("q") or "").strip()
@@ -340,7 +347,7 @@ def articulos_historial(request):
             Q(movimiento__observaciones__icontains=q)
         )
 
-    return render(request, "inventario/articulos_historial.html", {"detalles": detalles, "q": q})
+    return render(request, "inventario/articulos/articulos_historial.html", {"detalles": detalles, "q": q})
 
 
 # PC #
@@ -357,7 +364,7 @@ def pcs_page(request):
             Q(servicio__nombre__icontains=q)
         )
 
-    return render(request, "inventario/pcs.html", {"q": q, "pcs": pcs})
+    return render(request, "inventario/pcs/pcs.html", {"q": q, "pcs": pcs})
 
 def pcs_create(request):
     if request.method == "POST":
@@ -370,7 +377,7 @@ def pcs_create(request):
     else:
         form = ActivoPCForm()
 
-    return render(request, "inventario/pc_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/pcs/pc_form.html", {"form": form, "mode": "create"})
 
 def pcs_edit(request, pk):
     pc = get_object_or_404(ActivoPC, pk=pk)
@@ -385,7 +392,7 @@ def pcs_edit(request, pk):
     else:
         form = ActivoPCForm(instance=pc)
 
-    return render(request, "inventario/pc_form.html", {"form": form, "mode": "edit", "pc": pc})
+    return render(request, "inventario/pcs/pc_form.html", {"form": form, "mode": "edit", "pc": pc})
 
 # SERVICIOS #
 def servicios_page(request):
@@ -398,7 +405,7 @@ def servicios_page(request):
             Q(descripcion__icontains=q)
         )
 
-    return render(request, "inventario/servicios.html", {
+    return render(request, "inventario/servicios/servicios.html", {
         "q": q,
         "servicios": servicios,
     })
@@ -415,7 +422,7 @@ def servicio_create(request):
         form = ServicioForm()
 
     # igual a toner_form.html: usa mode
-    return render(request, "inventario/servicio_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/servicios/servicio_form.html", {"form": form, "mode": "create"})
 
 def servicio_edit(request, pk: int):
     servicio = get_object_or_404(Servicio, pk=pk)
@@ -430,7 +437,7 @@ def servicio_edit(request, pk: int):
     else:
         form = ServicioForm(instance=servicio)
 
-    return render(request, "inventario/servicio_form.html", {
+    return render(request, "inventario/servicios/servicio_form.html", {
         "form": form,
         "mode": "edit",
         "servicio": servicio
@@ -455,7 +462,7 @@ def impresoras_page(request):
             Q(servicio__nombre__icontains=q)
         )
 
-    return render(request, "inventario/impresoras.html", {"impresoras": impresoras, "q": q})
+    return render(request, "inventario/impresoras/impresoras.html", {"impresoras": impresoras, "q": q})
 
 def impresora_create(request):
     if request.method == "POST":
@@ -468,7 +475,7 @@ def impresora_create(request):
     else:
         form = ImpresoraForm()
 
-    return render(request, "inventario/impresora_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/impresoras/impresora_form.html", {"form": form, "mode": "create"})
 
 def impresora_edit(request, pk):
     impresora = get_object_or_404(Impresora, pk=pk)
@@ -483,7 +490,7 @@ def impresora_edit(request, pk):
     else:
         form = ImpresoraForm(instance=impresora)
 
-    return render(request, "inventario/impresora_form.html", {"form": form, "mode": "edit", "impresora": impresora})
+    return render(request, "inventario/impresoras/impresora_form.html", {"form": form, "mode": "edit", "impresora": impresora})
 
 def impresora_toggle(request, pk):
     impresora = get_object_or_404(Impresora, pk=pk)
@@ -538,7 +545,7 @@ def impresora_entrega(request):
     else:
         form = EntregaRapidaImpresoraForm()
 
-    return render(request, "inventario/impresora_entrega.html", {"form": form})
+    return render(request, "inventario/impresoras/impresora_entrega.html", {"form": form})
 
 def impresora_historial(request):
     """Listado simple de movimientos (EGRESO) de impresoras."""
@@ -559,7 +566,7 @@ def impresora_historial(request):
             Q(movimiento__observaciones__icontains=q)
         )
 
-    return render(request, "inventario/impresoras_historial.html", {"detalles": detalles, "q": q})
+    return render(request, "inventario/impresoras/impresoras_historial.html", {"detalles": detalles, "q": q})
 
 # MOVIMIENTOS #
 TonerFormSet = formset_factory(MovimientoDetalleTonerForm, extra=1, can_delete=True)
@@ -636,13 +643,12 @@ def movimiento_create(request):
         toner_formset = TonerFormSet(prefix="toner")
         art_formset   = ArtFormSet(prefix="art")
 
-    return render(request, "inventario/movimiento_form.html", {
+    return render(request, "inventario/movimientos/movimiento_form.html", {
         "title": "Nuevo Movimiento",
         "form": form,
         "toner_formset": toner_formset,
         "art_formset": art_formset,
     })
-
 
 def movimientos_list(request):
     servicio_id = request.GET.get("servicio") or ""
@@ -684,7 +690,7 @@ def movimientos_list(request):
         "q": q,
     }
 
-    return render(request, "inventario/movimientos_list.html", {
+    return render(request, "inventario/movimientos/movimientos_list.html", {
         "movimientos": movimientos[:200],
         "servicios": servicios,
         "toners": toners,
@@ -727,38 +733,73 @@ def movimientos_export_csv(request):
 
 
 
-
-# PROYECTOR #
-def proyector_prestamos_page(request):
+# PRESTAMOS #c
+def prestamos_list(request):
     q = (request.GET.get("q") or "").strip()
 
-    prestamos = PrestamoProyector.objects.select_related("servicio").order_by("-fecha_retiro")
+    prestamos = (
+        Prestamo.objects
+        .select_related("servicio")
+        .prefetch_related("detalles", "detalles__item")
+        .order_by("-fecha_retiro")
+    )
 
     if q:
-        prestamos = prestamos.filter(servicio__nombre__icontains=q)
+        prestamos = prestamos.filter(
+            Q(servicio__nombre__icontains=q) |
+            Q(entregado_a__icontains=q) |
+            Q(observaciones__icontains=q) |
+            Q(detalles__detalle__icontains=q) |
+            Q(detalles__item__tipo__icontains=q)
+        ).distinct()
 
-    return render(request, "inventario/proyector_prestamos.html", {
+    return render(request, "inventario/prestamos/list.html", {
         "prestamos": prestamos,
         "q": q,
     })
 
-def proyector_prestamo_create(request):
+def prestamo_create(request):
     if request.method == "POST":
-        form = PrestamoProyectorForm(request.POST)
+        form = PrestamoForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect("proyector_prestamos_page")
+            return redirect("prestamos_list")
     else:
-        form = PrestamoProyectorForm(initial={"fecha_retiro": timezone.now()})
+        form = PrestamoForm()
 
-    return render(request, "inventario/proyector_prestamo_form.html", {"form": form})
+    return render(request, "inventario/prestamos/form.html", {"form": form})
 
-def proyector_prestamo_devolver(request, pk):
-    p = get_object_or_404(PrestamoProyector, pk=pk)
+def prestamo_edit(request, pk):
+    prestamo = get_object_or_404(Prestamo, pk=pk)
+
     if request.method == "POST":
-        p.fecha_devolucion_real = timezone.now()
-        p.save()
-    return redirect("proyector_prestamos_page")
+        form = PrestamoForm(request.POST, instance=prestamo)
+        if form.is_valid():
+            form.save()
+            return redirect("prestamos_list")
+    else:
+        form = PrestamoForm(instance=prestamo)
+
+    return render(request, "inventario/prestamos/form.html", {"form": form, "prestamo": prestamo})
+
+def prestamo_detail(request, pk):
+    prestamo = get_object_or_404(
+        Prestamo.objects.select_related("servicio").prefetch_related("detalles", "detalles__item"),
+        pk=pk
+    )
+    return render(request, "inventario/prestamos/detail.html", {"prestamo": prestamo})
+
+def prestamo_devolver(request, pk):
+    prestamo = get_object_or_404(Prestamo, pk=pk)
+
+    if request.method == "POST":
+        prestamo.fecha_devolucion_real = timezone.now()
+        prestamo.save(update_fields=["fecha_devolucion_real"])
+        messages.success(request, "Préstamo marcado como devuelto.")
+        return redirect("prestamo_detail", pk=prestamo.pk)
+
+    # por si alguien entra por GET
+    return redirect("prestamo_detail", pk=prestamo.pk)
 
 # PENDIENTES #
 def pendientes_page(request):
@@ -771,7 +812,7 @@ def pendientes_page(request):
             return redirect("pendientes_page")
 
     pendientes = Pendiente.objects.select_related("servicio").all()
-    return render(request, "inventario/pendientes.html", {
+    return render(request, "inventario/pendientes/pendientes.html", {
         "form": form,
         "pendientes": pendientes,
     })
@@ -806,7 +847,7 @@ def reparaciones_list(request):
             Q(seguimiento__icontains=q)
         )
 
-    return render(request, "inventario/reparaciones_list.html", {
+    return render(request, "inventario/reparaciones/reparaciones_list.html", {
         "reparaciones": reparaciones,
         "estado": estado,
         "q": q,
@@ -822,7 +863,7 @@ def reparacion_create(request):
     else:
         form = ReparacionForm()
 
-    return render(request, "inventario/reparacion_form.html", {
+    return render(request, "inventario/reparaciones/reparacion_form.html", {
         "form": form,
         "title": "Nueva reparación",
     })
@@ -838,41 +879,52 @@ def reparacion_edit(request, pk):
     else:
         form = ReparacionForm(instance=rep)
 
-    return render(request, "inventario/reparacion_form.html", {
+    return render(request, "inventario/reparaciones/reparacion_form.html", {
         "form": form,
         "title": f"Editar reparación #{rep.id}",
         "rep": rep,
     })
 
 # PEDIDOS #
-@login_required
 def pedidos_list(request):
-    q = request.GET.get("q", "").strip()
-    servicio_id = request.GET.get("servicio")
+    q = (request.GET.get("q") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    estado = (request.GET.get("estado") or "").strip()
 
-    pedidos = Pedido.objects.select_related("servicio_solicitante", "solicitado_por").order_by("-creado")
+    pedidos = (
+        Pedido.objects
+        .select_related("servicio_solicitante")  # ✅ solo este existe
+        .order_by("-creado")
+    )
 
+    # 🔍 búsqueda general
     if q:
         pedidos = pedidos.filter(
             Q(numero__icontains=q) |
             Q(numero_nota__icontains=q) |
-            Q(para_que__icontains=q)
+            Q(para_que__icontains=q) |
+            Q(observaciones__icontains=q)
         )
 
-    if servicio_id:
-        pedidos = pedidos.filter(servicio_solicitante_id=servicio_id)
+    # 🏥 filtro por servicio (blindado contra None / basura)
+    if servicio_id and servicio_id.lower() != "none":
+        try:
+            pedidos = pedidos.filter(servicio_solicitante_id=int(servicio_id))
+        except ValueError:
+            pass
 
-    # si querés pasar lista de servicios para un <select>, traela acá
-    # servicios = Servicio.objects.all().order_by("nombre")
+    # 🔄 filtro por estado
+    if estado:
+        pedidos = pedidos.filter(estado=estado)
 
     return render(request, "inventario/pedidos/list.html", {
         "pedidos": pedidos,
         "q": q,
-        "servicio_id": servicio_id,
-        # "servicios": servicios
+        "servicio_id": servicio_id if servicio_id.lower() != "none" else "",
+        "estado": estado,
+        "estados": Pedido.ESTADOS,
     })
 
-@login_required
 def pedido_create(request):
     if request.method == "POST":
         form = PedidoForm(request.POST)
@@ -880,7 +932,6 @@ def pedido_create(request):
 
         if form.is_valid() and formset.is_valid():
             pedido = form.save(commit=False)
-            pedido.solicitado_por = request.user
             pedido.save()
             formset.instance = pedido
             formset.save()
@@ -896,7 +947,6 @@ def pedido_create(request):
         "is_edit": False,
     })
 
-@login_required
 def pedido_edit(request, pk):
     pedido = get_object_or_404(Pedido, pk=pk)
 
@@ -924,17 +974,18 @@ def pedido_edit(request, pk):
         "pedido": pedido,
     })
 
-@login_required
 def pedido_detail(request, pk):
     pedido = get_object_or_404(
-        Pedido.objects.select_related("servicio_solicitante", "solicitado_por"),
+        Pedido.objects.select_related("servicio_solicitante"),  # ✅ solo este
         pk=pk
     )
 
-    detalles = (PedidoDetalle.objects
-                .select_related("item")
-                .prefetch_related("patrimonios")
-                .filter(pedido=pedido))
+    detalles = (
+        PedidoDetalle.objects
+        .select_related("item")
+        .prefetch_related("patrimonios")
+        .filter(pedido=pedido)
+    )
 
     return render(request, "inventario/pedidos/detail.html", {
         "pedido": pedido,
@@ -942,7 +993,6 @@ def pedido_detail(request, pk):
     })
 
 
-@login_required
 def patrimonio_create(request, detalle_id):
     detalle = get_object_or_404(
         PedidoDetalle.objects.select_related("pedido", "item"),
@@ -950,7 +1000,6 @@ def patrimonio_create(request, detalle_id):
     )
     pedido = detalle.pedido
 
-    # Regla: solo cargar patrimonio desde RECIBIDO en adelante (si querés)
     if pedido.estado not in ("RECIBIDO", "ENTREGADO", "CERRADO"):
         messages.error(request, "Solo podés cargar patrimonio cuando el pedido esté RECIBIDO (o más).")
         return redirect("pedido_detail", pk=pedido.pk)

@@ -1,0 +1,28 @@
+{% extends "inventario/base.html" %}
+
+{% block title %}Préstamos{% endblock %}
+
+{% block content %}
+<h2>Préstamos</h2>
+
+<a class="btn" href="{% url 'prestamo_create' %}">Nuevo préstamo</a>
+<ul>
+  {% for p in prestamos %}
+    <li>
+      <a href="{% url 'prestamo_detail' p.id %}">
+        {{ p }}
+      </a>
+
+      {% if p.devuelto %}
+        ✅ Devuelto
+      {% else %}
+        ⏳ Pendiente
+      {% endif %}
+    </li>
+  {% empty %}
+    <li>No hay préstamos.</li>
+  {% endfor %}
+</ul>
+
+
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "inventario/base.html" %}
+{% block title %}Nuevo préstamo{% endblock %}
+
+{% block content %}
+<h1>Nuevo préstamo</h1>
+
+<form method="post">
+  {% csrf_token %}
+
+  <p><strong>Servicio</strong><br>{{ form.servicio }}</p>
+  <p><strong>Teléfono contacto</strong><br>{{ form.telefono_contacto }}</p>
+  <p><strong>Fecha retiro</strong><br>{{ form.fecha_retiro }}</p>
+  <p><strong>Fecha devolución estimada</strong><br>{{ form.fecha_devolucion_estimada }}</p>
+  <p><strong>Entregado a</strong><br>{{ form.entregado_a }}</p>
+
+  <hr>
+  <p><strong>{{ form.items.label }}</strong></p>
+
+
+  {{ form.items }}
+  {{ form.items.errors }}
+
+  <hr>
+  <p><strong>Observaciones</strong><br>{{ form.observaciones }}</p>
+
+  {% if form.non_field_errors %}
+    <div>{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="form-actions">
+  <button class="btn primary" type="submit">Guardar</button>
+  <a class="btn" href="{% url 'prestamos_list' %}">Cancelar</a>
+</div>
+
+</form>
+{% endblock %}

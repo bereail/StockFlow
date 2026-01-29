@@ -22,7 +22,6 @@ class Servicio(models.Model):
     def __str__(self):
         return self.nombre
 
-
 class Toner(models.Model):
     """
     Catálogo de toners.
@@ -38,7 +37,6 @@ class Toner(models.Model):
     def __str__(self):
         # Evita "CE285A ()" cuando no hay marca
         return f"{self.nombre}" + (f" ({self.marca})" if self.marca else "")
-
 
 class Articulo(models.Model):
     """
@@ -56,7 +54,6 @@ class Articulo(models.Model):
 
     def __str__(self):
         return self.nombre
-
 
 class ActivoPC(models.Model):
     """
@@ -80,7 +77,6 @@ class ActivoPC(models.Model):
 
     def __str__(self):
         return self.nombre_pc
-
 
 class Impresora(models.Model):
     """
@@ -131,7 +127,6 @@ class Impresora(models.Model):
         if self.conexion == "IP" and not self.ip:
             raise ValidationError({"ip": "Si la conexión es por red (IP), debés cargar la IP."})
 
-
 # =========================
 # DOCUMENTOS
 # =========================
@@ -159,7 +154,6 @@ class Documento(models.Model):
     def __str__(self):
         return f"{self.tipo} Nº {self.numero}"
 
-
 # =========================
 # ITEM (POLIMÓRFICO)
 # =========================
@@ -170,8 +164,6 @@ class Item(models.Model):
     - ARTICULO
     - ACTIVO_PC
     - IMPRESORA
-
-    Regla: según 'tipo', SOLO 1 FK debe estar seteada.
     """
     TIPO_CHOICES = [
         ("TONER", "Toner"),
@@ -182,16 +174,32 @@ class Item(models.Model):
 
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
 
-    # IMPORTANTE:
-    # Usamos PROTECT para NO romper históricos (movimientos) si alguien intenta borrar un catálogo.
     toner = models.ForeignKey(Toner, null=True, blank=True, on_delete=models.PROTECT)
     articulo = models.ForeignKey(Articulo, null=True, blank=True, on_delete=models.PROTECT)
     activo_pc = models.ForeignKey(ActivoPC, null=True, blank=True, on_delete=models.PROTECT)
     impresora = models.ForeignKey(Impresora, null=True, blank=True, on_delete=models.PROTECT)
 
+    # =========================
+    # PRÉSTAMOS
+    # =========================
+    CATEGORIA_CHOICES = [
+        ("PROYECTOR", "Proyector"),
+        ("WEBCAM", "Cámara web"),
+        ("NOTEBOOK", "Notebook"),
+        ("PROLONGACION", "Prolongación"),
+        ("OTRO", "Otro"),
+    ]
+
+    prestable = models.BooleanField(default=False)
+    categoria_prestamo = models.CharField(
+        max_length=20,
+        choices=CATEGORIA_CHOICES,
+        blank=True,
+        default="",
+    )
+
     class Meta:
         constraints = [
-            # Asegura 1 sola FK seteada (XOR simple a nivel DB)
             models.CheckConstraint(
                 check=(
                     (Q(toner__isnull=False) & Q(articulo__isnull=True) & Q(activo_pc__isnull=True) & Q(impresora__isnull=True)) |
@@ -201,8 +209,6 @@ class Item(models.Model):
                 ),
                 name="chk_item_exactamente_un_fk",
             ),
-
-            # Evita duplicados por tipo+objeto
             models.UniqueConstraint(
                 fields=["tipo", "toner"],
                 condition=Q(toner__isnull=False),
@@ -235,7 +241,6 @@ class Item(models.Model):
         if self.impresora:
             return f"IMPRESORA: {self.impresora}"
         return f"Item #{self.pk}"
-
 
 # =========================
 # MOVIMIENTOS
@@ -270,7 +275,6 @@ class Movimiento(models.Model):
     def __str__(self):
         return f"{self.tipo} {self.fecha:%Y-%m-%d %H:%M}"
 
-
 class MovimientoDetalle(models.Model):
     """
     Detalle de movimiento: item + cantidad.
@@ -282,21 +286,29 @@ class MovimientoDetalle(models.Model):
     def __str__(self):
         return f"{self.item} x {self.cantidad}"
 
-
 # =========================
-# PROYECTOR (PRÉSTAMOS)
+# (PRÉSTAMOS)
 # =========================
-class PrestamoProyector(models.Model):
-    servicio = models.ForeignKey(Servicio, on_delete=models.PROTECT, related_name="prestamos_proyector")
+class Prestamo(models.Model):
+    servicio = models.ForeignKey(
+        "Servicio",
+        on_delete=models.PROTECT,
+        related_name="prestamos",
+        null=True,
+        blank=True,
+    )
     telefono_contacto = models.CharField(max_length=50, blank=True, default="")
+    entregado_a = models.CharField(max_length=120, blank=True, default="")
 
     fecha_retiro = models.DateTimeField(default=timezone.now)
     fecha_devolucion_estimada = models.DateField(null=True, blank=True)
     fecha_devolucion_real = models.DateTimeField(null=True, blank=True)
 
-    incluye_prolongacion = models.BooleanField(default=False)
-    incluye_pc = models.BooleanField(default=False)
-    incluye_notebook = models.BooleanField(default=False)
+    # ✅ SOLO ESTO SE PUEDE PRESTAR (checks fijos)
+    proyector = models.BooleanField(default=False)
+    camara_web = models.BooleanField(default=False)
+    prolongacion = models.BooleanField(default=False)
+    notebook = models.BooleanField(default=False)
 
     observaciones = models.TextField(blank=True, default="")
 
@@ -304,13 +316,51 @@ class PrestamoProyector(models.Model):
         ordering = ["-fecha_retiro"]
 
     def __str__(self):
-        return f"Proyector -> {self.servicio.nombre} ({self.fecha_retiro:%Y-%m-%d})"
+        # Evita "Prestamo object (1)"
+        servicio = getattr(self.servicio, "nombre", None) or "Sin servicio"
+        return f" {servicio}"
 
     @property
     def devuelto(self):
         return self.fecha_devolucion_real is not None
 
+    @property
+    def items_label(self):
+        """Devuelve los ítems seleccionados (booleans) en formato texto."""
+        items = []
+        if self.proyector:
+            items.append("Proyector")
+        if self.camara_web:
+            items.append("Cámara web")
+        if self.notebook:
+            items.append("Notebook")
+        if self.prolongacion:
+            items.append("Prolongación")
+        return ", ".join(items) if items else "—"
 
+class PrestamoDetalle(models.Model):
+    prestamo = models.ForeignKey(
+        Prestamo,
+        on_delete=models.CASCADE,
+        related_name="detalles",
+    )
+
+    item = models.ForeignKey(
+        "Item",
+        on_delete=models.PROTECT,
+        related_name="prestamos_detalle",
+    )
+
+    cantidad = models.PositiveIntegerField(default=1)
+    detalle = models.CharField(max_length=200, blank=True, default="")
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        extra = f" ({self.detalle})" if self.detalle else ""
+        return f"{self.item} x{self.cantidad}{extra}"
+    
 # =========================
 # PENDIENTES
 # =========================
@@ -334,7 +384,6 @@ class Pendiente(models.Model):
     def __str__(self):
         return self.texto
 
-
 # =========================
 # PROVEEDORES / REPARACIONES
 # =========================
@@ -350,7 +399,6 @@ class Proveedor(models.Model):
 
     def __str__(self):
         return self.nombre
-
 
 class Reparacion(models.Model):
     ESTADOS = [
@@ -372,6 +420,15 @@ class Reparacion(models.Model):
         related_name="reparaciones",
     )
 
+    servicio = models.ForeignKey(
+    Servicio,
+    null=True,
+    blank=True,
+    on_delete=models.PROTECT,
+    related_name="reparaciones"
+)
+
+
     estado = models.CharField(max_length=20, choices=ESTADOS, default="RECIBIDO")
     fecha_envio = models.DateField(null=True, blank=True)
     fecha_retorno = models.DateField(null=True, blank=True)
@@ -388,7 +445,6 @@ class Reparacion(models.Model):
     def __str__(self):
         return f"Reparación #{self.id} - {self.item}"
 
-
 # =========================
 # PEDIDO / PATRIMONIO
 # =========================
@@ -401,27 +457,27 @@ class Pedido(models.Model):
         ("CANCELADO", "Cancelado"),
     ]
 
-    numero = models.CharField(max_length=40, unique=True)  # ej: PED-2026-0001
+    numero = models.CharField(max_length=40, unique=True)
 
     servicio_solicitante = models.ForeignKey(
         "Servicio",
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
         related_name="pedidos",
-        db_index=True
+        db_index=True,
     )
 
     numero_nota = models.CharField(max_length=50, blank=True)
     observaciones = models.TextField(blank=True)
     para_que = models.CharField(max_length=255, blank=True)
 
-    solicitado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="pedidos_creados"
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default="HECHO",
+        db_index=True,
     )
-
-    estado = models.CharField(max_length=20, choices=ESTADOS, default="HECHO", db_index=True)
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
@@ -448,7 +504,6 @@ class PedidoDetalle(models.Model):
 
     def __str__(self):
         return f"{self.pedido.numero} - {self.item} x {self.cantidad}"
-
 
 class PatrimonioUnidad(models.Model):
     """

@@ -1,8 +1,8 @@
-from ..models import Pedido, PedidoDetalle, PatrimonioUnidad
-
-from django.utils import timezone
-from django.forms import inlineformset_factory
 from django import forms
+from django.forms import inlineformset_factory
+from django.utils import timezone
+from ..models import Pedido, PedidoDetalle, PatrimonioUnidad
+from ..models import Item  # ✅ IMPORTANTE
 
 class PedidoForm(forms.ModelForm):
     class Meta:
@@ -25,23 +25,37 @@ class PedidoForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         estado = cleaned.get("estado")
-        # Regla: ENTREGADO requiere RECIBIDO antes (simple)
-        # Si querés más estricto, hacelo en view comparando estado anterior.
-        if estado == "ENTREGADO":
-            # Si el pedido es nuevo, no puede nacer entregado
-            if self.instance.pk is None:
-                raise forms.ValidationError("No podés crear un pedido directamente como ENTREGADO.")
+
+        # Regla: no crear un pedido directamente como ENTREGADO
+        if estado == "ENTREGADO" and self.instance.pk is None:
+            raise forms.ValidationError("No podés crear un pedido directamente como ENTREGADO.")
+
         return cleaned
-    
+
+class PedidoDetalleForm(forms.ModelForm):
+    class Meta:
+        model = PedidoDetalle
+        fields = ["item", "cantidad", "detalle"]
+        widgets = {
+            "detalle": forms.TextInput(attrs={"placeholder": "Detalle opcional (marca/modelo/etc.)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # ✅ SOLO ARTICULOS (sin toners)
+        self.fields["item"].queryset = (
+            Item.objects
+            .filter(tipo="ARTICULO")  # <-- si tu choice es distinto, cambiá este string
+            .order_by("id")
+        )
+
 PedidoDetalleFormSet = inlineformset_factory(
     Pedido,
     PedidoDetalle,
-    fields=["item", "cantidad", "detalle"],
+    form=PedidoDetalleForm,  # <-- clave
     extra=1,
     can_delete=True,
-    widgets={
-        "detalle": forms.TextInput(attrs={"placeholder": "Detalle opcional (marca/modelo/etc.)"})
-    }
 )
 
 class PatrimonioUnidadForm(forms.ModelForm):
@@ -55,7 +69,7 @@ class PatrimonioUnidadForm(forms.ModelForm):
             "servicio_asignado",
         ]
         widgets = {
-            "detalle_item": forms.TextInput(attrs={"placeholder": "Detalle libre (ej: PC Dell...)",}),
+            "detalle_item": forms.TextInput(attrs={"placeholder": "Detalle libre (ej: PC Dell...)"}),
             "observaciones": forms.Textarea(attrs={"rows": 2}),
         }
 
@@ -69,16 +83,14 @@ class PatrimonioUnidadForm(forms.ModelForm):
         if not self.pedido_detalle:
             return cleaned
 
-        # límite por cantidad pedida
         ya_cargados = self.pedido_detalle.patrimonios.count()
-        if self.instance.pk:
-            # si estás editando, no sumes uno nuevo
-            pass
-        else:
-            if ya_cargados >= self.pedido_detalle.cantidad:
-                raise forms.ValidationError(
-                    f"Ya cargaste {ya_cargados}/{self.pedido_detalle.cantidad} patrimonios para este item."
-                )
+
+        # Si es creación (no edición), validar cupo
+        if not self.instance.pk and ya_cargados >= self.pedido_detalle.cantidad:
+            raise forms.ValidationError(
+                f"Ya cargaste {ya_cargados}/{self.pedido_detalle.cantidad} patrimonios para este item."
+            )
+
         return cleaned
 
     def save(self, commit=True):

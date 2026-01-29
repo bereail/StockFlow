@@ -46,10 +46,13 @@ urlpatterns = [
     path("movimientos/export/csv/", views.movimientos_export_csv, name="movimientos_export_csv"),
     path("movimientos/nuevo/", views.movimiento_create, name="movimiento_create"),
 
-    # PROYECTOR #
-    path("mas/proyector/", views.proyector_prestamos_page, name="proyector_prestamos_page"),
-    path("mas/proyector/nuevo/", views.proyector_prestamo_create, name="proyector_prestamo_create"),
-    path("mas/proyector/<int:pk>/devolver/", views.proyector_prestamo_devolver, name="proyector_prestamo_devolver"),
+    # PRESTAMOS
+    path("prestamos/", views.prestamos_list, name="prestamos_page"),  # <-- esta te arregla el error ya
+    path("mas/prestamos/nuevo/", views.prestamo_create, name="prestamo_create"),
+    path("prestamos/<int:pk>/", views.prestamo_detail, name="prestamo_detail"),
+    path("mas/prestamos/", views.prestamos_list, name="prestamos_list"),
+    path("prestamos/<int:pk>/editar/", views.prestamo_edit, name="prestamo_edit"),
+    path("prestamos/<int:pk>/devolver/", views.prestamo_devolver, name="prestamo_devolver"),
 
     # PENDIeNTES #
     path("pendientes/", views.pendientes_page, name="pendientes_page"),
@@ -62,9 +65,9 @@ urlpatterns = [
     path("reparaciones/<int:pk>/editar/", views.reparacion_edit, name="reparacion_edit"),
 
     # PEDIDOS #
-      path("pedidos/", views.pedidos_list, name="pedidos_list"),
+    path("pedidos/", views.pedidos_list, name="pedidos_list"),
     path("pedidos/nuevo/", views.pedido_create, name="pedido_create"),
     path("pedidos/<int:pk>/", views.pedido_detail, name="pedido_detail"),
     path("pedidos/<int:pk>/editar/", views.pedido_edit, name="pedido_edit"),
-    path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create"),
+    path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create")
 ]

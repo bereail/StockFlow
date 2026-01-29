@@ -13,9 +13,6 @@ from .pcs import ActivoPCForm
 # Impresoras
 from .impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
 
-# Proyector
-from .proyector import PrestamoProyectorForm
-
 # Pendientes
 from .pendientes import PendienteForm
 
@@ -24,6 +21,9 @@ from .reparaciones import ReparacionForm
 
 # pedidos
 from .pedidos import Pedido, PedidoDetalle, PedidoDetalleFormSet
+
+#prestamos
+from .prestamos import PrestamoForm
 
 from .movimientos import (
     DocumentoForm,

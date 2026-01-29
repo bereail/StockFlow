@@ -14,6 +14,10 @@
   --ok: #35d07f;
   --warn: #ffcc66;
 
+
+
+
+  
   /* Layout */
   --radius: 16px;
   --gap: 16px;
@@ -266,7 +270,10 @@ a{ color: inherit; text-decoration: none; }
 /* =========================================================
    7) INPUTS
 ========================================================= */
-input, select, textarea{
+/* Inputs normales (NO checkboxes) */
+input:not([type="checkbox"]),
+select,
+textarea{
   background: rgba(255,255,255,.04);
   color: var(--text);
   border: var(--border);
@@ -274,6 +281,7 @@ input, select, textarea{
   padding: 10px 12px;
   min-height: 40px;
 }
+
 input::placeholder{ color: rgba(159,176,208,.8); }
 
 input:focus, select:focus, textarea:focus{
@@ -515,4 +523,108 @@ select option:checked{
 select option:hover{
   background-color: rgba(79,140,255,.35);
   color: #ffffff;
+}
+
+/* =========================
+   INPUTS (NO CHECKBOX)
+========================= */
+input:not([type="checkbox"]),
+select,
+textarea{
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+
+/* =========================
+   PRESTAMOS CHECKBOX GRID
+========================= */
+.toggle-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.toggle-item{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-item input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #4f8cff;
+}
+
+.form-error{
+  padding: 10px;
+  border: 1px solid rgba(255,0,0,.4);
+  border-radius: 12px;
+}
+
+/* lista de checks de Django (CheckboxSelectMultiple) */
+.checks ul{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.checks li{
+  margin: 0;
+}
+
+/* estilo tipo card clickeable */
+.checks label{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+
+  /* anti-bloqueo */
+  position: relative;
+  z-index: 5;
+  pointer-events: auto !important;
+}
+
+.checks input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+
+  /* anti-bloqueo */
+  pointer-events: auto !important;
+}
+
+/* por si algún contenedor tenía pointer-events raro */
+.panel, .formgrid, .field, .checks{
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 3;
+}
+
+.form-error{
+  padding: 10px;
+  border: 1px solid rgba(255,0,0,.4);
+  border-radius: 12px;
 }
