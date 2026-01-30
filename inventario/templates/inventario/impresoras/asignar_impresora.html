@@ -1,0 +1,24 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<h2>{{ title }}</h2>
+
+<div class="card">
+  <p><strong>Impresora:</strong> {{ impresora }}</p>
+  <p>
+    <strong>Servicio actual:</strong>
+    {{ impresora.servicio_actual|default:"(sin asignar)" }}
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <div style="margin-top:12px">
+      <button type="submit" class="btn primary">Guardar</button>
+      <a href="{% url 'impresoras_list' %}" class="btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

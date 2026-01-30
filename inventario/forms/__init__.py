@@ -31,3 +31,5 @@ from .movimientos import (
     MovimientoDetalleTonerForm,
     MovimientoDetalleArticuloForm,
 )
+
+from .asignaciones import AsignacionImpresoraForm

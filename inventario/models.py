@@ -80,8 +80,10 @@ class ActivoPC(models.Model):
 
 class Impresora(models.Model):
     """
-    Impresoras del sistema.
+    Impresoras del sistema (objeto físico).
+    NO tiene servicio directo: el servicio se maneja con AsignacionImpresora (historial).
     """
+
     TIPO_CONEXION = (
         ("IP", "Red"),
         ("USB", "USB"),
@@ -90,8 +92,7 @@ class Impresora(models.Model):
     marca = models.CharField(max_length=100)
     modelo = models.CharField(max_length=100)
 
-    # 'tipo' te lo dejo, pero ojo: es muy genérico.
-    # Si lo usás para "Laser / Inkjet / Multifunción", conviene choices.
+    # Si esto representa "Laser / Inkjet / Multifunción", conviene choices.
     tipo = models.CharField(max_length=100)
 
     patrimonio = models.CharField(max_length=100, blank=True)
@@ -99,15 +100,15 @@ class Impresora(models.Model):
     activo = models.BooleanField(default=True)
     estado = models.CharField(max_length=50, default="ACTIVA")
 
-    servicio = models.ForeignKey(
-        Servicio, on_delete=models.SET_NULL, null=True, blank=True, related_name="impresoras"
-    )
-
     conexion = models.CharField(max_length=10, choices=TIPO_CONEXION)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
 
     toner = models.ForeignKey(
-        Toner, on_delete=models.SET_NULL, null=True, blank=True, related_name="impresoras"
+        "Toner",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="impresoras",
     )
 
     observaciones = models.TextField(blank=True)
@@ -126,6 +127,67 @@ class Impresora(models.Model):
 
         if self.conexion == "IP" and not self.ip:
             raise ValidationError({"ip": "Si la conexión es por red (IP), debés cargar la IP."})
+
+    @property
+    def asignacion_activa(self):
+        # Requiere related_name="asignaciones" en AsignacionImpresora
+        return self.asignaciones.filter(fecha_hasta__isnull=True).order_by("-fecha_desde").first()
+
+    @property
+    def servicio_actual(self):
+        a = self.asignacion_activa
+        return a.servicio if a else None
+
+    @property
+    def ubicacion_actual(self):
+        a = self.asignacion_activa
+        return a.ubicacion if a else ""
+
+    @property
+    def responsable_actual(self):
+        a = self.asignacion_activa
+        return a.responsable if a else ""
+
+
+class AsignacionImpresora(models.Model):
+    """
+    Historial de asignación de una impresora a un servicio.
+    Solo 1 asignación puede estar activa (fecha_hasta NULL) por impresora.
+    """
+
+    impresora = models.ForeignKey(
+        Impresora,
+        on_delete=models.PROTECT,
+        related_name="asignaciones",
+    )
+
+    servicio = models.ForeignKey(
+        "Servicio",
+        on_delete=models.PROTECT,
+        related_name="impresoras_asignadas",
+    )
+
+    fecha_desde = models.DateField(default=timezone.now)
+    fecha_hasta = models.DateField(null=True, blank=True)
+
+    ubicacion = models.CharField(max_length=100, blank=True, default="")
+    responsable = models.CharField(max_length=120, blank=True, default="")
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-fecha_desde"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["impresora"],
+                condition=Q(fecha_hasta__isnull=True),
+                name="uniq_asignacion_activa_por_impresora",
+            )
+        ]
+
+    def __str__(self):
+        desde = self.fecha_desde.isoformat() if self.fecha_desde else ""
+        hasta = self.fecha_hasta.isoformat() if self.fecha_hasta else "Actual"
+        return f"{self.impresora} -> {self.servicio} ({desde} a {hasta})"
 
 # =========================
 # DOCUMENTOS
@@ -484,7 +546,6 @@ class Pedido(models.Model):
 
     def __str__(self):
         return f"{self.numero} - {self.get_estado_display()}"
-
 
 class PedidoDetalle(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="detalles")

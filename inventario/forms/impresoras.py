@@ -7,8 +7,7 @@ class ImpresoraForm(forms.ModelForm):
     class Meta:
         model = Impresora
         fields = [
-            "marca","modelo","tipo","patrimonio","activo","estado",
-            "servicio","conexion","ip","toner","observaciones",
+            "marca","modelo","tipo","patrimonio","activo","estado","conexion","ip","toner","observaciones",
         ]
         widgets = {
             "marca": forms.TextInput(attrs={"placeholder": "Ej: Ricoh / HP"}),

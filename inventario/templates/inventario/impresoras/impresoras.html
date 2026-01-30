@@ -9,7 +9,12 @@
 
   <div class="page-actions" style="display:flex; gap:10px; align-items:center;">
     <form method="get" class="page-actions">
-      <input name="q" value="{{ q }}" placeholder="Buscar por marca / modelo / IP / patrimonio / servicio" style="width:360px">
+      <input
+        name="q"
+        value="{{ q }}"
+        placeholder="Buscar por marca / modelo / IP / patrimonio / servicio"
+        style="width:360px"
+      >
       <button class="btn" type="submit">Buscar</button>
     </form>
 
@@ -36,7 +41,7 @@
         <th>Patrimonio</th>
         <th>Servicio</th>
         <th>Estado</th>
-        <th style="width:220px">Acciones</th>
+        <th style="width:260px">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -44,11 +49,20 @@
         <tr>
           <td><strong>{{ i.marca }}</strong></td>
           <td>{{ i.modelo }}</td>
-          <td class="muted">{% if i.tipo %}{{ i.tipo }}{% else %}-{% endif %}</td>
+          <td class="muted">{{ i.tipo|default:"-" }}</td>
           <td class="muted">{{ i.get_conexion_display }}</td>
-          <td class="muted">{% if i.ip %}{{ i.ip }}{% else %}-{% endif %}</td>
-          <td class="muted">{% if i.patrimonio %}{{ i.patrimonio }}{% else %}-{% endif %}</td>
-          <td class="muted">{% if i.servicio %}{{ i.servicio.nombre }}{% else %}-{% endif %}</td>
+          <td class="muted">{{ i.ip|default:"-" }}</td>
+          <td class="muted">{{ i.patrimonio|default:"-" }}</td>
+
+          <!-- SERVICIO (nuevo modelo) -->
+          <td class="muted">
+            {% if i.servicio_actual %}
+              {{ i.servicio_actual.nombre }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+
           <td>
             {% if i.estado|upper == "ACTIVA" %}
               <span class="muted">ACTIVA</span>
@@ -56,8 +70,14 @@
               <span class="muted">{{ i.estado|default:"INACTIVA" }}</span>
             {% endif %}
           </td>
-          <td style="display:flex; gap:8px;">
+
+          <td style="display:flex; gap:8px; flex-wrap:wrap;">
             <a class="btn" href="{% url 'impresora_edit' i.id %}">Editar</a>
+
+            <a class="btn" href="{% url 'asignar_impresora' i.id %}">
+              Asignar / Mover
+            </a>
+
             {% if i.estado|upper == "ACTIVA" %}
               <a class="btn" href="{% url 'impresora_toggle' i.id %}">Desactivar</a>
             {% else %}
@@ -67,7 +87,9 @@
         </tr>
       {% empty %}
         <tr>
-          <td colspan="9" class="muted" style="padding:16px">No hay impresoras cargadas.</td>
+          <td colspan="9" class="muted" style="padding:16px">
+            No hay impresoras cargadas.
+          </td>
         </tr>
       {% endfor %}
     </tbody>
@@ -96,24 +118,44 @@
         <tr>
           <td class="muted">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
           <td><strong>{{ d.movimiento.tipo }}</strong></td>
-          <td class="muted">{% if d.movimiento.servicio %}{{ d.movimiento.servicio.nombre }}{% else %}-{% endif %}</td>
+
+          <td class="muted">
+            {% if d.movimiento.servicio %}
+              {{ d.movimiento.servicio.nombre }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+
           <td>
             {% if d.item.impresora %}
               <strong>{{ d.item.impresora.marca }} {{ d.item.impresora.modelo }}</strong>
               <div class="muted" style="font-size:12px">
-                {% if d.item.impresora.patrimonio %}Pat: {{ d.item.impresora.patrimonio }}{% endif %}
-                {% if d.item.impresora.ip %} · IP: {{ d.item.impresora.ip }}{% endif %}
+                {% if d.item.impresora.patrimonio %}
+                  Pat: {{ d.item.impresora.patrimonio }}
+                {% endif %}
+                {% if d.item.impresora.ip %}
+                  · IP: {{ d.item.impresora.ip }}
+                {% endif %}
               </div>
             {% else %}
               -
             {% endif %}
           </td>
-          <td class="muted">{% if d.movimiento.documento %}{{ d.movimiento.documento }}{% else %}-{% endif %}</td>
-          <td class="muted">{{ d.movimiento.observaciones|default:"-" }}</td>
+
+          <td class="muted">
+            {{ d.movimiento.documento|default:"-" }}
+          </td>
+
+          <td class="muted">
+            {{ d.movimiento.observaciones|default:"-" }}
+          </td>
         </tr>
       {% empty %}
         <tr>
-          <td colspan="6" class="muted" style="padding:16px">Todavía no hay movimientos de impresoras.</td>
+          <td colspan="6" class="muted" style="padding:16px">
+            Todavía no hay movimientos de impresoras.
+          </td>
         </tr>
       {% endfor %}
     </tbody>

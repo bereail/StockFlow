@@ -27,11 +27,10 @@ from .forms.servicios import ServicioForm
 from .forms.pcs import ActivoPCForm
 from .forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
 from .forms.prestamos import PrestamoForm
-
-
 from .forms.pendientes import PendienteForm
 from .forms.reparaciones import ReparacionForm
 from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
+from .forms.asignaciones import AsignacionImpresoraForm
 
 def dashboard(request):
     return render(request, "inventario/dashboard.html")
@@ -463,6 +462,44 @@ def impresoras_page(request):
         )
 
     return render(request, "inventario/impresoras/impresoras.html", {"impresoras": impresoras, "q": q})
+
+def asignar_impresora(request, impresora_id):
+    impresora = get_object_or_404(Impresora, id=impresora_id)
+
+    if request.method == "POST":
+        form = AsignacionImpresoraForm(request.POST)
+        if form.is_valid():
+            hoy = timezone.now().date()
+
+            # cerrar asignación activa si existe
+            AsignacionImpresora.objects.filter(
+                impresora=impresora,
+                fecha_hasta__isnull=True
+            ).update(fecha_hasta=hoy)
+
+            asignacion = form.save(commit=False)
+            asignacion.impresora = impresora
+            asignacion.save()
+
+            messages.success(
+                request,
+                f"Impresora asignada a {asignacion.servicio} correctamente."
+            )
+            return redirect("impresoras_list")
+    else:
+        form = AsignacionImpresoraForm(
+            initial={"fecha_desde": timezone.now().date()}
+        )
+
+    return render(
+        request,
+        "inventario/impresoras/asignar_impresora.html",
+        {
+            "impresora": impresora,
+            "form": form,
+            "title": "Asignar impresora a servicio",
+        },
+    )
 
 def impresora_create(request):
     if request.method == "POST":

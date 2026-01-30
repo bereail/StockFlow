@@ -40,6 +40,7 @@ urlpatterns = [
     path("impresoras/<int:pk>/toggle/", views.impresora_toggle, name="impresora_toggle"),
     path("impresoras/entrega/", views.impresora_entrega, name="impresora_entrega"),
     path("impresoras/historial/", views.impresora_historial, name="impresora_historial"),
+    path("impresoras/<int:impresora_id>/asignar/", views.asignar_impresora,name="asignar_impresora",),
 
     # MOVIMIENTOS
     path("movimientos/", views.movimientos_list, name="movimientos_list"),
