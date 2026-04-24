@@ -10,6 +10,7 @@ from .models import (
     Proveedor,
     Prestamo,
     PrestamoDetalle,
+    ItemComponente
 )
 
 # =========================
@@ -33,14 +34,34 @@ admin.site.register(Impresora)
 # =========================
 # ITEM (con PRÉSTAMOS)
 # =========================
+class ItemComponenteInline(admin.TabularInline):
+    model = ItemComponente
+    fk_name = "item_padre"
+    extra = 1
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "item_hijo":
+            qs = Item.objects.all()
+
+            # ✅ Regla: el componente NO puede ser TONER
+            qs = qs.exclude(tipo="TONER")
+
+            # ✅ (recomendado) Evitar combos dentro de combos
+            qs = qs.filter(es_combo=False)
+
+            kwargs["queryset"] = qs
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "tipo", "prestable", "categoria_prestamo")
-    list_filter = ("tipo", "prestable", "categoria_prestamo")
+    list_display = ("id", "tipo", "es_combo", "prestable", "categoria_prestamo")
+    list_filter = ("tipo", "es_combo", "prestable", "categoria_prestamo")
     search_fields = ("id",)
-    list_editable = ("prestable", "categoria_prestamo")  # opcional, cómodo
+    list_editable = ("es_combo", "prestable", "categoria_prestamo")
 
-
+    inlines = [ItemComponenteInline]
 # =========================
 # PRESTAMOS (GENÉRICO)
 # =========================
@@ -89,3 +110,4 @@ class ProveedorAdmin(admin.ModelAdmin):
     search_fields = ("nombre", "telefono", "email")
     list_filter = ("activo",)
     ordering = ("nombre",)
+

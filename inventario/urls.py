@@ -40,7 +40,8 @@ urlpatterns = [
     path("impresoras/<int:pk>/toggle/", views.impresora_toggle, name="impresora_toggle"),
     path("impresoras/entrega/", views.impresora_entrega, name="impresora_entrega"),
     path("impresoras/historial/", views.impresora_historial, name="impresora_historial"),
-    path("impresoras/<int:impresora_id>/asignar/", views.asignar_impresora,name="asignar_impresora",),
+    path("impresoras/", views.impresoras_page, name="impresoras_page"),
+    path("impresoras/<int:impresora_id>/asignar/", views.asignar_impresora, name="asignar_impresora"),
 
     # MOVIMIENTOS
     path("movimientos/", views.movimientos_list, name="movimientos_list"),
@@ -59,7 +60,8 @@ urlpatterns = [
     path("pendientes/", views.pendientes_page, name="pendientes_page"),
     path("pendientes/<int:pk>/toggle/", views.pendiente_toggle, name="pendiente_toggle"),
     path("pendientes/<int:pk>/delete/", views.pendiente_delete, name="pendiente_delete"),
-
+    path("pendientes/<int:pk>/obs/", views.pendiente_obs, name="pendiente_obs"),
+    
     # REPARACIONES #
     path("reparaciones/", views.reparaciones_list, name="reparaciones_list"),
     path("reparaciones/nueva/", views.reparacion_create, name="reparacion_create"),
@@ -70,5 +72,13 @@ urlpatterns = [
     path("pedidos/nuevo/", views.pedido_create, name="pedido_create"),
     path("pedidos/<int:pk>/", views.pedido_detail, name="pedido_detail"),
     path("pedidos/<int:pk>/editar/", views.pedido_edit, name="pedido_edit"),
-    path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create")
+    path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create"),
+
+    # NOTA #
+    path("notas/", views.nota_list, name="notas_list"),
+    path("notas/nueva/", views.nota_create, name="nota_create"),
+    path("notas/<int:pk>/", views.nota_detail, name="nota_detail"),
+    path("notas/<int:pk>/editar/", views.nota_edit, name="nota_edit"),
+    path("notas/<int:pk>/eliminar/", views.nota_delete, name="nota_delete"),
+
 ]

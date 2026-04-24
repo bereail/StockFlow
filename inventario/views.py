@@ -1,9 +1,9 @@
 import csv
-from django.forms import formset_factory
+from django.forms import formset_factory, modelformset_factory
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -11,15 +11,18 @@ from django.utils.timezone import is_naive, make_aware
 from django.views.decorators.http import require_POST
 from .models import (
     Toner, Articulo, Servicio, ActivoPC, Impresora,
+    AsignacionImpresora,
     Item, Movimiento, MovimientoDetalle,
     Pendiente, Reparacion,
     Prestamo, 
     Pedido, PedidoDetalle,
+    Nota, NotaDetalle
 )
 from .forms import (
     MovimientoForm,
     MovimientoDetalleTonerForm,
     MovimientoDetalleArticuloForm,
+    
 )
 from .forms.toner import TonerForm, EntregaRapidaTonerForm
 from .forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
@@ -31,6 +34,7 @@ from .forms.pendientes import PendienteForm
 from .forms.reparaciones import ReparacionForm
 from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
 from .forms.asignaciones import AsignacionImpresoraForm
+from .forms.nota import NotaForm, NotaDetalleFormSet 
 
 def dashboard(request):
     return render(request, "inventario/dashboard.html")
@@ -443,12 +447,19 @@ def servicio_edit(request, pk: int):
     })
 
 # IMPRESORA #
+
 def impresoras_page(request):
     q = (request.GET.get("q") or "").strip()
 
     impresoras = (
         Impresora.objects
-        .select_related("servicio", "toner")
+        .select_related("toner")
+        .prefetch_related(
+            Prefetch(
+                "asignaciones",
+                queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
+            )
+        )
         .order_by("marca", "modelo")
     )
 
@@ -457,11 +468,17 @@ def impresoras_page(request):
             Q(marca__icontains=q) |
             Q(modelo__icontains=q) |
             Q(patrimonio__icontains=q) |
-            Q(ip__icontains=q) |
-            Q(servicio__nombre__icontains=q)
+            Q(ip__icontains=q)
         )
 
-    return render(request, "inventario/impresoras/impresoras.html", {"impresoras": impresoras, "q": q})
+    return render(
+        request,
+        "inventario/impresoras/impresoras.html",
+        {
+            "impresoras": impresoras,
+            "q": q,
+        },
+    )
 
 def asignar_impresora(request, impresora_id):
     impresora = get_object_or_404(Impresora, id=impresora_id)
@@ -469,7 +486,7 @@ def asignar_impresora(request, impresora_id):
     if request.method == "POST":
         form = AsignacionImpresoraForm(request.POST)
         if form.is_valid():
-            hoy = timezone.now().date()
+            hoy = timezone.localdate()
 
             # cerrar asignación activa si existe
             AsignacionImpresora.objects.filter(
@@ -479,26 +496,19 @@ def asignar_impresora(request, impresora_id):
 
             asignacion = form.save(commit=False)
             asignacion.impresora = impresora
+            if not asignacion.fecha_desde:
+                asignacion.fecha_desde = hoy
             asignacion.save()
 
-            messages.success(
-                request,
-                f"Impresora asignada a {asignacion.servicio} correctamente."
-            )
-            return redirect("impresoras_list")
+            messages.success(request, f"Impresora asignada a {asignacion.servicio} correctamente.")
+            return redirect("impresoras_page")  # ✅ ESTE ERA EL ERROR
     else:
-        form = AsignacionImpresoraForm(
-            initial={"fecha_desde": timezone.now().date()}
-        )
+        form = AsignacionImpresoraForm(initial={"fecha_desde": timezone.localdate()})
 
     return render(
         request,
         "inventario/impresoras/asignar_impresora.html",
-        {
-            "impresora": impresora,
-            "form": form,
-            "title": "Asignar impresora a servicio",
-        },
+        {"impresora": impresora, "form": form, "title": "Asignar impresora a servicio"},
     )
 
 def impresora_create(request):
@@ -604,6 +614,8 @@ def impresora_historial(request):
         )
 
     return render(request, "inventario/impresoras/impresoras_historial.html", {"detalles": detalles, "q": q})
+
+
 
 # MOVIMIENTOS #
 TonerFormSet = formset_factory(MovimientoDetalleTonerForm, extra=1, can_delete=True)
@@ -862,6 +874,13 @@ def pendiente_toggle(request, pk):
     return redirect("pendientes_page")
 
 @require_POST
+def pendiente_obs(request, pk):
+    p = get_object_or_404(Pendiente, pk=pk)
+    p.observacion = (request.POST.get("observacion") or "").strip()
+    p.save(update_fields=["observacion"])
+    return redirect("pendientes_page")
+
+@require_POST
 def pendiente_delete(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
     p.delete()
@@ -1029,7 +1048,6 @@ def pedido_detail(request, pk):
         "detalles": detalles,
     })
 
-
 def patrimonio_create(request, detalle_id):
     detalle = get_object_or_404(
         PedidoDetalle.objects.select_related("pedido", "item"),
@@ -1057,3 +1075,70 @@ def patrimonio_create(request, detalle_id):
         "cargados": detalle.patrimonios.count(),
         "maximo": detalle.cantidad,
     })
+
+
+# NOTA #
+@transaction.atomic
+def nota_edit(request, pk):
+    nota = get_object_or_404(Nota, pk=pk)
+
+    if request.method == "POST":
+        form = NotaForm(request.POST, instance=nota)
+        formset = NotaDetalleFormSet(request.POST, instance=nota)
+
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            messages.success(request, "Nota actualizada.")
+            return redirect("nota_detail", pk=nota.pk)
+    else:
+        form = NotaForm(instance=nota)
+        formset = NotaDetalleFormSet(instance=nota)
+
+    return render(request, "inventario/notas/form.html", {
+        "form": form,
+        "formset": formset,
+        "modo_edicion": True,
+        "nota": nota,
+    })
+
+@require_POST
+@transaction.atomic
+def nota_delete(request, pk):
+    nota = get_object_or_404(Nota, pk=pk)
+    nota.delete()
+    messages.success(request, "Nota eliminada.")
+    return redirect("notas_list")
+
+def nota_list(request):
+    notas = Nota.objects.select_related("servicio_solicitante").all()
+    return render(request, "inventario/notas/lista.html", {"notas": notas})
+
+@transaction.atomic
+def nota_create(request):
+    if request.method == "POST":
+        form = NotaForm(request.POST)
+
+        if form.is_valid():
+            nota = form.save()
+            formset = NotaDetalleFormSet(request.POST, instance=nota)
+
+            if formset.is_valid():
+                formset.save()
+                messages.success(request, "Nota creada correctamente.")
+                return redirect("nota_detail", pk=nota.pk)
+        else:
+            formset = NotaDetalleFormSet(request.POST)  # para re-render con errores
+    else:
+        form = NotaForm()
+        formset = NotaDetalleFormSet()
+
+    return render(request, "inventario/notas/form.html", {
+        "form": form,
+        "formset": formset,
+    })
+
+def nota_detail(request, pk):
+    nota = get_object_or_404(Nota.objects.select_related("servicio_solicitante"), pk=pk)
+    detalles = nota.detalles.select_related("item").all()
+    return render(request, "inventario/notas/detalle.html", {"nota": nota, "detalles": detalles})

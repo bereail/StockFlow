@@ -1,0 +1,45 @@
+{% extends "inventario/base.html" %}
+{% block content %}
+
+<div class="row space-between" style="margin-bottom:14px">
+  <div>
+    <div class="page-title">Detalle Nota</div>
+    <div class="page-subtitle muted">
+      {{ nota.fecha }} · {{ nota.servicio_solicitante.nombre|default:"Sin servicio" }} · {{ nota.get_estado_display }}
+    </div>
+  </div>
+  <a class="btn" href="{% url 'notas_list' %}">Volver</a>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <div><b>Número:</b> {{ nota.numero|default:"—" }}</div>
+  <div style="margin-top:10px"><b>Detalle:</b></div>
+  <div class="muted" style="white-space:pre-wrap">{{ nota.detalle|default:"—" }}</div>
+</div>
+
+<div class="card">
+  <div class="page-subtitle muted" style="margin-bottom:10px">Items</div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Cantidad</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detalles %}
+      <tr>
+        <td>{{ d.item }}</td>
+        <td>{{ d.cantidad }}</td>
+        <td>{{ d.detalle|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="muted">Sin items.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

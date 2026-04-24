@@ -361,3 +361,23 @@ html, body, body.app {
 }
 
 
+.pendiente-card {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:10px;
+  border: var(--border);
+}
+
+.pendiente-ok {
+  background: rgba(53,208,127,.08);
+  border-left: 4px solid rgba(53,208,127,.6);
+}
+
+.pendiente-pendiente {
+  background: rgba(255,91,110,.06);
+  border-left: 4px solid rgba(255,91,110,.6);
+}
+

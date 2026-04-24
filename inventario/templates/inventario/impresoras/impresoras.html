@@ -63,12 +63,23 @@
             {% endif %}
           </td>
 
+          <!-- ESTADO CON COLOR -->
           <td>
-            {% if i.estado|upper == "ACTIVA" %}
-              <span class="muted">ACTIVA</span>
-            {% else %}
-              <span class="muted">{{ i.estado|default:"INACTIVA" }}</span>
-            {% endif %}
+            {% with est=i.estado|default:"INACTIVA"|upper %}
+              <span class="badge
+                {% if est == 'ACTIVA' %}
+                  badge-ok
+                {% elif est == 'EN_REPARACION' or est == 'EN REPARACION' %}
+                  badge-warn
+                {% elif est == 'INACTIVA' or est == 'DESCARTADA' %}
+                  badge-danger
+                {% else %}
+                  badge-neutral
+                {% endif %}
+              ">
+                {{ est }}
+              </span>
+            {% endwith %}
           </td>
 
           <td style="display:flex; gap:8px; flex-wrap:wrap;">

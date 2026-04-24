@@ -2,9 +2,10 @@
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
-from django.db.models import Q
+from django.db.models import Q, F
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 
 # =========================
 # MAESTROS / CATÁLOGOS
@@ -148,7 +149,6 @@ class Impresora(models.Model):
         a = self.asignacion_activa
         return a.responsable if a else ""
 
-
 class AsignacionImpresora(models.Model):
     """
     Historial de asignación de una impresora a un servicio.
@@ -240,7 +240,8 @@ class Item(models.Model):
     articulo = models.ForeignKey(Articulo, null=True, blank=True, on_delete=models.PROTECT)
     activo_pc = models.ForeignKey(ActivoPC, null=True, blank=True, on_delete=models.PROTECT)
     impresora = models.ForeignKey(Impresora, null=True, blank=True, on_delete=models.PROTECT)
-
+    es_combo = models.BooleanField(default=False)
+    
     # =========================
     # PRÉSTAMOS
     # =========================
@@ -304,6 +305,30 @@ class Item(models.Model):
             return f"IMPRESORA: {self.impresora}"
         return f"Item #{self.pk}"
 
+class ItemComponente(models.Model):
+    item_padre = models.ForeignKey("Item", on_delete=models.CASCADE, related_name="componentes")
+    item_hijo = models.ForeignKey("Item", on_delete=models.PROTECT, related_name="usado_en_combos")
+    cantidad = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["item_padre", "item_hijo"], name="uniq_combo_componente"),
+            models.CheckConstraint(check=~Q(item_padre=F("item_hijo")), name="chk_no_auto_referencia")
+        ]
+
+    def clean(self):
+        if not self.item_padre.es_combo:
+            raise ValidationError("El item padre debe estar marcado como combo.")
+        if self.item_hijo.es_combo:
+            raise ValidationError("Un combo no puede incluir otro combo (por ahora).")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.item_padre} incluye {self.item_hijo} x{self.cantidad}"
+    
 # =========================
 # MOVIMIENTOS
 # =========================
@@ -439,6 +464,8 @@ class Pendiente(models.Model):
     )
 
     creado = models.DateTimeField(auto_now_add=True)
+
+    observacion = models.TextField(blank=True, default="")
 
     class Meta:
         ordering = ["completado", "-creado"]
@@ -609,3 +636,85 @@ class PatrimonioUnidad(models.Model):
 
     def __str__(self):
         return f"Patrimonio {self.numero_patrimonio}"
+
+
+# =========================
+# NOTA
+# =========================
+class Nota(models.Model):
+    ESTADOS = [
+        ("BORRADOR", "Borrador"),
+        ("ENVIADA", "Enviada"),
+        ("APROBADA", "Aprobada"),
+        ("CERRADA", "Cerrada"),
+        ("CANCELADA", "Cancelada"),
+    ]
+
+    numero = models.CharField(max_length=50, blank=True, default="")
+
+    servicio_solicitante = models.ForeignKey(
+        "Servicio",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="notas",
+        db_index=True,
+    )
+
+    fecha = models.DateField(default=timezone.now)
+    detalle = models.TextField(blank=True, default="")
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default="BORRADOR",
+        db_index=True
+    )
+
+    # ✅ NUEVO CAMPO
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
+
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-fecha", "-creado"]
+        indexes = [
+            models.Index(fields=["estado"]),
+            models.Index(fields=["fecha"]),
+        ]
+
+    def save(self, *args, **kwargs):
+        """
+        Lógica automática:
+        - Si pasa a CERRADA → setea fecha_cierre
+        - Si deja de estar cerrada → limpia fecha_cierre
+        """
+
+        if self.estado == "CERRADA" and self.fecha_cierre is None:
+            self.fecha_cierre = timezone.now()
+
+        if self.estado != "CERRADA" and self.fecha_cierre is not None:
+            self.fecha_cierre = None
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        num = self.numero.strip() or "Sin número"
+        serv = getattr(self.servicio_solicitante, "nombre", None) or "Sin servicio"
+        return f"Nota {num} - {serv} ({self.fecha:%Y-%m-%d})"
+
+class NotaDetalle(models.Model):
+    nota = models.ForeignKey(Nota, on_delete=models.CASCADE, related_name="detalles")
+    item = models.ForeignKey("Item", on_delete=models.PROTECT, db_index=True)
+    cantidad = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
+    detalle = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(fields=["nota", "item"], name="uniq_nota_item"),
+        ]
+
+    def __str__(self):
+        extra = f" ({self.detalle})" if self.detalle else ""
+        return f"{self.item} x {self.cantidad}{extra}"

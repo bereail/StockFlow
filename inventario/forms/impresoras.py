@@ -7,31 +7,39 @@ class ImpresoraForm(forms.ModelForm):
     class Meta:
         model = Impresora
         fields = [
-            "marca","modelo","tipo","patrimonio","activo","estado","conexion","ip","toner","observaciones",
+            "marca",
+            "modelo",
+            "tipo",
+            "patrimonio",
+            "activo",
+            "estado",
+            "conexion",
+            "ip",
+            "toner",
+            "observaciones",
         ]
         widgets = {
             "marca": forms.TextInput(attrs={"placeholder": "Ej: Ricoh / HP"}),
             "modelo": forms.TextInput(attrs={"placeholder": "Ej: MP 301"}),
-            "tipo": forms.TextInput(attrs={"placeholder": "Ej: Multifunción"}),
+            "tipo": forms.TextInput(attrs={"placeholder": "Ej: Multifunción / Láser / Inkjet"}),
             "patrimonio": forms.TextInput(attrs={"placeholder": "N° patrimonio (opcional)"}),
             "estado": forms.TextInput(attrs={"placeholder": "ACTIVA / BAJA / REPARACIÓN"}),
             "ip": forms.TextInput(attrs={"placeholder": "192.168.1.20"}),
-            "observaciones": forms.Textarea(attrs={"rows": 2}),
+            "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Obs (opcional)"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # opcionales
-        for f in ["patrimonio","estado","servicio","ip","toner","observaciones"]:
-            self.fields[f].required = False
+        # ✅ opcionales (sin KeyError)
+        for f in ["patrimonio", "estado", "ip", "toner", "observaciones"]:
+            if f in self.fields:
+                self.fields[f].required = False
 
-        # ✅ TONER opcional, solo activos + ordenado + label vacío
-        self.fields["toner"].queryset = Toner.objects.filter(activo=True).order_by("marca","nombre")
-        self.fields["toner"].empty_label = "-- Sin toner / No aplica --"
-
-        # (opcional) Servicio ordenado
-        self.fields["servicio"].queryset = Servicio.objects.order_by("nombre")
+        # ✅ TONER opcional: solo activos + ordenado + label vacío
+        if "toner" in self.fields:
+            self.fields["toner"].queryset = Toner.objects.filter(activo=True).order_by("marca", "nombre")
+            self.fields["toner"].empty_label = "-- Sin toner / No aplica --"
 
     def clean(self):
         cleaned = super().clean()
@@ -42,6 +50,7 @@ class ImpresoraForm(forms.ModelForm):
         if conexion == "IP" and not ip:
             self.add_error("ip", "Si la conexión es por red (IP), debés cargar la IP.")
         return cleaned
+
 
 class EntregaRapidaImpresoraForm(forms.Form):
     servicio = forms.ModelChoiceField(
@@ -63,7 +72,5 @@ class EntregaRapidaImpresoraForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # default para datetime-local
         if not self.initial.get("fecha"):
             self.initial["fecha"] = timezone.localtime(timezone.now()).strftime("%Y-%m-%dT%H:%M")
-

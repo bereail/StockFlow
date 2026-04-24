@@ -628,3 +628,60 @@ textarea{
   border: 1px solid rgba(255,0,0,.4);
   border-radius: 12px;
 }
+
+
+/* pendientes page */
+.pendiente-card {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:10px;
+  border: var(--border);
+}
+
+.pendiente-ok {
+  background: rgba(53,208,127,.08);
+  border-left: 4px solid rgba(53,208,127,.6);
+}
+
+.pendiente-pendiente {
+  background: rgba(255,91,110,.06);
+  border-left: 4px solid rgba(255,91,110,.6);
+}
+
+/* ===== BADGES DE ESTADO ===== */
+.badge{
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-block;
+  letter-spacing: .3px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.badge-ok{
+  background: rgba(53, 208, 127, 0.14);
+  color: #35d07f;
+  border-color: rgba(53, 208, 127, 0.35);
+}
+
+.badge-warn{
+  background: rgba(255, 204, 102, 0.14);
+  color: #ffcc66;
+  border-color: rgba(255, 204, 102, 0.35);
+}
+
+.badge-danger{
+  background: rgba(255, 91, 110, 0.14);
+  color: #ff5b6e;
+  border-color: rgba(255, 91, 110, 0.35);
+}
+
+.badge-neutral{
+  background: rgba(159, 176, 208, 0.10);
+  color: rgba(159, 176, 208, 0.90);
+  border-color: rgba(159, 176, 208, 0.20);
+}

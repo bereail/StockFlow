@@ -1,0 +1,42 @@
+{% extends "inventario/base.html" %}
+
+{% block content %}
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card">
+    <h3>Nota</h3>
+    {{ form.non_field_errors }}
+
+    <div>{{ form.numero.label_tag }} {{ form.numero }} {{ form.numero.errors }}</div>
+    <div>{{ form.fecha.label_tag }} {{ form.fecha }} {{ form.fecha.errors }}</div>
+    <div>{{ form.servicio_solicitante.label_tag }} {{ form.servicio_solicitante }} {{ form.servicio_solicitante.errors }}</div>
+    <div>{{ form.estado.label_tag }} {{ form.estado }} {{ form.estado.errors }}</div>
+    <div>{{ form.detalle.label_tag }} {{ form.detalle }} {{ form.detalle.errors }}</div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h3>Detalles</h3>
+
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+
+    {% for f in formset %}
+      <div class="detalle-box">
+        {{ f.non_field_errors }}
+
+        <div>{{ f.item.label_tag }} {{ f.item }} {{ f.item.errors }}</div>
+        <div>{{ f.cantidad.label_tag }} {{ f.cantidad }} {{ f.cantidad.errors }}</div>
+        <div>{{ f.detalle.label_tag }} {{ f.detalle }} {{ f.detalle.errors }}</div>
+
+        {% if formset.can_delete %}
+          <div>{{ f.DELETE }} <label>Eliminar</label></div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+<button class="btn primary" type="submit">Guardar</button>
+</form>
+
+{% endblock %}

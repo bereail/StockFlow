@@ -1,22 +1,40 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<h2>{{ title }}</h2>
+<div class="row" style="justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+  <div>
+    <div class="page-title">{{ title }}</div>
+    <div class="page-subtitle muted">Asigná o cambiá el servicio de esta impresora</div>
+  </div>
+  <a href="{% url 'impresoras_page' %}" class="btn">Volver</a>
+</div>
 
 <div class="card">
-  <p><strong>Impresora:</strong> {{ impresora }}</p>
-  <p>
-    <strong>Servicio actual:</strong>
-    {{ impresora.servicio_actual|default:"(sin asignar)" }}
-  </p>
+  <div class="row" style="justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:10px;">
+    <div>
+      <div class="label">Impresora</div>
+      <div style="font-weight:700;">{{ impresora }}</div>
+    </div>
+
+    <div>
+      <div class="label">Servicio actual</div>
+      <div>
+        {% if impresora.servicio_actual %}
+          <span class="pill ok">{{ impresora.servicio_actual.nombre }}</span>
+        {% else %}
+          <span class="pill warn">(sin asignar)</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
 
-    <div style="margin-top:12px">
+    <div class="row" style="gap:10px; margin-top:12px;">
       <button type="submit" class="btn primary">Guardar</button>
-      <a href="{% url 'impresoras_list' %}" class="btn">Cancelar</a>
+      <a href="{% url 'impresoras_page' %}" class="btn">Cancelar</a>
     </div>
   </form>
 </div>
