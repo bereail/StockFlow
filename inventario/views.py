@@ -34,7 +34,8 @@ from .forms.pendientes import PendienteForm
 from .forms.reparaciones import ReparacionForm
 from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
 from .forms.asignaciones import AsignacionImpresoraForm
-from .forms.nota import NotaForm, NotaDetalleFormSet 
+from .forms.nota import NotaForm, NotaDetalleFormSet
+from .services.items import item_de_toner, item_de_articulo, item_de_impresora
 
 def dashboard(request):
     return render(request, "inventario/dashboard.html")
@@ -114,15 +115,9 @@ def toner_entrega(request):
                     observaciones=obs,
                 )
 
-                item, _ = Item.objects.get_or_create(
-                    tipo="TONER",
-                    toner=toner,
-                    defaults={"articulo": None, "activo_pc": None},
-                )
-
                 MovimientoDetalle.objects.create(
                     movimiento=mov,
-                    item=item,
+                    item=item_de_toner(toner),
                     cantidad=cantidad,
                 )
 
@@ -315,15 +310,9 @@ def articulo_entrega(request):
                     observaciones=observaciones.strip(),
                 )
 
-                item, _ = Item.objects.get_or_create(
-                    tipo="ARTICULO",
-                    articulo=articulo,
-                    defaults={"toner": None, "activo_pc": None},
-                )
-
                 MovimientoDetalle.objects.create(
                     movimiento=mov,
-                    item=item,
+                    item=item_de_articulo(articulo),
                     cantidad=cantidad,
                 )
 
@@ -566,21 +555,11 @@ def impresora_entrega(request):
                         observaciones=observaciones,
                     )
 
-                    item, _ = Item.objects.get_or_create(
-                        tipo="IMPRESORA",
-                        impresora=impresora,
-                        defaults={"toner": None, "articulo": None, "activo_pc": None},
-                    )
-
                     MovimientoDetalle.objects.create(
                         movimiento=movimiento,
-                        item=item,
+                        item=item_de_impresora(impresora),
                         cantidad=1,
                     )
-
-                    # actualizar servicio asignado
-                    impresora.servicio = servicio
-                    impresora.save(update_fields=["servicio"])
 
                 messages.success(request, "Movimiento de impresora registrado correctamente.")
                 return redirect("impresoras_page")
@@ -660,12 +639,7 @@ def movimiento_create(request):
                     if not toner or not cantidad:
                         continue
 
-                    item, _ = Item.objects.get_or_create(
-                        tipo="TONER",
-                        toner=toner,
-                        defaults={"articulo": None, "activo_pc": None, "impresora": None},
-                    )
-                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
+                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item_de_toner(toner), cantidad=cantidad)
 
                 for f in art_formset:
                     if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
@@ -675,12 +649,7 @@ def movimiento_create(request):
                     if not articulo or not cantidad:
                         continue
 
-                    item, _ = Item.objects.get_or_create(
-                        tipo="ARTICULO",
-                        articulo=articulo,
-                        defaults={"toner": None, "activo_pc": None, "impresora": None},
-                    )
-                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
+                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item_de_articulo(articulo), cantidad=cantidad)
 
             messages.success(request, "✅ Movimiento guardado.")
             return redirect("movimientos_list")
@@ -1118,17 +1087,14 @@ def nota_list(request):
 def nota_create(request):
     if request.method == "POST":
         form = NotaForm(request.POST)
+        formset = NotaDetalleFormSet(request.POST)
 
-        if form.is_valid():
+        if form.is_valid() and formset.is_valid():
             nota = form.save()
-            formset = NotaDetalleFormSet(request.POST, instance=nota)
-
-            if formset.is_valid():
-                formset.save()
-                messages.success(request, "Nota creada correctamente.")
-                return redirect("nota_detail", pk=nota.pk)
-        else:
-            formset = NotaDetalleFormSet(request.POST)  # para re-render con errores
+            formset.instance = nota
+            formset.save()
+            messages.success(request, "Nota creada correctamente.")
+            return redirect("nota_detail", pk=nota.pk)
     else:
         form = NotaForm()
         formset = NotaDetalleFormSet()

@@ -1,16 +1,16 @@
-# inventario/services/stock.py
 from django.db.models import Sum
 from inventario.models import MovimientoDetalle
+
 
 def stock_de_item(item_id: int) -> int:
     """
     Stock = ingresos (+) + ajustes (+/-) - egresos (-)
-    Reglas:
-      - INGRESO suma
-      - EGRESO resta
-      - AJUSTE suma/resta según el signo que vos cargues (cantidad puede ser + o -)
+    Los movimientos anulados no se cuentan.
     """
-    qs = MovimientoDetalle.objects.filter(item_id=item_id)
+    qs = MovimientoDetalle.objects.filter(
+        item_id=item_id,
+        movimiento__anulado=False,
+    )
 
     ingresos = qs.filter(movimiento__tipo="INGRESO").aggregate(s=Sum("cantidad"))["s"] or 0
     egresos  = qs.filter(movimiento__tipo="EGRESO").aggregate(s=Sum("cantidad"))["s"] or 0

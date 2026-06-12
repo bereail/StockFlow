@@ -40,7 +40,6 @@ urlpatterns = [
     path("impresoras/<int:pk>/toggle/", views.impresora_toggle, name="impresora_toggle"),
     path("impresoras/entrega/", views.impresora_entrega, name="impresora_entrega"),
     path("impresoras/historial/", views.impresora_historial, name="impresora_historial"),
-    path("impresoras/", views.impresoras_page, name="impresoras_page"),
     path("impresoras/<int:impresora_id>/asignar/", views.asignar_impresora, name="asignar_impresora"),
 
     # MOVIMIENTOS

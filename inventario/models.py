@@ -2,10 +2,9 @@
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db.models import Q, F
 from django.conf import settings
-from django.core.validators import MinValueValidator
-from django.core.exceptions import ValidationError
 
 # =========================
 # MAESTROS / CATÁLOGOS
@@ -121,11 +120,6 @@ class Impresora(models.Model):
         return f"{self.marca} {self.modelo}"
 
     def clean(self):
-        """
-        Validación básica: si la conexión es IP, debería tener IP.
-        """
-        from django.core.exceptions import ValidationError
-
         if self.conexion == "IP" and not self.ip:
             raise ValidationError({"ip": "Si la conexión es por red (IP), debés cargar la IP."})
 
@@ -510,12 +504,12 @@ class Reparacion(models.Model):
     )
 
     servicio = models.ForeignKey(
-    Servicio,
-    null=True,
-    blank=True,
-    on_delete=models.PROTECT,
-    related_name="reparaciones"
-)
+        Servicio,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reparaciones",
+    )
 
 
     estado = models.CharField(max_length=20, choices=ESTADOS, default="RECIBIDO")
