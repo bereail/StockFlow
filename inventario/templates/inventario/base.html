@@ -5,60 +5,123 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{% block title %}StockToner{% endblock %}</title>
-
   {% now "U" as cachebust %}
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
 </head>
 
 <body class="app">
 
-  <!-- TOPBAR -->
+  <!-- ===== TOPBAR ===== -->
   <header class="topbar">
     <div class="topbar-inner">
+
       <a class="brand" href="{% url 'dashboard' %}">Registro</a>
 
       <nav class="nav">
         {% with name=request.resolver_match.url_name %}
-          <a class="navlink {% if name == 'toner_page' or name == 'toner_list' or name == 'toner_create' or name == 'toner_edit' or name == 'toner_entrega' or name == 'toner_historial' %}active{% endif %}"
-             href="{% url 'toner_page' %}">Toner</a>
 
-          <a class="navlink {% if name == 'pcs_page' or name == 'pcs_create' or name == 'pcs_edit' %}active{% endif %}"
+          <a class="navlink {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
+             href="{% url 'toner_page' %}">Tóner</a>
+
+          <a class="navlink {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
              href="{% url 'pcs_page' %}">PC</a>
 
-          <a class="navlink {% if name == 'articulos_page' or name == 'articulo_create' or name == 'articulo_edit' or name == 'articulo_entrega' or name == 'articulos_historial' %}active{% endif %}"
+          <a class="navlink {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
              href="{% url 'articulos_page' %}">Artículos</a>
 
-          <a class="navlink {% if name == 'impresoras_page' or name == 'impresora_create' or name == 'impresora_edit' or name == 'impresora_entrega' or name == 'impresora_historial' or name == 'asignar_impresora' %}active{% endif %}"
+          <a class="navlink {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
              href="{% url 'impresoras_page' %}">Impresoras</a>
 
-          <a class="navlink {% if name == 'servicios_page' or name == 'servicio_create' or name == 'servicio_edit' %}active{% endif %}"
+          <a class="navlink {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
              href="{% url 'servicios_page' %}">Servicios</a>
 
-          <a class="navlink {% if name == 'movimientos_list' or name == 'movimiento_create' %}active{% endif %}"
+          <a class="navlink {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
              href="{% url 'movimientos_list' %}">Movimientos</a>
 
-          <div class="nav-more">
-            <button class="navlink {% if nav_mas_activo %}active{% endif %}" type="button">Más ▾</button>
-            <div class="nav-more-menu">
-              <a class="navlink {% if name == 'prestamos_list' or name == 'prestamos_page' or name == 'prestamo_detail' or name == 'prestamo_create' or name == 'prestamo_edit' %}active{% endif %}"
-                 href="{% url 'prestamos_list' %}">Préstamos</a>
-              <a class="navlink {% if name == 'pendientes_page' %}active{% endif %}"
-                 href="{% url 'pendientes_page' %}">Pendientes</a>
-              <a class="navlink {% if name == 'reparaciones_list' or name == 'reparacion_create' or name == 'reparacion_edit' %}active{% endif %}"
-                 href="{% url 'reparaciones_list' %}">Reparaciones</a>
-              <a class="navlink {% if name == 'pedidos_list' or name == 'pedido_create' or name == 'pedido_detail' or name == 'pedido_edit' %}active{% endif %}"
-                 href="{% url 'pedidos_list' %}">Pedidos</a>
-              <a class="navlink {% if name == 'notas_list' or name == 'nota_create' or name == 'nota_detail' or name == 'nota_edit' %}active{% endif %}"
-                 href="{% url 'notas_list' %}">Notas</a>
-            </div>
-          </div>
+          <!-- DROPDOWN "Más" -->
+          <div class="nav-more" id="nav-more">
+            <button class="navlink mas-btn {% if nav_mas_activo %}active{% endif %}"
+                    id="mas-toggle"
+                    type="button"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-controls="mas-menu">
+              Más
+              <span class="mas-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </button>
+
+            <div class="nav-more-menu" id="mas-menu" role="menu" aria-label="Más secciones">
+
+              <!-- Préstamos -->
+              <a class="mas-card {% if name in 'prestamos_list prestamos_page prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
+                 href="{% url 'prestamos_list' %}" role="menuitem">
+                <div class="mas-card-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/>
+                    <path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"/>
+                  </svg>
+                </div>
+                <span>Préstamos</span>
+              </a>
+
+              <!-- Pendientes -->
+              <a class="mas-card {% if name == 'pendientes_page' %}active{% endif %}"
+                 href="{% url 'pendientes_page' %}" role="menuitem">
+                <div class="mas-card-icon">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 7v5l3 3"/>
+                  </svg>
+                </div>
+                <span>Pendientes</span>
+              </a>
+
+              <!-- Reparaciones -->
+              <a class="mas-card {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
+                 href="{% url 'reparaciones_list' %}" role="menuitem">
+                <div class="mas-card-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a5.8 5.8 0 01-7.4 7.4L5.7 21.4a2 2 0 01-2.8-2.8L11 10.7a5.8 5.8 0 017.4-7.4L14.7 6.3z"/>
+                  </svg>
+                </div>
+                <span>Reparaciones</span>
+              </a>
+
+              <!-- Pedidos -->
+              <a class="mas-card {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
+                 href="{% url 'pedidos_list' %}" role="menuitem">
+                <div class="mas-card-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                  </svg>
+                </div>
+                <span>Pedidos</span>
+              </a>
+
+              <!-- Notas -->
+              <a class="mas-card {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
+                 href="{% url 'notas_list' %}" role="menuitem">
+                <div class="mas-card-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M9 12h6M9 16h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                  </svg>
+                </div>
+                <span>Notas</span>
+              </a>
+
+            </div><!-- /nav-more-menu -->
+          </div><!-- /nav-more -->
+
         {% endwith %}
       </nav>
 
       <!-- BÚSQUEDA GLOBAL -->
       <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
         <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="16.5" y1="16.5" x2="22" y2="22"/>
         </svg>
         <input type="search" name="q" placeholder="Buscar…" autocomplete="off"
                value="{% if request.resolver_match.url_name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
@@ -67,10 +130,10 @@
       <!-- USUARIO / SESIÓN -->
       {% if user.is_authenticated %}
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-          <span class="muted" style="font-size:13px;white-space:nowrap;">{{ user.username }}</span>
+          <span class="muted" style="font-size:12.5px;white-space:nowrap;font-weight:600;">{{ user.username }}</span>
           <form method="post" action="{% url 'logout' %}" style="margin:0;">
             {% csrf_token %}
-            <button type="submit" class="btn2" style="font-size:13px;padding:6px 10px;">Salir</button>
+            <button type="submit" class="btn2" style="font-size:12.5px;padding:6px 12px;">Salir</button>
           </form>
         </div>
       {% endif %}
@@ -78,12 +141,12 @@
     </div>
   </header>
 
-  <!-- CONTENIDO -->
+  <!-- ===== CONTENIDO ===== -->
   <main class="container">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- TOASTS -->
+  <!-- ===== TOASTS ===== -->
   {% if messages %}
   <div class="toast-stack">
     {% for m in messages %}
@@ -99,6 +162,43 @@
     {% endfor %}
   </div>
   {% endif %}
+
+  <!-- ===== JS ===== -->
+  <script>
+  (function () {
+    var wrap   = document.getElementById('nav-more');
+    var toggle = document.getElementById('mas-toggle');
+    var menu   = document.getElementById('mas-menu');
+    if (!wrap || !toggle || !menu) return;
+
+    function open() {
+      wrap.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      wrap.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      wrap.classList.contains('open') ? close() : open();
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+
+    /* Cerrar al navegar a un ítem del menú */
+    menu.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', close);
+    });
+  })();
+  </script>
 
 </body>
 </html>
