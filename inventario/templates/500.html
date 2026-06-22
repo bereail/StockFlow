@@ -1,0 +1,18 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>500 — Error interno</title>
+  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}">
+</head>
+<body class="app" style="display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center">
+  <div>
+    <div style="font-size:72px;font-weight:900;color:rgba(255,91,110,.4);line-height:1">500</div>
+    <div style="font-size:20px;font-weight:700;margin:12px 0 8px">Error interno del servidor</div>
+    <div class="muted" style="margin-bottom:24px">Algo salió mal. Intentá de nuevo en unos momentos.</div>
+    <a class="btn primary" href="/">← Volver al inicio</a>
+  </div>
+</body>
+</html>

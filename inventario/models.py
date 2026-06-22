@@ -419,6 +419,13 @@ class Prestamo(models.Model):
             items.append("Prolongación")
         return ", ".join(items) if items else "—"
 
+    @property
+    def dias_restantes(self):
+        if self.fecha_devolucion_estimada and not self.devuelto:
+            from django.utils import timezone
+            return (self.fecha_devolucion_estimada - timezone.localdate()).days
+        return None
+
 class PrestamoDetalle(models.Model):
     prestamo = models.ForeignKey(
         Prestamo,

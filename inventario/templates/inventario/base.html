@@ -6,13 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{% block title %}StockToner{% endblock %}</title>
 
-  {# Cache-busting para que pywebview no te cachee el CSS #}
   {% now "U" as cachebust %}
-  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}&r={{ request.resolver_match.url_name }}">
-
-  {# Fuente (opcional) #}
-  <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap">
+  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
 </head>
 
 <body class="app">
@@ -24,39 +19,55 @@
 
       <nav class="nav">
         {% with name=request.resolver_match.url_name %}
-          <a class="navlink {% if name == 'toner_page' %}active{% endif %}" href="{% url 'toner_page' %}">Toner</a>
-          <a class="navlink {% if name == 'pcs_page' %}active{% endif %}" href="{% url 'pcs_page' %}">PC</a>
-          <a class="navlink {% if name == 'articulos_page' %}active{% endif %}" href="{% url 'articulos_page' %}">Artículos</a>
-          <a class="navlink {% if name == 'impresoras_page' %}active{% endif %}" href="{% url 'impresoras_page' %}">Impresoras</a>
+          <a class="navlink {% if name == 'toner_page' or name == 'toner_list' or name == 'toner_create' or name == 'toner_edit' or name == 'toner_entrega' or name == 'toner_historial' %}active{% endif %}"
+             href="{% url 'toner_page' %}">Toner</a>
+
+          <a class="navlink {% if name == 'pcs_page' or name == 'pcs_create' or name == 'pcs_edit' %}active{% endif %}"
+             href="{% url 'pcs_page' %}">PC</a>
+
+          <a class="navlink {% if name == 'articulos_page' or name == 'articulo_create' or name == 'articulo_edit' or name == 'articulo_entrega' or name == 'articulos_historial' %}active{% endif %}"
+             href="{% url 'articulos_page' %}">Artículos</a>
+
+          <a class="navlink {% if name == 'impresoras_page' or name == 'impresora_create' or name == 'impresora_edit' or name == 'impresora_entrega' or name == 'impresora_historial' or name == 'asignar_impresora' %}active{% endif %}"
+             href="{% url 'impresoras_page' %}">Impresoras</a>
+
           <a class="navlink {% if name == 'servicios_page' or name == 'servicio_create' or name == 'servicio_edit' %}active{% endif %}"
              href="{% url 'servicios_page' %}">Servicios</a>
-        {% endwith %}
 
-        <div class="nav-more">
-          <button class="navlink" type="button">Más ▾</button>
-          <div class="nav-more-menu">
+          <a class="navlink {% if name == 'movimientos_list' or name == 'movimiento_create' %}active{% endif %}"
+             href="{% url 'movimientos_list' %}">Movimientos</a>
 
-            {# ✅ CORRECCIÓN: "Préstamos" debe ir al LISTADO (prestamos_list), no al create #}
-            <a class="navlink" href="{% url 'prestamos_list' %}">Préstamos</a>
-            <a class="navlink" href="{% url 'pendientes_page' %}">Pendientes</a>
-            <a class="navlink" href="{% url 'reparaciones_list' %}">Reparaciones</a>
-            <a class="navlink" href="{% url 'pedidos_list' %}">Pedidos</a>
-             <a class="navlink" href="{% url 'notas_list' %}">Notas</a>
+          <div class="nav-more">
+            <button class="navlink {% if nav_mas_activo %}active{% endif %}" type="button">Más ▾</button>
+            <div class="nav-more-menu">
+              <a class="navlink {% if name == 'prestamos_list' or name == 'prestamos_page' or name == 'prestamo_detail' or name == 'prestamo_create' or name == 'prestamo_edit' %}active{% endif %}"
+                 href="{% url 'prestamos_list' %}">Préstamos</a>
+              <a class="navlink {% if name == 'pendientes_page' %}active{% endif %}"
+                 href="{% url 'pendientes_page' %}">Pendientes</a>
+              <a class="navlink {% if name == 'reparaciones_list' or name == 'reparacion_create' or name == 'reparacion_edit' %}active{% endif %}"
+                 href="{% url 'reparaciones_list' %}">Reparaciones</a>
+              <a class="navlink {% if name == 'pedidos_list' or name == 'pedido_create' or name == 'pedido_detail' or name == 'pedido_edit' %}active{% endif %}"
+                 href="{% url 'pedidos_list' %}">Pedidos</a>
+              <a class="navlink {% if name == 'notas_list' or name == 'nota_create' or name == 'nota_detail' or name == 'nota_edit' %}active{% endif %}"
+                 href="{% url 'notas_list' %}">Notas</a>
+            </div>
           </div>
-        </div>
+        {% endwith %}
       </nav>
 
-      {# Botón recargar solo en DEBUG (requiere context_processor settings) #}
-      {% if settings.DEBUG %}
-        <button class="btn2" type="button"
-                onclick="window.location.href = window.location.href.split('#')[0] + '?_=' + Date.now()">
-          🔄 Recargar
-        </button>
-      {% endif %}
+      <!-- BÚSQUEDA GLOBAL -->
+      <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
+        <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+        </svg>
+        <input type="search" name="q" placeholder="Buscar…" autocomplete="off"
+               value="{% if request.resolver_match.url_name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
+      </form>
 
+      <!-- USUARIO / SESIÓN -->
       {% if user.is_authenticated %}
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="muted" style="font-size:13px;">{{ user.username }}</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <span class="muted" style="font-size:13px;white-space:nowrap;">{{ user.username }}</span>
           <form method="post" action="{% url 'logout' %}" style="margin:0;">
             {% csrf_token %}
             <button type="submit" class="btn2" style="font-size:13px;padding:6px 10px;">Salir</button>
@@ -71,6 +82,23 @@
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+
+  <!-- TOASTS -->
+  {% if messages %}
+  <div class="toast-stack">
+    {% for m in messages %}
+      {% if 'error' in m.tags %}
+        <div class="toast error">{{ m }}</div>
+      {% elif 'warning' in m.tags %}
+        <div class="toast warning">{{ m }}</div>
+      {% elif 'success' in m.tags %}
+        <div class="toast success">{{ m }}</div>
+      {% else %}
+        <div class="toast info">{{ m }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
 
 </body>
 </html>

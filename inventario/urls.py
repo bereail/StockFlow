@@ -80,4 +80,7 @@ urlpatterns = [
     path("notas/<int:pk>/editar/", views.nota_edit, name="nota_edit"),
     path("notas/<int:pk>/eliminar/", views.nota_delete, name="nota_delete"),
 
+    # BÚSQUEDA GLOBAL
+    path("buscar/", views.busqueda_global, name="busqueda_global"),
+
 ]

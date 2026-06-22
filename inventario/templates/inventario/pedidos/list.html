@@ -3,72 +3,94 @@
 
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">Pedidos</div>
-    <div class="page-subtitle">Control personal</div>
+    <div class="page-subtitle muted">Control de pedidos de insumos y equipos</div>
   </div>
-
-  <a class="btn" href="{% url 'pedido_create' %}">+ Nuevo pedido</a>
+  <a class="btn primary" href="{% url 'pedido_create' %}">+ Nuevo pedido</a>
 </div>
 
-<form method="get" class="row" style="gap:8px; margin-bottom:12px">
-  <input
-    name="q"
-    value="{{ q }}"
-    placeholder="Buscar por número / nota / para qué / obs"
-    style="width:360px"
-  >
+<div class="card" style="margin-bottom:14px">
+  <form method="get" class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
 
-  <input
-    name="servicio"
-    value="{{ servicio_id|default_if_none:'' }}"
-    placeholder="ID servicio (opcional)"
-    style="width:160px"
-  >
+    <div style="flex:2;min-width:200px">
+      <div class="label" style="margin-bottom:4px">Buscar</div>
+      <input name="q" value="{{ q }}" placeholder="Número / nota / para qué / obs…">
+    </div>
 
-  <select name="estado" style="width:200px">
-    <option value="">-- Estado --</option>
-    {% for value,label in estados %}
-      <option value="{{ value }}" {% if estado == value %}selected{% endif %}>
-        {{ label }}
-      </option>
-    {% endfor %}
-  </select>
+    <div style="flex:2;min-width:180px">
+      <div class="label" style="margin-bottom:4px">Servicio</div>
+      <select name="servicio">
+        <option value="">Todos los servicios</option>
+        {% for s in servicios %}
+          <option value="{{ s.id }}" {% if servicio_id == s.id|stringformat:"s" %}selected{% endif %}>
+            {{ s.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
 
-  <button class="btn" type="submit">Buscar</button>
-  <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Limpiar</a>
-</form>
+    <div style="flex:1;min-width:160px">
+      <div class="label" style="margin-bottom:4px">Estado</div>
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for value, label in estados %}
+          <option value="{{ value }}" {% if estado == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Número</th>
-      <th>Servicio</th>
-      <th>Estado</th>
-      <th>Nota</th>
-      <th>Para qué</th>
-      <th>Creado</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for p in pedidos %}
+    <div class="row" style="gap:8px">
+      <button class="btn" type="submit">Filtrar</button>
+      <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Limpiar</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
       <tr>
-        <td>
-          <a href="{% url 'pedido_detail' p.pk %}">{{ p.numero }}</a>
-        </td>
-        <td>{{ p.servicio_solicitante|default:"-" }}</td>
-        <td>{{ p.get_estado_display }}</td>
-        <td>{{ p.numero_nota|default:"-" }}</td>
-        <td>{{ p.para_que|default:"-" }}</td>
-        <td>{{ p.creado|date:"d/m/Y H:i" }}</td>
+        <th>Número</th>
+        <th>Servicio</th>
+        <th style="width:120px">Estado</th>
+        <th>Nota</th>
+        <th>Para qué</th>
+        <th style="width:130px">Creado</th>
       </tr>
-    {% empty %}
-      <tr>
-        <td colspan="6">No hay pedidos.</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {% for p in pedidos %}
+        <tr>
+          <td><a href="{% url 'pedido_detail' p.pk %}" style="font-weight:700">{{ p.numero }}</a></td>
+          <td>{{ p.servicio_solicitante|default:"—" }}</td>
+          <td>
+            {% if p.estado == "HECHO" %}
+              <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
+            {% elif p.estado == "APROBADO" %}
+              <span class="badge badge-warn">{{ p.get_estado_display }}</span>
+            {% elif p.estado == "RECIBIDO" or p.estado == "ENTREGADO" %}
+              <span class="badge badge-ok">{{ p.get_estado_display }}</span>
+            {% elif p.estado == "CANCELADO" %}
+              <span class="badge badge-danger">{{ p.get_estado_display }}</span>
+            {% else %}
+              <span class="badge">{{ p.get_estado_display }}</span>
+            {% endif %}
+          </td>
+          <td class="muted">{{ p.numero_nota|default:"—" }}</td>
+          <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
+          <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="muted" style="padding:20px;text-align:center">
+            No hay pedidos con esos filtros.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 {% endblock %}

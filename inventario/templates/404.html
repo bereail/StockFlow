@@ -1,0 +1,18 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>404 — Página no encontrada</title>
+  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}">
+</head>
+<body class="app" style="display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center">
+  <div>
+    <div style="font-size:72px;font-weight:900;color:rgba(79,140,255,.5);line-height:1">404</div>
+    <div style="font-size:20px;font-weight:700;margin:12px 0 8px">Página no encontrada</div>
+    <div class="muted" style="margin-bottom:24px">La dirección que buscás no existe o fue movida.</div>
+    <a class="btn primary" href="/">← Volver al inicio</a>
+  </div>
+</body>
+</html>

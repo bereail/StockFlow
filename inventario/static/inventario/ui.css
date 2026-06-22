@@ -480,20 +480,31 @@ tbody tr:hover{ background: rgba(255,255,255,.03); }
 }
 
 /* =========================================================
-   14) DEBUG VISUAL (opcional)
+   14) DEBUG VISUAL
 ========================================================= */
+@keyframes css-flash{
+  0%   { opacity:0; transform: translateY(8px) scale(.95); }
+  12%  { opacity:1; transform: translateY(0)   scale(1);   }
+  70%  { opacity:1; }
+  100% { opacity:0; }
+}
+
 body.app::before{
-  content: "CSS RECARGADO";
+  content: "✓ CSS";
   position: fixed;
-  bottom: 10px;
-  right: 10px;
-  font-size: 12px;
-  padding: 6px 10px;
+  bottom: 16px;
+  right: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(79,140,255,.18);
-  border: 1px solid rgba(79,140,255,.35);
-  color: #e7eefc;
+  background: rgba(53,208,127,.12);
+  border: 1px solid rgba(53,208,127,.30);
+  color: rgba(53,208,127,.90);
   z-index: 99999;
+  pointer-events: none;
+  animation: css-flash 2s ease forwards;
 }
 
 /* ================================
@@ -685,6 +696,178 @@ textarea{
   color: rgba(159, 176, 208, 0.90);
   border-color: rgba(159, 176, 208, 0.20);
 }
+
+/* =========================================================
+   TOASTS
+========================================================= */
+@keyframes toast-in{
+  from{ opacity:0; transform:translateX(20px) scale(.96); }
+  to  { opacity:1; transform:translateX(0)    scale(1);   }
+}
+@keyframes toast-out{
+  0%  { opacity:1; transform:translateX(0); }
+  100%{ opacity:0; transform:translateX(20px); }
+}
+
+.toast-stack{
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  z-index:9990;
+  pointer-events:none;
+}
+
+.toast{
+  padding:12px 18px;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:600;
+  max-width:360px;
+  border:1px solid;
+  backdrop-filter:blur(12px);
+  animation:toast-in .22s ease, toast-out .35s ease 3.5s forwards;
+}
+
+.toast.success{
+  background:rgba(53,208,127,.14);
+  border-color:rgba(53,208,127,.32);
+  color:#7ff4c0;
+}
+.toast.error{
+  background:rgba(255,91,110,.14);
+  border-color:rgba(255,91,110,.32);
+  color:#ffaab5;
+}
+.toast.warning{
+  background:rgba(255,204,102,.12);
+  border-color:rgba(255,204,102,.28);
+  color:#ffe082;
+}
+.toast.info{
+  background:rgba(79,140,255,.14);
+  border-color:rgba(79,140,255,.32);
+  color:#a0c4ff;
+}
+
+/* =========================================================
+   BÚSQUEDA GLOBAL (topbar)
+========================================================= */
+.search-global{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.search-global input{
+  width:200px;
+  min-height:34px;
+  padding:6px 12px 6px 32px;
+  border-radius:999px;
+  font-size:13px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  color:var(--text);
+  transition:width .2s ease, border-color .15s ease, background .15s ease;
+}
+.search-global input:focus{
+  width:280px;
+  border-color:rgba(79,140,255,.45);
+  background:rgba(79,140,255,.07);
+  outline:none;
+  box-shadow:var(--ring);
+}
+.search-global input::placeholder{ color:rgba(159,176,208,.6); }
+.search-global .icon-search{
+  position:absolute;
+  left:10px;
+  width:14px;
+  height:14px;
+  color:var(--muted);
+  pointer-events:none;
+}
+
+/* =========================================================
+   PAGINACIÓN
+========================================================= */
+.pagination{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:16px 0 4px;
+  flex-wrap:wrap;
+}
+.pagination a,
+.pagination span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:34px;
+  height:34px;
+  padding:0 10px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:600;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+  color:var(--muted);
+  transition:background .12s, border-color .12s, color .12s;
+}
+.pagination a:hover{
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+}
+.pagination .current{
+  background:rgba(79,140,255,.18);
+  border-color:rgba(79,140,255,.38);
+  color:var(--text);
+}
+.pagination .disabled{
+  opacity:.35;
+  pointer-events:none;
+}
+
+/* =========================================================
+   BÚSQUEDA — página de resultados
+========================================================= */
+.search-section{
+  margin-bottom:20px;
+}
+.search-section-title{
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.search-result-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid transparent;
+  transition:background .12s, border-color .12s;
+}
+.search-result-row:hover{
+  background:rgba(255,255,255,.04);
+  border-color:rgba(255,255,255,.08);
+}
+
+/* =========================================================
+   DÍAS RESTANTES (préstamos)
+========================================================= */
+.dias-ok   { color:#7ff4c0; font-weight:700; }
+.dias-warn { color:#ffe082; font-weight:700; }
+.dias-venc { color:#ffaab5; font-weight:700; }
+
+/* =========================================================
+   TABLA — fila anulada
+========================================================= */
+tr.anulado td{ opacity:.45; text-decoration:line-through; }
 
 /* alias para compatibilidad */
 .badge-bad{

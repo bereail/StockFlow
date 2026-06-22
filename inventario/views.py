@@ -759,8 +759,14 @@ def movimientos_list(request):
         "q": q,
     }
 
+    from django.core.paginator import Paginator
+    paginator = Paginator(movimientos, 25)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     return render(request, "inventario/movimientos/movimientos_list.html", {
-        "movimientos": movimientos[:200],
+        "movimientos": page_obj,
+        "page_obj": page_obj,
         "servicios": servicios,
         "toners": toners,
         "filtros": filtros,
@@ -1020,6 +1026,7 @@ def pedidos_list(request):
         "servicio_id": servicio_id if servicio_id.lower() != "none" else "",
         "estado": estado,
         "estados": Pedido.ESTADOS,
+        "servicios": Servicio.objects.order_by("nombre"),
     })
 
 
@@ -1196,3 +1203,52 @@ def nota_detail(request, pk):
     nota = get_object_or_404(Nota.objects.select_related("servicio_solicitante"), pk=pk)
     detalles = nota.detalles.select_related("item").all()
     return render(request, "inventario/notas/detalle.html", {"nota": nota, "detalles": detalles})
+
+
+@login_required
+def busqueda_global(request):
+    q = (request.GET.get("q") or "").strip()
+    if not q:
+        return redirect("dashboard")
+
+    toners = Toner.objects.filter(
+        Q(nombre__icontains=q) | Q(marca__icontains=q) | Q(modelo_impresora__icontains=q)
+    ).order_by("marca", "nombre")[:12]
+
+    articulos = Articulo.objects.filter(
+        Q(nombre__icontains=q) | Q(marca__icontains=q) | Q(descripcion__icontains=q)
+    ).order_by("nombre")[:12]
+
+    pcs = ActivoPC.objects.select_related("servicio").filter(
+        Q(nombre_pc__icontains=q) | Q(ip__icontains=q) |
+        Q(patrimonio__icontains=q) | Q(serie__icontains=q)
+    ).order_by("nombre_pc")[:12]
+
+    impresoras = Impresora.objects.filter(
+        Q(marca__icontains=q) | Q(modelo__icontains=q) |
+        Q(patrimonio__icontains=q) | Q(ip__icontains=q)
+    ).order_by("marca", "modelo")[:12]
+
+    servicios = Servicio.objects.filter(
+        Q(nombre__icontains=q) | Q(descripcion__icontains=q)
+    ).order_by("nombre")[:12]
+
+    total = toners.count() + articulos.count() + pcs.count() + impresoras.count() + servicios.count()
+
+    return render(request, "inventario/busqueda.html", {
+        "q": q,
+        "toners": toners,
+        "articulos": articulos,
+        "pcs": pcs,
+        "impresoras": impresoras,
+        "servicios": servicios,
+        "total": total,
+    })
+
+
+def handler_404(request, exception):
+    return render(request, "404.html", status=404)
+
+
+def handler_500(request):
+    return render(request, "500.html", status=500)

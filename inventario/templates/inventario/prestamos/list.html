@@ -6,18 +6,16 @@
 <div class="page-header">
   <div>
     <div class="page-title">Préstamos</div>
-    <div class="page-subtitle muted">Registro de equipos prestados</div>
+    <div class="page-subtitle muted">Registro de equipos prestados a servicios</div>
   </div>
   <a class="btn primary" href="{% url 'prestamo_create' %}">+ Nuevo préstamo</a>
 </div>
 
 <form method="get" class="row" style="gap:8px;margin-bottom:14px;flex-wrap:wrap">
-  <input name="q" value="{{ q }}" placeholder="Buscar servicio / persona / ítem"
+  <input name="q" value="{{ q }}" placeholder="Buscar servicio / persona / ítem…"
          style="flex:1;min-width:220px">
   <button class="btn" type="submit">Buscar</button>
-  {% if q %}
-    <a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Limpiar</a>
-  {% endif %}
+  {% if q %}<a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Limpiar</a>{% endif %}
 </form>
 
 <div class="card">
@@ -27,10 +25,11 @@
         <th>Servicio</th>
         <th>Entregado a</th>
         <th>Ítems</th>
-        <th>Retiro</th>
-        <th>Dev. estimada</th>
-        <th>Estado</th>
-        <th style="width:120px"></th>
+        <th style="width:130px">Retiro</th>
+        <th style="width:100px">Devol. est.</th>
+        <th style="width:110px">Días rest.</th>
+        <th style="width:100px">Estado</th>
+        <th style="width:60px"></th>
       </tr>
     </thead>
     <tbody>
@@ -38,9 +37,26 @@
       <tr>
         <td>{{ p.servicio|default:"—" }}</td>
         <td>{{ p.entregado_a|default:"—" }}</td>
-        <td>{{ p.items_label }}</td>
-        <td class="muted">{{ p.fecha_retiro|date:"d/m/Y H:i" }}</td>
-        <td class="muted">{{ p.fecha_devolucion_estimada|date:"d/m/Y"|default:"—" }}</td>
+        <td class="muted" style="font-size:12px">{{ p.items_label }}</td>
+        <td class="muted mono" style="font-size:12px">{{ p.fecha_retiro|date:"d/m/Y" }}</td>
+        <td class="muted mono" style="font-size:12px">{{ p.fecha_devolucion_estimada|date:"d/m/Y"|default:"—" }}</td>
+        <td>
+          {% if p.devuelto %}
+            <span class="muted" style="font-size:12px">—</span>
+          {% elif p.dias_restantes is not None %}
+            {% if p.dias_restantes < 0 %}
+              <span class="dias-venc">Vencido</span>
+            {% elif p.dias_restantes == 0 %}
+              <span class="dias-warn">Hoy</span>
+            {% elif p.dias_restantes <= 3 %}
+              <span class="dias-warn">{{ p.dias_restantes }} días</span>
+            {% else %}
+              <span class="dias-ok">{{ p.dias_restantes }} días</span>
+            {% endif %}
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
         <td>
           {% if p.devuelto %}
             <span class="chip ok">Devuelto</span>
@@ -48,13 +64,13 @@
             <span class="chip danger">Pendiente</span>
           {% endif %}
         </td>
-        <td style="text-align:right;white-space:nowrap">
+        <td>
           <a class="btn2" href="{% url 'prestamo_detail' p.id %}">Ver</a>
         </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="7" class="muted" style="padding:20px;text-align:center">
+        <td colspan="8" class="muted" style="padding:20px;text-align:center">
           No hay préstamos registrados.
         </td>
       </tr>
