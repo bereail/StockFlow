@@ -8,197 +8,232 @@
   {% now "U" as cachebust %}
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
 </head>
-
 <body class="app">
 
-  <!-- ===== TOPBAR ===== -->
-  <header class="topbar">
-    <div class="topbar-inner">
+<!-- ===== TOPBAR ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
 
-      <a class="brand" href="{% url 'dashboard' %}">Registro</a>
+    <!-- Hamburger (solo mobile) -->
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Menú" aria-expanded="false" aria-controls="main-nav">
+      <svg id="hamburger-icon" viewBox="0 0 24 24">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+      <svg id="close-icon" viewBox="0 0 24 24" style="display:none">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6"  y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
 
-      <nav class="nav">
-        {% with name=request.resolver_match.url_name %}
+    <a class="brand" href="{% url 'dashboard' %}">Registro</a>
 
-          <a class="navlink {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
-             href="{% url 'toner_page' %}">Tóner</a>
+    <!-- Nav principal -->
+    <nav class="nav" id="main-nav" role="navigation" aria-label="Navegación principal">
+      {% with name=request.resolver_match.url_name %}
 
-          <a class="navlink {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
-             href="{% url 'pcs_page' %}">PC</a>
-
-          <a class="navlink {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
-             href="{% url 'articulos_page' %}">Artículos</a>
-
-          <a class="navlink {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
-             href="{% url 'impresoras_page' %}">Impresoras</a>
-
-          <a class="navlink {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
-             href="{% url 'servicios_page' %}">Servicios</a>
-
-          <a class="navlink {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
-             href="{% url 'movimientos_list' %}">Movimientos</a>
-
-          <!-- DROPDOWN "Más" -->
-          <div class="nav-more" id="nav-more">
-            <button class="navlink mas-btn {% if nav_mas_activo %}active{% endif %}"
-                    id="mas-toggle"
-                    type="button"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    aria-controls="mas-menu">
-              Más
-              <span class="mas-chevron" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-              </span>
-            </button>
-
-            <div class="nav-more-menu" id="mas-menu" role="menu" aria-label="Más secciones">
-
-              <!-- Préstamos -->
-              <a class="mas-card {% if name in 'prestamos_list prestamos_page prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
-                 href="{% url 'prestamos_list' %}" role="menuitem">
-                <div class="mas-card-icon">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/>
-                    <path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"/>
-                  </svg>
-                </div>
-                <span>Préstamos</span>
-              </a>
-
-              <!-- Pendientes -->
-              <a class="mas-card {% if name == 'pendientes_page' %}active{% endif %}"
-                 href="{% url 'pendientes_page' %}" role="menuitem">
-                <div class="mas-card-icon">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v5l3 3"/>
-                  </svg>
-                </div>
-                <span>Pendientes</span>
-              </a>
-
-              <!-- Reparaciones -->
-              <a class="mas-card {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
-                 href="{% url 'reparaciones_list' %}" role="menuitem">
-                <div class="mas-card-icon">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a5.8 5.8 0 01-7.4 7.4L5.7 21.4a2 2 0 01-2.8-2.8L11 10.7a5.8 5.8 0 017.4-7.4L14.7 6.3z"/>
-                  </svg>
-                </div>
-                <span>Reparaciones</span>
-              </a>
-
-              <!-- Pedidos -->
-              <a class="mas-card {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
-                 href="{% url 'pedidos_list' %}" role="menuitem">
-                <div class="mas-card-icon">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                  </svg>
-                </div>
-                <span>Pedidos</span>
-              </a>
-
-              <!-- Notas -->
-              <a class="mas-card {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
-                 href="{% url 'notas_list' %}" role="menuitem">
-                <div class="mas-card-icon">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M9 12h6M9 16h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
-                  </svg>
-                </div>
-                <span>Notas</span>
-              </a>
-
-            </div><!-- /nav-more-menu -->
-          </div><!-- /nav-more -->
-
-        {% endwith %}
-      </nav>
-
-      <!-- BÚSQUEDA GLOBAL -->
-      <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
+      <!-- Búsqueda dentro del nav mobile -->
+      <form class="nav-search-mobile" method="get" action="{% url 'busqueda_global' %}">
         <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="16.5" y1="16.5" x2="22" y2="22"/>
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
         </svg>
-        <input type="search" name="q" placeholder="Buscar…" autocomplete="off"
-               value="{% if request.resolver_match.url_name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
+        <input type="search" name="q" placeholder="Buscar…" autocomplete="off">
       </form>
 
-      <!-- USUARIO / SESIÓN -->
-      {% if user.is_authenticated %}
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-          <span class="muted" style="font-size:12.5px;white-space:nowrap;font-weight:600;">{{ user.username }}</span>
-          <form method="post" action="{% url 'logout' %}" style="margin:0;">
-            {% csrf_token %}
-            <button type="submit" class="btn2" style="font-size:12.5px;padding:6px 12px;">Salir</button>
-          </form>
+      <a class="navlink {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
+         href="{% url 'toner_page' %}">Tóner</a>
+
+      <a class="navlink {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
+         href="{% url 'pcs_page' %}">PC</a>
+
+      <a class="navlink {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
+         href="{% url 'articulos_page' %}">Artículos</a>
+
+      <a class="navlink {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
+         href="{% url 'impresoras_page' %}">Impresoras</a>
+
+      <a class="navlink {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
+         href="{% url 'servicios_page' %}">Servicios</a>
+
+      <a class="navlink {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
+         href="{% url 'movimientos_list' %}">Movimientos</a>
+
+      <!-- DROPDOWN "Más" -->
+      <div class="nav-more" id="nav-more">
+        <button class="navlink mas-btn {% if nav_mas_activo %}active{% endif %}"
+                id="mas-toggle" type="button"
+                aria-haspopup="true" aria-expanded="false" aria-controls="mas-menu">
+          Más
+          <span class="mas-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+
+        <div class="nav-more-menu" id="mas-menu" role="menu">
+
+          <a class="mas-card {% if name in 'prestamos_list prestamos_page prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
+             href="{% url 'prestamos_list' %}" role="menuitem">
+            <div class="mas-card-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/>
+                <path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"/>
+              </svg>
+            </div>
+            <span>Préstamos</span>
+          </a>
+
+          <a class="mas-card {% if name == 'pendientes_page' %}active{% endif %}"
+             href="{% url 'pendientes_page' %}" role="menuitem">
+            <div class="mas-card-icon">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 7v5l3 3"/>
+              </svg>
+            </div>
+            <span>Pendientes</span>
+          </a>
+
+          <a class="mas-card {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
+             href="{% url 'reparaciones_list' %}" role="menuitem">
+            <div class="mas-card-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a5.8 5.8 0 01-7.4 7.4L5.7 21.4a2 2 0 01-2.8-2.8L11 10.7a5.8 5.8 0 017.4-7.4L14.7 6.3z"/>
+              </svg>
+            </div>
+            <span>Reparaciones</span>
+          </a>
+
+          <a class="mas-card {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
+             href="{% url 'pedidos_list' %}" role="menuitem">
+            <div class="mas-card-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+            </div>
+            <span>Pedidos</span>
+          </a>
+
+          <a class="mas-card {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
+             href="{% url 'notas_list' %}" role="menuitem">
+            <div class="mas-card-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M9 12h6M9 16h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+              </svg>
+            </div>
+            <span>Notas</span>
+          </a>
+
         </div>
-      {% endif %}
+      </div>
 
+      {% endwith %}
+    </nav>
+
+    <!-- Búsqueda global (desktop) -->
+    <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
+      <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+      </svg>
+      <input type="search" name="q" placeholder="Buscar…" autocomplete="off"
+             value="{% if request.resolver_match.url_name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
+    </form>
+
+    <!-- Usuario / sesión -->
+    {% if user.is_authenticated %}
+    <div class="user-bar">
+      <span class="username">{{ user.username }}</span>
+      <form method="post" action="{% url 'logout' %}" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn2" style="padding:6px 12px;font-size:12.5px;">Salir</button>
+      </form>
     </div>
-  </header>
+    {% endif %}
 
-  <!-- ===== CONTENIDO ===== -->
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
-
-  <!-- ===== TOASTS ===== -->
-  {% if messages %}
-  <div class="toast-stack">
-    {% for m in messages %}
-      {% if 'error' in m.tags %}
-        <div class="toast error">{{ m }}</div>
-      {% elif 'warning' in m.tags %}
-        <div class="toast warning">{{ m }}</div>
-      {% elif 'success' in m.tags %}
-        <div class="toast success">{{ m }}</div>
-      {% else %}
-        <div class="toast info">{{ m }}</div>
-      {% endif %}
-    {% endfor %}
   </div>
-  {% endif %}
+</header>
 
-  <!-- ===== JS ===== -->
-  <script>
-  (function () {
-    var wrap   = document.getElementById('nav-more');
-    var toggle = document.getElementById('mas-toggle');
-    var menu   = document.getElementById('mas-menu');
-    if (!wrap || !toggle || !menu) return;
+<!-- ===== CONTENIDO ===== -->
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
 
-    function open() {
-      wrap.classList.add('open');
-      toggle.setAttribute('aria-expanded', 'true');
-    }
-    function close() {
-      wrap.classList.remove('open');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
+<!-- ===== TOASTS ===== -->
+{% if messages %}
+<div class="toast-stack">
+  {% for m in messages %}
+    {% if 'error' in m.tags %}<div class="toast error">{{ m }}</div>
+    {% elif 'warning' in m.tags %}<div class="toast warning">{{ m }}</div>
+    {% elif 'success' in m.tags %}<div class="toast success">{{ m }}</div>
+    {% else %}<div class="toast info">{{ m }}</div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
 
-    toggle.addEventListener('click', function (e) {
+<!-- ===== JS ===== -->
+<script>
+(function () {
+  /* ── Dropdown "Más" ── */
+  var navMore  = document.getElementById('nav-more');
+  var masBtn   = document.getElementById('mas-toggle');
+  var masMenu  = document.getElementById('mas-menu');
+
+  function masOpen()  { navMore.classList.add('open');    masBtn.setAttribute('aria-expanded','true'); }
+  function masClose() { navMore.classList.remove('open'); masBtn.setAttribute('aria-expanded','false'); }
+
+  if (masBtn) {
+    masBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      wrap.classList.contains('open') ? close() : open();
+      navMore.classList.contains('open') ? masClose() : masOpen();
     });
+    if (masMenu) {
+      masMenu.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', masClose); });
+    }
+  }
 
-    document.addEventListener('click', function (e) {
-      if (!wrap.contains(e.target)) close();
-    });
+  /* ── Nav mobile (hamburger) ── */
+  var navToggle      = document.getElementById('nav-toggle');
+  var mainNav        = document.getElementById('main-nav');
+  var hamburgerIcon  = document.getElementById('hamburger-icon');
+  var closeIcon      = document.getElementById('close-icon');
 
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') close();
-    });
+  function navMobileOpen() {
+    mainNav.classList.add('nav-open');
+    navToggle.setAttribute('aria-expanded','true');
+    hamburgerIcon.style.display = 'none';
+    closeIcon.style.display     = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+  function navMobileClose() {
+    mainNav.classList.remove('nav-open');
+    masClose();
+    navToggle.setAttribute('aria-expanded','false');
+    hamburgerIcon.style.display = 'block';
+    closeIcon.style.display     = 'none';
+    document.body.style.overflow = '';
+  }
 
-    /* Cerrar al navegar a un ítem del menú */
-    menu.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', close);
+  if (navToggle && mainNav) {
+    navToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      mainNav.classList.contains('nav-open') ? navMobileClose() : navMobileOpen();
     });
-  })();
-  </script>
+  }
+
+  /* Click fuera cierra ambos */
+  document.addEventListener('click', function(e) {
+    if (navMore && !navMore.contains(e.target)) masClose();
+    if (mainNav && !mainNav.contains(e.target) && navToggle && !navToggle.contains(e.target)) {
+      navMobileClose();
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { masClose(); navMobileClose(); }
+  });
+})();
+</script>
 
 </body>
 </html>

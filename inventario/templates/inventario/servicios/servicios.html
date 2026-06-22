@@ -1,71 +1,59 @@
 {% extends "inventario/base.html" %}
+{% block title %}Servicios{% endblock %}
 {% block content %}
 
-<!-- ================= HEADER ================= -->
-<header class="page-header">
-  <div class="title-wrap">
+<div class="page-header">
+  <div>
     <div class="page-title">Servicios</div>
     <div class="page-subtitle muted">Alta, listado y edición</div>
   </div>
-
   <div class="page-actions">
-    <form method="get" class="page-actions-form">
-      <input
-        class="search"
-        name="q"
-        value="{{ q }}"
-        placeholder="Buscar por nombre o descripción"
-      >
+    <form method="get" style="display:contents">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o descripción">
       <button class="btn2 primary" type="submit">Buscar</button>
     </form>
-
     <a class="btn2" href="{% url 'servicio_create' %}">+ Nuevo</a>
   </div>
-</header>
+</div>
 
-<!-- ================= LISTADO ================= -->
 <div class="card">
   <div class="card-header">
     <h3>Servicios</h3>
     <span class="muted">Total: {{ servicios|length }}</span>
   </div>
-
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Descripción</th>
-        <th class="th-actions th-actions-wide">Acciones</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for s in servicios %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td><strong>{{ s.nombre }}</strong></td>
-
-          <td class="muted td-ellipsis" title="{{ s.descripcion|default:'-' }}">
-            {{ s.descripcion|default:"-" }}
-          </td>
-
-          <td class="td-actions">
-            <a class="btn2 small" href="{% url 'servicio_edit' s.id %}">Editar</a>
-            <a class="btn2 small" href="{% url 'movimientos_list' %}?servicio={{ s.id }}">Movimientos</a>
-          </td>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th style="width:200px">Acciones</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="3" class="empty-cell">
-            <div class="empty-state">
-              <div class="empty-title">No hay servicios cargados</div>
-              <div class="muted empty-subtitle">Creá el primer servicio para registrar movimientos y entregas.</div>
-              <a class="btn2 primary" href="{% url 'servicio_create' %}">+ Nuevo servicio</a>
-            </div>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for s in servicios %}
+          <tr>
+            <td><strong>{{ s.nombre }}</strong></td>
+            <td class="muted">{{ s.descripcion|default:"-" }}</td>
+            <td>
+              <a class="btn2" href="{% url 'servicio_edit' s.id %}">Editar</a>
+              <a class="btn2" href="{% url 'movimientos_list' %}?servicio={{ s.id }}">Movimientos</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay servicios cargados</div>
+                <div class="empty-state-sub">Creá el primer servicio para registrar movimientos y entregas.</div>
+                <a class="btn2 primary" href="{% url 'servicio_create' %}">+ Nuevo servicio</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

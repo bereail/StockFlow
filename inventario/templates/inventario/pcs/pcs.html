@@ -1,56 +1,68 @@
 {% extends "inventario/base.html" %}
+{% block title %}PCs{% endblock %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">PCs</div>
-    <div class="page-subtitle">Alta, listado y edición</div>
+    <div class="page-subtitle muted">Alta, listado y edición</div>
   </div>
-
-  <div class="page-actions" style="display:flex; gap:10px; align-items:center;">
-    <form method="get" class="page-actions">
-      <input name="q" value="{{ q }}" placeholder="Buscar por nombre / IP / servicio" style="width:320px">
-      <button class="btn" type="submit">Buscar</button>
+  <div class="page-actions">
+    <form method="get" style="display:contents">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre / IP / servicio">
+      <button class="btn2" type="submit">Buscar</button>
     </form>
-
-    <a class="btn" href="{% url 'pcs_create' %}">+ Nuevo</a>
+    <a class="btn2 primary" href="{% url 'pcs_create' %}">+ Nueva</a>
   </div>
 </div>
 
 <div class="card">
-  <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
-    <h3 style="margin:0">Listado</h3>
-    <div class="muted">Total: {{ pcs|length }}</div>
+  <div class="card-header">
+    <h3>Listado</h3>
+    <span class="muted">Total: {{ pcs|length }}</span>
   </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>IP</th>
-        <th>Servicio</th>
-        <th>Activo</th>
-        <th style="width:140px">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pc in pcs %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td><strong>{{ pc.nombre_pc }}</strong></td>
-          <td class="muted">{{ pc.ip|default:"-" }}</td>
-          <td class="muted">{% if pc.servicio %}{{ pc.servicio.nombre }}{% else %}-{% endif %}</td>
-          <td>{% if pc.activo %}Sí{% else %}No{% endif %}</td>
-          <td>
-            <a class="btn" href="{% url 'pcs_edit' pc.id %}">Editar</a>
-          </td>
+          <th>Nombre</th>
+          <th>IP</th>
+          <th>Servicio</th>
+          <th>Estado</th>
+          <th style="width:140px">Acciones</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5" class="muted" style="padding:16px">No hay PCs cargadas.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for pc in pcs %}
+          <tr>
+            <td><strong>{{ pc.nombre_pc }}</strong></td>
+            <td class="muted">{{ pc.ip|default:"-" }}</td>
+            <td class="muted">{% if pc.servicio %}{{ pc.servicio.nombre }}{% else %}-{% endif %}</td>
+            <td>
+              {% if pc.activo %}
+                <span class="chip ok">Activo</span>
+              {% else %}
+                <span class="chip">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn2" href="{% url 'pcs_edit' pc.id %}">Editar</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay PCs cargadas</div>
+                <div class="empty-state-sub">Registrá la primera PC para empezar.</div>
+                <a class="btn2 primary" href="{% url 'pcs_create' %}">+ Nueva PC</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

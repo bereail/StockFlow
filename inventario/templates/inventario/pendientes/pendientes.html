@@ -1,170 +1,72 @@
 {% extends "inventario/base.html" %}
+{% block title %}Pendientes{% endblock %}
 
 {% block content %}
 
-<style>
-  /* ===== Pendientes (cards) + observaciones ===== */
-
-  .pendiente-card{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-    padding:12px;
-    border-radius:14px;
-    margin-bottom:10px;
-    border: var(--border);
-    background: rgba(255,255,255,.03);
-  }
-
-  .pendiente-ok{
-    background: rgba(53, 208, 127, 0.08);
-    border-left: 4px solid rgba(53, 208, 127, 0.6);
-  }
-
-  .pendiente-pendiente{
-    background: rgba(255, 91, 110, 0.06);
-    border-left: 4px solid rgba(255, 91, 110, 0.6);
-  }
-
-  /* Amarillo sutil cuando hay observación */
-  .pendiente-has-obs{
-    box-shadow: 0 0 0 1px rgba(255, 204, 102, .18) inset;
-  }
-  .pendiente-has-obs::after{
-    content:"";
-    display:block;
-    width:6px;
-    border-radius:999px;
-    background: rgba(255,204,102,.85);
-    margin-left: auto;
-    margin-right: 2px;
-  }
-
-  .pendiente-text{
-    font-weight:600;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
-
-  .pendiente-text.is-done{
-    opacity:.8;
-    text-decoration: line-through;
-  }
-
-  details.obs{
-    margin-top:8px;
-    border-radius:12px;
-    background: rgba(255,255,255,.02);
-    border: 1px solid rgba(255,255,255,.08);
-    padding: 8px 10px;
-  }
-  details.obs summary{
-    cursor:pointer;
-    user-select:none;
-    font-size:.9rem;
-    color: var(--muted);
-    list-style:none;
-  }
-  details.obs summary::-webkit-details-marker { display:none; }
-
-  .obs-area{
-    margin-top:8px;
-  }
-  .obs-area textarea{
-    width:100%;
-    resize:vertical;
-    padding:10px;
-    border-radius:12px;
-    border: var(--border);
-    background: rgba(255,255,255,.04);
-    color: var(--text);
-    outline: none;
-  }
-  .obs-actions{
-    display:flex;
-    gap:8px;
-    justify-content:flex-end;
-    margin-top:8px;
-  }
-</style>
-
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">Pendientes</div>
-    <div class="page-subtitle">Tareas rápidas</div>
+    <div class="page-subtitle muted">Tareas rápidas</div>
   </div>
-
   <form method="get" class="page-actions">
-    <select name="estado" style="min-width:180px">
+    <select name="estado">
       <option value="" {% if not estado %}selected{% endif %}>Todos</option>
       <option value="pendiente" {% if estado == "pendiente" %}selected{% endif %}>Solo pendientes</option>
       <option value="hecho" {% if estado == "hecho" %}selected{% endif %}>Solo hechos</option>
     </select>
-    <button class="btn" type="submit">Filtrar</button>
-    <a class="btn btn-ghost" href="{% url 'pendientes_page' %}">Limpiar</a>
+    <button class="btn2" type="submit">Filtrar</button>
+    <a class="btn2 btn-ghost" href="{% url 'pendientes_page' %}">Limpiar</a>
   </form>
 </div>
 
-<div class="grid" style="grid-template-columns: 1fr;">
+<div style="display:flex;flex-direction:column;gap:16px">
+
   <!-- NUEVO -->
   <div class="card">
-    <div class="row" style="justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:10px">
-      <h3 style="margin:0">Nuevo pendiente</h3>
-      <div class="muted" style="font-size:.9rem">
-        {{ pendientes|length }} ítems
-      </div>
+    <div class="card-header">
+      <h3>Nuevo pendiente</h3>
+      <span class="muted">{{ pendientes|length }} ítems</span>
     </div>
-
-    <form method="post" action="{% url 'pendientes_page' %}" class="row" style="gap:10px; align-items:flex-end; flex-wrap:wrap">
+    <form method="post" action="{% url 'pendientes_page' %}" class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap">
       {% csrf_token %}
-
-      <div style="flex:1; min-width:260px">
+      <div style="flex:1;min-width:260px">
         <label class="label">Texto</label>
         <input type="text" name="texto" maxlength="255"
                placeholder="Ej: Revisar impresora / Pedir insumos..."
                required>
       </div>
-
-      <button class="btn primary" type="submit">+ Agregar</button>
+      <button class="btn2 primary" type="submit">+ Agregar</button>
     </form>
   </div>
 
   <!-- LISTA -->
   <div class="card">
-    <div class="row" style="justify-content:space-between; margin-bottom:10px">
-      <h3 style="margin:0">Lista</h3>
-      <div class="muted" style="font-size:.9rem">Marcá el check para completar.</div>
+    <div class="card-header">
+      <h3>Lista</h3>
+      <span class="muted">Marcá el check para completar.</span>
     </div>
 
     {% if pendientes %}
       {% for p in pendientes %}
+        <div class="pendiente-card {% if p.completado %}pendiente-ok{% else %}pendiente-pendiente{% endif %} {% if p.observacion %}pendiente-has-obs{% endif %}">
 
-        <div class="
-          pendiente-card
-          {% if p.completado %}pendiente-ok{% else %}pendiente-pendiente{% endif %}
-          {% if p.observacion %}pendiente-has-obs{% endif %}
-        ">
           <!-- CHECK -->
           <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
             {% csrf_token %}
             <input type="checkbox"
                    onchange="this.form.submit()"
                    {% if p.completado %}checked{% endif %}
-                   style="width:18px; height:18px; cursor:pointer; margin-top:2px;">
+                   style="width:18px;height:18px;cursor:pointer;margin-top:2px;">
           </form>
 
           <!-- CUERPO -->
-          <div style="flex:1; min-width:0">
+          <div style="flex:1;min-width:0">
+            <div class="pendiente-text {% if p.completado %}is-done{% endif %}">{{ p.texto }}</div>
 
-            <div class="pendiente-text {% if p.completado %}is-done{% endif %}">
-              {{ p.texto }}
-            </div>
-
-            <div class="muted" style="font-size:.85rem; margin-top:4px">
+            <div class="muted" style="font-size:.85rem;margin-top:4px">
               Creado: {{ p.creado|date:"d/m/Y H:i" }}
               {% if p.observacion %}
-                • <span style="color: rgba(255,204,102,.95)">Con observación</span>
+                • <span style="color:rgba(255,204,102,.95)">Con observación</span>
               {% endif %}
             </div>
 
@@ -173,19 +75,16 @@
               <summary>
                 {% if p.observacion %}✎ Editar observación{% else %}+ Agregar observación{% endif %}
               </summary>
-
               <div class="obs-area">
                 <form method="post" action="{% url 'pendiente_obs' p.id %}">
                   {% csrf_token %}
                   <textarea name="observacion" rows="2" placeholder="Escribí una nota rápida (opcional)...">{{ p.observacion }}</textarea>
-
                   <div class="obs-actions">
-                    <button class="btn btn-ghost" type="submit">Guardar</button>
+                    <button class="btn2 btn-ghost" type="submit">Guardar</button>
                   </div>
                 </form>
               </div>
             </details>
-
           </div>
 
           <!-- BORRAR -->
@@ -197,12 +96,15 @@
             <button class="btn2 danger" type="submit">Borrar</button>
           </form>
         </div>
-
       {% endfor %}
     {% else %}
-      <div class="empty">No hay pendientes para mostrar.</div>
+      <div class="empty-state">
+        <div class="empty-state-title">No hay pendientes para mostrar</div>
+        <div class="empty-state-sub">Usá el formulario de arriba para crear el primero.</div>
+      </div>
     {% endif %}
   </div>
+
 </div>
 
 {% endblock %}

@@ -1,72 +1,75 @@
 {% extends "inventario/base.html" %}
+{% block title %}Artículos{% endblock %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">Artículos</div>
-    <div class="page-subtitle">Catálogo + acciones</div>
+    <div class="page-subtitle muted">Catálogo y acciones</div>
   </div>
-
-  <form method="get" class="row" style="gap:10px">
-    <input name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / descripción)" style="width:320px">
-    <button class="btn primary" type="submit"><span class="mi"></span> Buscar</button>
+  <form method="get" class="page-actions">
+    <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / descripción)">
+    <button class="btn2 primary" type="submit">Buscar</button>
   </form>
 </div>
 
-<div class="card-header">
-  <h3>Artículos</h3>
-  <div class="row" style="gap:8px">
-    <a class="btn2" href="{% url 'articulo_create' %}"><span class="mi"></span> Nuevo</a>
-    <a class="btn2" href="{% url 'articulo_entrega' %}"><span class="mi"></span> Entrega</a>
-    <a class="btn2" href="{% url 'articulos_historial' %}"><span class="mi"></span> Historial</a>
+<div class="card">
+  <div class="card-header">
+    <h3>Artículos</h3>
+    <div class="row" style="gap:8px">
+      <a class="btn2" href="{% url 'articulo_create' %}">Nuevo</a>
+      <a class="btn2" href="{% url 'articulo_entrega' %}">Entrega</a>
+      <a class="btn2" href="{% url 'articulos_historial' %}">Historial</a>
+    </div>
   </div>
-</div>
-
-
-  <table>
-    <thead>
-      <tr>
-        <th>Marca</th>
-        <th>Nombre</th>
-        <th>Descripción</th>
-        <th>Estado</th>
-        <th style="width:240px">Acciones</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for a in articulos %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td>{{ a.marca|default:"-" }}</td>
-          <td><strong>{{ a.nombre }}</strong></td>
-          <td class="muted">{{ a.descripcion|default:"-" }}</td>
-
-          <td>
-            {% if a.activo %}
-              <span class="chip ok"><span class="mi">check</span> Activo</span>
-            {% else %}
-              <span class="chip"><span class="mi">pause</span> Inactivo</span>
-            {% endif %}
-          </td>
-
-          <td>
-            <a class="btn2" href="{% url 'articulo_edit' a.id %}">Editar</a>
-
-            <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline">
-              {% csrf_token %}
-              <button class="btn2 {% if a.activo %}danger{% endif %}" type="submit">
-                {% if a.activo %}Desactivar{% else %}Activar{% endif %}
-              </button>
-            </form>
-          </td>
+          <th>Marca</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th style="width:240px">Acciones</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5" class="muted">No hay artículos cargados.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for a in articulos %}
+          <tr>
+            <td>{{ a.marca|default:"-" }}</td>
+            <td><strong>{{ a.nombre }}</strong></td>
+            <td class="muted">{{ a.descripcion|default:"-" }}</td>
+            <td>
+              {% if a.activo %}
+                <span class="chip ok">Activo</span>
+              {% else %}
+                <span class="chip">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn2" href="{% url 'articulo_edit' a.id %}">Editar</a>
+              <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline">
+                {% csrf_token %}
+                <button class="btn2 {% if a.activo %}danger{% endif %}" type="submit">
+                  {% if a.activo %}Desactivar{% else %}Activar{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay artículos cargados</div>
+                <div class="empty-state-sub">Creá el primer artículo para comenzar.</div>
+                <a class="btn2 primary" href="{% url 'articulo_create' %}">+ Nuevo artículo</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

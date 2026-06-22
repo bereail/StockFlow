@@ -1,111 +1,92 @@
 {% extends "inventario/base.html" %}
+{% block title %}Impresoras{% endblock %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">Impresoras</div>
-    <div class="page-subtitle">Alta, edición, activación y movimientos</div>
+    <div class="page-subtitle muted">Alta, edición, activación y movimientos</div>
   </div>
-
-  <div class="page-actions" style="display:flex; gap:10px; align-items:center;">
-    <form method="get" class="page-actions">
-      <input
-        name="q"
-        value="{{ q }}"
-        placeholder="Buscar por marca / modelo / IP / patrimonio / servicio"
-        style="width:360px"
-      >
-      <button class="btn" type="submit">Buscar</button>
+  <div class="page-actions">
+    <form method="get" style="display:contents">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por marca / modelo / IP / patrimonio / servicio">
+      <button class="btn2" type="submit">Buscar</button>
     </form>
-
-    <a class="btn" href="{% url 'impresora_entrega' %}">Registrar movimiento</a>
-    <a class="btn" href="{% url 'impresora_historial' %}">Historial</a>
-    <a class="btn" href="{% url 'impresora_create' %}">+ Nueva</a>
+    <a class="btn2" href="{% url 'impresora_entrega' %}">Registrar movimiento</a>
+    <a class="btn2" href="{% url 'impresora_historial' %}">Historial</a>
+    <a class="btn2 primary" href="{% url 'impresora_create' %}">+ Nueva</a>
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px">
-  <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px">
-    <h3 style="margin:0">Listado</h3>
-    <div class="muted">Total: {{ impresoras|length }}</div>
+<div class="card">
+  <div class="card-header">
+    <h3>Listado</h3>
+    <span class="muted">Total: {{ impresoras|length }}</span>
   </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Marca</th>
-        <th>Modelo</th>
-        <th>Tipo</th>
-        <th>Conexión</th>
-        <th>IP</th>
-        <th>Patrimonio</th>
-        <th>Servicio</th>
-        <th>Estado</th>
-        <th style="width:260px">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in impresoras %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td><strong>{{ i.marca }}</strong></td>
-          <td>{{ i.modelo }}</td>
-          <td class="muted">{{ i.tipo|default:"-" }}</td>
-          <td class="muted">{{ i.get_conexion_display }}</td>
-          <td class="muted">{{ i.ip|default:"-" }}</td>
-          <td class="muted">{{ i.patrimonio|default:"-" }}</td>
-
-          <!-- SERVICIO (nuevo modelo) -->
-          <td class="muted">
-            {% if i.servicio_actual %}
-              {{ i.servicio_actual.nombre }}
-            {% else %}
-              -
-            {% endif %}
-          </td>
-
-          <!-- ESTADO CON COLOR -->
-          <td>
-            {% with est=i.estado|default:"INACTIVA"|upper %}
-              <span class="badge
-                {% if est == 'ACTIVA' %}
-                  badge-ok
-                {% elif est == 'EN_REPARACION' or est == 'EN REPARACION' %}
-                  badge-warn
-                {% elif est == 'INACTIVA' or est == 'DESCARTADA' %}
-                  badge-danger
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Tipo</th>
+          <th>Conexión</th>
+          <th>IP</th>
+          <th>Patrimonio</th>
+          <th>Servicio</th>
+          <th>Estado</th>
+          <th style="width:260px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in impresoras %}
+          <tr>
+            <td><strong>{{ i.marca }}</strong></td>
+            <td>{{ i.modelo }}</td>
+            <td class="muted">{{ i.tipo|default:"-" }}</td>
+            <td class="muted">{{ i.get_conexion_display }}</td>
+            <td class="muted">{{ i.ip|default:"-" }}</td>
+            <td class="muted">{{ i.patrimonio|default:"-" }}</td>
+            <td class="muted">
+              {% if i.servicio_actual %}{{ i.servicio_actual.nombre }}{% else %}-{% endif %}
+            </td>
+            <td>
+              {% with est=i.estado|default:"INACTIVA"|upper %}
+                <span class="badge
+                  {% if est == 'ACTIVA' %}badge-ok
+                  {% elif est == 'EN_REPARACION' or est == 'EN REPARACION' %}badge-warn
+                  {% elif est == 'INACTIVA' or est == 'DESCARTADA' %}badge-danger
+                  {% else %}badge-neutral{% endif %}">
+                  {{ est }}
+                </span>
+              {% endwith %}
+            </td>
+            <td>
+              <div class="row" style="gap:6px;flex-wrap:wrap">
+                <a class="btn2" href="{% url 'impresora_edit' i.id %}">Editar</a>
+                <a class="btn2" href="{% url 'asignar_impresora' i.id %}">Asignar / Mover</a>
+                {% if i.estado|upper == "ACTIVA" %}
+                  <a class="btn2" href="{% url 'impresora_toggle' i.id %}">Desactivar</a>
                 {% else %}
-                  badge-neutral
+                  <a class="btn2" href="{% url 'impresora_toggle' i.id %}">Activar</a>
                 {% endif %}
-              ">
-                {{ est }}
-              </span>
-            {% endwith %}
-          </td>
-
-          <td style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a class="btn" href="{% url 'impresora_edit' i.id %}">Editar</a>
-
-            <a class="btn" href="{% url 'asignar_impresora' i.id %}">
-              Asignar / Mover
-            </a>
-
-            {% if i.estado|upper == "ACTIVA" %}
-              <a class="btn" href="{% url 'impresora_toggle' i.id %}">Desactivar</a>
-            {% else %}
-              <a class="btn" href="{% url 'impresora_toggle' i.id %}">Activar</a>
-            {% endif %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="9" class="muted" style="padding:16px">
-            No hay impresoras cargadas.
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay impresoras cargadas</div>
+                <div class="empty-state-sub">Registrá la primera impresora para empezar.</div>
+                <a class="btn2 primary" href="{% url 'impresora_create' %}">+ Nueva impresora</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
-
 
 {% endblock %}

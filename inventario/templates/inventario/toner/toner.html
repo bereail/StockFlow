@@ -1,66 +1,59 @@
 {% extends "inventario/base.html" %}
+{% block title %}Tóner{% endblock %}
 {% block content %}
 
-<!-- HEADER -->
 <div class="page-header">
   <div>
-    <div class="page-title">Registro</div>
+    <div class="page-title">Registro de Tóner</div>
+    <div class="page-subtitle muted">Gestión y entregas</div>
   </div>
-
   <form method="get" class="page-actions">
-    <input
-      class="search"
-      name="q"
-      value="{{ q }}"
-      placeholder="Buscar (marca / nombre / impresora)"
-    >
+    <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)">
     <button class="btn2 primary" type="submit">Buscar</button>
     <a class="btn2" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
   </form>
 </div>
 
-
-<!-- ================= ULTIMAS ENTREGAS ================= -->
 <div class="card" style="margin-bottom:14px">
   <div class="card-header">
     <h3>Últimas entregas</h3>
     {% if mostrar_ver_todo %}
-  <a class="btn2" href="{% url 'toner_historial' %}">Ver todo</a>
-{% endif %}
-
+      <a class="btn2" href="{% url 'toner_historial' %}">Ver todo</a>
+    {% endif %}
   </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Toner</th>
-        <th>Cantidad</th>
-        <th>Destino</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in movimientos|slice:":3" %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td class="muted">{{ d.movimiento.fecha|date:"Y-m-d H:i" }}</td>
-
-          <td>
-            {{ d.item.toner.marca|default_if_none:"" }}
-            {{ d.item.toner.nombre|default_if_none:"" }}
-          </td>
-
-          <td><span class="chip">{{ d.cantidad }}</span></td>
-
-          <td class="muted">{{ d.movimiento.servicio|default:"-" }}</td>
+          <th>Fecha</th>
+          <th>Toner</th>
+          <th>Cantidad</th>
+          <th>Destino</th>
         </tr>
-      {% empty %}
-        <tr><td colspan="4" class="muted">Sin movimientos.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for d in movimientos|slice:":3" %}
+          <tr>
+            <td class="muted">{{ d.movimiento.fecha|date:"Y-m-d H:i" }}</td>
+            <td>{{ d.item.toner.marca|default_if_none:"" }} {{ d.item.toner.nombre|default_if_none:"" }}</td>
+            <td><span class="chip">{{ d.cantidad }}</span></td>
+            <td class="muted">{{ d.movimiento.servicio|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">
+                <div class="empty-state-title">Sin movimientos</div>
+                <div class="empty-state-sub">No se registraron entregas todavía.</div>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- ================= TONERS ================= -->
 <div class="card">
   <div class="card-header">
     <h3>Toners</h3>
@@ -69,46 +62,54 @@
       <a class="btn2" href="{% url 'toner_historial' %}">Historial</a>
     </div>
   </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Marca</th>
-        <th>Nombre</th>
-        <th>Modelo impresora</th>
-        <th>Estado</th>
-        <th style="width:240px">Acciones</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for t in toners %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td>{{ t.marca|default:"-" }}</td>
-          <td><strong>{{ t.nombre }}</strong></td>
-          <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
-          <td>
-            {% if t.activo %}
-              <span class="chip ok">Activo</span>
-            {% else %}
-              <span class="chip">Desactivado</span>
-            {% endif %}
-          </td>
-          <td>
-            <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
-            <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
-              {% csrf_token %}
-              <button class="btn2 {% if t.activo %}danger{% endif %}">
-                {% if t.activo %}Desactivar{% else %}Activar{% endif %}
-              </button>
-            </form>
-          </td>
+          <th>Marca</th>
+          <th>Nombre</th>
+          <th>Modelo impresora</th>
+          <th>Estado</th>
+          <th style="width:240px">Acciones</th>
         </tr>
-      {% empty %}
-        <tr><td colspan="5" class="muted">No hay toners cargados.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for t in toners %}
+          <tr>
+            <td>{{ t.marca|default:"-" }}</td>
+            <td><strong>{{ t.nombre }}</strong></td>
+            <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
+            <td>
+              {% if t.activo %}
+                <span class="chip ok">Activo</span>
+              {% else %}
+                <span class="chip">Desactivado</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
+              <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
+                {% csrf_token %}
+                <button class="btn2 {% if t.activo %}danger{% endif %}">
+                  {% if t.activo %}Desactivar{% else %}Activar{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay toners cargados</div>
+                <div class="empty-state-sub">Agregá el primer tóner para empezar.</div>
+                <a class="btn2 primary" href="{% url 'toner_create' %}">+ Nuevo toner</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}
