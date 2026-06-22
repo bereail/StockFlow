@@ -214,6 +214,52 @@
 
 <!-- ===== JS ===== -->
 <script>
+/* ── Cards colapsables (global) ── */
+(function () {
+  function initCollapsible(card) {
+    var trigger = card.querySelector('.collapse-trigger');
+    var body    = card.querySelector('.card-collapse-body');
+    if (!trigger || !body) return;
+
+    /* estado inicial: open */
+    card.classList.add('open');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    trigger.setAttribute('aria-expanded', 'true');
+
+    trigger.addEventListener('click', function (e) {
+      /* no colapsar si el clic fue en un link o botón de acción */
+      if (e.target.closest('a[href], button:not(.collapse-trigger), form')) return;
+      e.stopPropagation();
+      var isOpen = card.classList.contains('open');
+      if (isOpen) {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            body.style.maxHeight = '0px';
+          });
+        });
+        card.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        card.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+        trigger.setAttribute('aria-expanded', 'true');
+        /* quitar max-height fija una vez terminada la animación */
+        body.addEventListener('transitionend', function fn() {
+          if (card.classList.contains('open')) body.style.maxHeight = 'none';
+          body.removeEventListener('transitionend', fn);
+        });
+      }
+    });
+
+    trigger.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+    });
+  }
+
+  document.querySelectorAll('.card-collapsible').forEach(initCollapsible);
+})();
+
 (function () {
   /* ── Dropdown "Más" (desktop) ── */
   var navMore = document.getElementById('nav-more');
