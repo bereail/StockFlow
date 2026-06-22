@@ -54,6 +54,16 @@
         </button>
       {% endif %}
 
+      {% if user.is_authenticated %}
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="muted" style="font-size:13px;">{{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn2" style="font-size:13px;padding:6px 10px;">Salir</button>
+          </form>
+        </div>
+      {% endif %}
+
     </div>
   </header>
 

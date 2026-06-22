@@ -1,42 +1,117 @@
 {% extends "inventario/base.html" %}
+{% block title %}{% if modo_edicion %}Editar nota{% else %}Nueva nota{% endif %}{% endblock %}
 
 {% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{% if modo_edicion %}Editar nota{{ nota.numero|default:"" }}{% else %}Nueva nota{% endif %}</div>
+  </div>
+  {% if modo_edicion %}
+    <a class="btn btn-ghost" href="{% url 'nota_detail' nota.pk %}">← Volver</a>
+  {% else %}
+    <a class="btn btn-ghost" href="{% url 'notas_list' %}">← Volver</a>
+  {% endif %}
+</div>
 
 <form method="post">
   {% csrf_token %}
 
-  <div class="card">
-    <h3>Nota</h3>
-    {{ form.non_field_errors }}
+  <div class="card" style="margin-bottom:14px">
+    <h3 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+      Datos de la nota
+    </h3>
 
-    <div>{{ form.numero.label_tag }} {{ form.numero }} {{ form.numero.errors }}</div>
-    <div>{{ form.fecha.label_tag }} {{ form.fecha }} {{ form.fecha.errors }}</div>
-    <div>{{ form.servicio_solicitante.label_tag }} {{ form.servicio_solicitante }} {{ form.servicio_solicitante.errors }}</div>
-    <div>{{ form.estado.label_tag }} {{ form.estado }} {{ form.estado.errors }}</div>
-    <div>{{ form.detalle.label_tag }} {{ form.detalle }} {{ form.detalle.errors }}</div>
+    {% if form.non_field_errors %}
+      <div class="form-error" style="margin-bottom:12px">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="formgrid">
+      <div class="field col-4">
+        <label class="label">Número</label>
+        {{ form.numero }}
+        {% if form.numero.errors %}<div class="form-error">{{ form.numero.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-4">
+        <label class="label">Fecha</label>
+        {{ form.fecha }}
+        {% if form.fecha.errors %}<div class="form-error">{{ form.fecha.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-4">
+        <label class="label">Estado</label>
+        {{ form.estado }}
+        {% if form.estado.errors %}<div class="form-error">{{ form.estado.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-6">
+        <label class="label">Servicio solicitante</label>
+        {{ form.servicio_solicitante }}
+        {% if form.servicio_solicitante.errors %}<div class="form-error">{{ form.servicio_solicitante.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-12">
+        <label class="label">Detalle</label>
+        {{ form.detalle }}
+        {% if form.detalle.errors %}<div class="form-error">{{ form.detalle.errors }}</div>{% endif %}
+      </div>
+    </div>
   </div>
 
-  <div class="card" style="margin-top:12px;">
-    <h3>Detalles</h3>
+  <div class="card" style="margin-bottom:14px">
+    <h3 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+      Ítems
+    </h3>
 
     {{ formset.management_form }}
-    {{ formset.non_form_errors }}
 
-    {% for f in formset %}
-      <div class="detalle-box">
-        {{ f.non_field_errors }}
+    {% if formset.non_form_errors %}
+      <div class="form-error" style="margin-bottom:12px">{{ formset.non_form_errors }}</div>
+    {% endif %}
 
-        <div>{{ f.item.label_tag }} {{ f.item }} {{ f.item.errors }}</div>
-        <div>{{ f.cantidad.label_tag }} {{ f.cantidad }} {{ f.cantidad.errors }}</div>
-        <div>{{ f.detalle.label_tag }} {{ f.detalle }} {{ f.detalle.errors }}</div>
-
-        {% if formset.can_delete %}
-          <div>{{ f.DELETE }} <label>Eliminar</label></div>
-        {% endif %}
-      </div>
-    {% endfor %}
+    <table>
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th style="width:110px">Cantidad</th>
+          <th>Detalle</th>
+          {% if formset.can_delete %}<th style="width:80px">Quitar</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in formset %}
+          {{ f.id }}
+          <tr>
+            <td>
+              {{ f.item }}
+              {% if f.item.errors %}<div class="form-error">{{ f.item.errors }}</div>{% endif %}
+            </td>
+            <td>
+              {{ f.cantidad }}
+              {% if f.cantidad.errors %}<div class="form-error">{{ f.cantidad.errors }}</div>{% endif %}
+            </td>
+            <td>
+              {{ f.detalle }}
+              {% if f.detalle.errors %}<div class="form-error">{{ f.detalle.errors }}</div>{% endif %}
+            </td>
+            {% if formset.can_delete %}
+              <td style="text-align:center">{{ f.DELETE }}</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-<button class="btn primary" type="submit">Guardar</button>
+
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Guardar</button>
+    {% if modo_edicion %}
+      <a class="btn btn-ghost" href="{% url 'nota_detail' nota.pk %}">Cancelar</a>
+    {% else %}
+      <a class="btn btn-ghost" href="{% url 'notas_list' %}">Cancelar</a>
+    {% endif %}
+  </div>
 </form>
 
 {% endblock %}

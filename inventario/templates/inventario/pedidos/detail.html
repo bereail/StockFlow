@@ -1,86 +1,107 @@
 {% extends "inventario/base.html" %}
+{% block title %}Pedido {{ pedido.numero }}{% endblock %}
+
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">Pedido {{ pedido.numero }}</div>
-    <div class="page-subtitle">
-      Servicio: {{ pedido.servicio_solicitante|default:"-" }} · Estado: {{ pedido.get_estado_display }}
+    <div class="page-subtitle muted">
+      {{ pedido.servicio_solicitante|default:"Sin servicio" }} &middot; {{ pedido.get_estado_display }}
     </div>
   </div>
-
   <div class="row" style="gap:8px">
     {% if pedido.estado == "HECHO" %}
       <a class="btn" href="{% url 'pedido_edit' pedido.pk %}">Editar</a>
     {% endif %}
-    <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Volver</a>
+    <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">← Volver</a>
   </div>
 </div>
 
-<div class="card" style="margin-bottom:12px">
-  <div><b>Nota:</b> {{ pedido.numero_nota|default:"-" }}</div>
-  <div><b>Para qué:</b> {{ pedido.para_que|default:"-" }}</div>
-  <div><b>Obs:</b> {{ pedido.observaciones|default:"-" }}</div>
-  <div><b>Solicitado por:</b> {{ pedido.solicitado_por }}</div>
-  <div><b>Creado:</b> {{ pedido.creado|date:"d/m/Y H:i" }}</div>
+<div class="card" style="margin-bottom:14px">
+  <div class="formgrid">
+    <div class="field col-6">
+      <div class="label">Nota</div>
+      <div>{{ pedido.numero_nota|default:"—" }}</div>
+    </div>
+    <div class="field col-6">
+      <div class="label">Para qué</div>
+      <div>{{ pedido.para_que|default:"—" }}</div>
+    </div>
+    <div class="field col-6">
+      <div class="label">Creado</div>
+      <div class="muted">{{ pedido.creado|date:"d/m/Y H:i" }}</div>
+    </div>
+    {% if pedido.observaciones %}
+    <div class="field col-12">
+      <div class="label">Observaciones</div>
+      <div class="muted" style="white-space:pre-wrap">{{ pedido.observaciones }}</div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 
 <div class="card">
-  <h3 style="margin-top:0">Items y patrimonios</h3>
+  <h3 style="margin:0 0 12px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+    Ítems y patrimonios
+  </h3>
 
   <table>
     <thead>
       <tr>
-        <th>Item</th>
+        <th>Ítem</th>
         <th>Cantidad</th>
         <th>Detalle</th>
         <th>Patrimonios</th>
-        <th></th>
+        <th style="width:140px"></th>
       </tr>
     </thead>
     <tbody>
-      {% for row in filas %}
-        {% with d=row.detalle %}
+      {% for d in detalles %}
+        {% with cargados=d.patrimonios.count %}
         <tr>
           <td>{{ d.item }}</td>
           <td>{{ d.cantidad }}</td>
-          <td>{{ d.detalle|default:"-" }}</td>
-          <td>{{ row.cargados }}/{{ row.maximo }}</td>
+          <td class="muted">{{ d.detalle|default:"—" }}</td>
+          <td>
+            <span class="chip {% if cargados == d.cantidad %}ok{% endif %}">
+              {{ cargados }}/{{ d.cantidad }}
+            </span>
+          </td>
           <td style="text-align:right">
             {% if pedido.estado in "RECIBIDO ENTREGADO CERRADO" %}
-              {% if not row.completo %}
-                <a class="btn" href="{% url 'patrimonio_create' d.pk %}">+ Patrimonio</a>
+              {% if cargados < d.cantidad %}
+                <a class="btn2" href="{% url 'patrimonio_create' d.pk %}">+ Patrimonio</a>
               {% else %}
-                <span class="badge">Completo</span>
+                <span class="chip ok">Completo</span>
               {% endif %}
             {% else %}
-              <span class="muted">Disponible al RECIBIR</span>
+              <span class="muted" style="font-size:12px">Al recibir</span>
             {% endif %}
           </td>
         </tr>
 
         {% if d.patrimonios.all %}
-          <tr>
-            <td colspan="5">
-              <div style="padding:8px 0">
-                <b>Patrimonios cargados:</b>
-                <ul style="margin:6px 0 0 18px">
-                  {% for p in d.patrimonios.all %}
-                    <li>
-                      {{ p.numero_patrimonio }}{% if p.serial %} · SN: {{ p.serial }}{% endif %}
-                      {% if p.servicio_asignado %} · Asignado: {{ p.servicio_asignado }}{% endif %}
-                    </li>
-                  {% empty %}
-                    <li class="muted">Sin patrimonios.</li>
-                  {% endfor %}
-                </ul>
+          <tr style="background:rgba(255,255,255,.02)">
+            <td colspan="5" style="padding-left:20px">
+              <div class="muted" style="font-size:12px;padding:6px 0">
+                <strong>Patrimonios:</strong>
+                {% for p in d.patrimonios.all %}
+                  <span style="margin-left:8px">
+                    {{ p.numero_patrimonio }}{% if p.serial %} · SN: {{ p.serial }}{% endif %}{% if p.servicio_asignado %} → {{ p.servicio_asignado }}{% endif %}
+                  </span>{% if not forloop.last %},{% endif %}
+                {% endfor %}
               </div>
             </td>
           </tr>
         {% endif %}
         {% endwith %}
       {% empty %}
-        <tr><td colspan="5">Este pedido no tiene items.</td></tr>
+        <tr>
+          <td colspan="5" class="muted" style="padding:20px;text-align:center">
+            Este pedido no tiene ítems.
+          </td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>

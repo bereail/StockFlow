@@ -685,3 +685,48 @@ textarea{
   color: rgba(159, 176, 208, 0.90);
   border-color: rgba(159, 176, 208, 0.20);
 }
+
+/* alias para compatibilidad */
+.badge-bad{
+  background: rgba(255, 91, 110, 0.14);
+  color: #ff5b6e;
+  border-color: rgba(255, 91, 110, 0.35);
+}
+
+/* =========================================================
+   CHIP — variantes de color
+========================================================= */
+.chip.warn{
+  border-color: rgba(255,204,102,.35);
+  background: rgba(255,204,102,.10);
+  color: #ffdb8a;
+}
+.chip.danger{
+  border-color: rgba(255,91,110,.35);
+  background: rgba(255,91,110,.10);
+  color: #ffd0d6;
+}
+
+/* =========================================================
+   BTN-GHOST
+========================================================= */
+.btn.btn-ghost, .btn2.btn-ghost{
+  background: transparent;
+  border-color: rgba(255,255,255,.12);
+  color: var(--muted);
+}
+.btn.btn-ghost:hover, .btn2.btn-ghost:hover{
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+}
+
+/* =========================================================
+   DASHBOARD — accesos adicionales
+========================================================= */
+.dashboard .card.p-impresoras .icon{ color: #c084fc; }
+.dashboard .card.p-prestamos  .icon{ color: #22d3ee; }
+.dashboard .card.p-reparaciones .icon{ color: var(--warn); }
+.dashboard .card.p-pedidos    .icon{ color: var(--ok); }
+.dashboard .card.p-notas      .icon{ color: #f472b6; }
+.dashboard .card.p-pendientes .icon{ color: var(--primary); }
+.dashboard .card.p-movimientos .icon{ color: #a78bfa; }

@@ -353,3 +353,19 @@ class VistasCrudTest(TestCase):
         p = Pendiente.objects.create(texto="Borrar esto", servicio=self.servicio)
         self.client.post(f"/pendientes/{p.pk}/delete/")
         self.assertFalse(Pendiente.objects.filter(pk=p.pk).exists())
+
+
+# ============================================================
+# LOGIN — redirección sin autenticación
+# ============================================================
+
+class LoginRedirectTest(TestCase):
+    def test_dashboard_sin_login_redirige(self):
+        r = self.client.get("/")
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/accounts/login/", r["Location"])
+
+    def test_toner_sin_login_redirige(self):
+        r = self.client.get("/toner/")
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/accounts/login/", r["Location"])

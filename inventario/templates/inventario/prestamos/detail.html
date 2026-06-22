@@ -1,33 +1,98 @@
 {% extends "inventario/base.html" %}
+{% block title %}Préstamo #{{ prestamo.id }}{% endblock %}
+
 {% block content %}
 
-<h2>Préstamo #{{ prestamo.id }}</h2>
+<div class="page-header">
+  <div>
+    <div class="page-title">Préstamo #{{ prestamo.id }}</div>
+    <div class="page-subtitle muted">
+      {% if prestamo.devuelto %}
+        <span class="chip ok" style="margin-right:6px">Devuelto</span>
+      {% else %}
+        <span class="chip danger" style="margin-right:6px">Pendiente de devolución</span>
+      {% endif %}
+      {{ prestamo.fecha_retiro|date:"d/m/Y H:i" }}
+    </div>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'prestamos_list' %}">← Volver</a>
+</div>
 
-<p><b>Servicio:</b> {{ prestamo.servicio }}</p>
-<p><b>Entregado a:</b> {{ prestamo.entregado_a }}</p>
-<p><b>Teléfono:</b> {{ prestamo.telefono_contacto }}</p>
-<p><b>Retiro:</b> {{ prestamo.fecha_retiro }}</p>
-<p><b>Dev. estimada:</b> {{ prestamo.fecha_devolucion_estimada }}</p>
-<p><b>Dev. real:</b> {{ prestamo.fecha_devolucion_real|default:"-" }}</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
 
-<h3>Items</h3>
-<ul>
-  {% for d in prestamo.detalles.all %}
-    <li>{{ d.item }} x{{ d.cantidad }} {% if d.detalle %}({{ d.detalle }}){% endif %}</li>
-  {% empty %}
-    <li>Sin detalles.</li>
-  {% endfor %}
-</ul>
+  <!-- INFO PRINCIPAL -->
+  <div class="card">
+    <h3 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+      Datos del préstamo
+    </h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div class="label">Servicio</div>
+        <div>{{ prestamo.servicio|default:"—" }}</div>
+      </div>
+      <div>
+        <div class="label">Entregado a</div>
+        <div>{{ prestamo.entregado_a|default:"—" }}</div>
+      </div>
+      <div>
+        <div class="label">Teléfono de contacto</div>
+        <div>{{ prestamo.telefono_contacto|default:"—" }}</div>
+      </div>
+      {% if prestamo.observaciones %}
+      <div>
+        <div class="label">Observaciones</div>
+        <div class="muted" style="white-space:pre-wrap">{{ prestamo.observaciones }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 
-<a class="btn" href="{% url 'prestamo_edit' prestamo.id %}">Editar</a>
+  <!-- FECHAS -->
+  <div class="card">
+    <h3 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+      Fechas
+    </h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div class="label">Fecha de retiro</div>
+        <div>{{ prestamo.fecha_retiro|date:"d/m/Y H:i" }}</div>
+      </div>
+      <div>
+        <div class="label">Devolución estimada</div>
+        <div>{{ prestamo.fecha_devolucion_estimada|date:"d/m/Y"|default:"—" }}</div>
+      </div>
+      <div>
+        <div class="label">Devolución real</div>
+        <div>
+          {% if prestamo.fecha_devolucion_real %}
+            <span class="chip ok">{{ prestamo.fecha_devolucion_real|date:"d/m/Y H:i" }}</span>
+          {% else %}
+            <span class="muted">Sin registrar</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-{% if not prestamo.devuelto %}
-<form method="post" action="{% url 'prestamo_devolver' prestamo.id %}" style="display:inline">
-  {% csrf_token %}
-  <button class="btn primary" type="submit">Marcar devuelto</button>
-</form>
-{% endif %}
+<!-- ÍTEMS -->
+<div class="card" style="margin-bottom:14px">
+  <h3 style="margin:0 0 12px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+    Ítems prestados
+  </h3>
+  <div>{{ prestamo.items_label }}</div>
+</div>
 
-<a class="btn" href="{% url 'prestamos_page' %}">Volver</a>
+<!-- ACCIONES -->
+<div class="row" style="gap:10px">
+  <a class="btn" href="{% url 'prestamo_edit' prestamo.id %}">Editar</a>
+
+  {% if not prestamo.devuelto %}
+  <form method="post" action="{% url 'prestamo_devolver' prestamo.id %}" style="margin:0">
+    {% csrf_token %}
+    <button class="btn primary" type="submit">Marcar como devuelto</button>
+  </form>
+  {% endif %}
+</div>
 
 {% endblock %}

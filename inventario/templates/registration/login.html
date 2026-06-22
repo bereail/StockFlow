@@ -1,0 +1,45 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Iniciar sesión — StockToner</title>
+  {% now "U" as cachebust %}
+  <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
+</head>
+<body class="app" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+
+  <div class="panel" style="width:100%;max-width:360px;padding:32px 28px;">
+    <h1 style="margin:0 0 6px;font-size:22px;font-weight:900;">StockToner</h1>
+    <p class="muted" style="margin:0 0 24px;font-size:14px;">Iniciá sesión para continuar</p>
+
+    {% if form.errors %}
+      <div style="margin-bottom:16px;padding:10px 14px;border-radius:10px;background:rgba(255,91,110,.12);border:1px solid rgba(255,91,110,.28);color:#ff5b6e;font-size:13px;">
+        Usuario o contraseña incorrectos.
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Usuario</label>
+          <input type="text" name="username" autofocus autocomplete="username"
+                 style="width:100%;" placeholder="usuario">
+        </div>
+        <div>
+          <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Contraseña</label>
+          <input type="password" name="password" autocomplete="current-password"
+                 style="width:100%;" placeholder="••••••••">
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn primary" style="width:100%;justify-content:center;margin-top:4px;">
+          Entrar
+        </button>
+      </div>
+    </form>
+  </div>
+
+</body>
+</html>

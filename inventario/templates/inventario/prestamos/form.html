@@ -1,36 +1,76 @@
 {% extends "inventario/base.html" %}
-{% block title %}Nuevo préstamo{% endblock %}
+{% block title %}{% if prestamo %}Editar préstamo{% else %}Nuevo préstamo{% endif %}{% endblock %}
 
 {% block content %}
-<h1>Nuevo préstamo</h1>
 
-<form method="post">
-  {% csrf_token %}
-
-  <p><strong>Servicio</strong><br>{{ form.servicio }}</p>
-  <p><strong>Teléfono contacto</strong><br>{{ form.telefono_contacto }}</p>
-  <p><strong>Fecha retiro</strong><br>{{ form.fecha_retiro }}</p>
-  <p><strong>Fecha devolución estimada</strong><br>{{ form.fecha_devolucion_estimada }}</p>
-  <p><strong>Entregado a</strong><br>{{ form.entregado_a }}</p>
-
-  <hr>
-  <p><strong>{{ form.items.label }}</strong></p>
-
-
-  {{ form.items }}
-  {{ form.items.errors }}
-
-  <hr>
-  <p><strong>Observaciones</strong><br>{{ form.observaciones }}</p>
-
-  {% if form.non_field_errors %}
-    <div>{{ form.non_field_errors }}</div>
-  {% endif %}
-
-  <div class="form-actions">
-  <button class="btn primary" type="submit">Guardar</button>
-  <a class="btn" href="{% url 'prestamos_list' %}">Cancelar</a>
+<div class="page-header">
+  <div>
+    <div class="page-title">{% if prestamo %}Editar préstamo #{{ prestamo.id }}{% else %}Nuevo préstamo{% endif %}</div>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'prestamos_list' %}">← Volver</a>
 </div>
 
-</form>
+<div class="panel panel--narrow">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="form-error" style="margin-bottom:14px">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="formgrid" style="margin-bottom:20px">
+      <div class="field col-6">
+        <label class="label">Servicio</label>
+        {{ form.servicio }}
+        {% if form.servicio.errors %}<div class="form-error">{{ form.servicio.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-6">
+        <label class="label">Entregado a</label>
+        {{ form.entregado_a }}
+        {% if form.entregado_a.errors %}<div class="form-error">{{ form.entregado_a.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-6">
+        <label class="label">Teléfono de contacto</label>
+        {{ form.telefono_contacto }}
+        {% if form.telefono_contacto.errors %}<div class="form-error">{{ form.telefono_contacto.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-6">
+        <label class="label">Fecha de retiro</label>
+        {{ form.fecha_retiro }}
+        {% if form.fecha_retiro.errors %}<div class="form-error">{{ form.fecha_retiro.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-6">
+        <label class="label">Devolución estimada</label>
+        {{ form.fecha_devolucion_estimada }}
+        {% if form.fecha_devolucion_estimada.errors %}<div class="form-error">{{ form.fecha_devolucion_estimada.errors }}</div>{% endif %}
+      </div>
+    </div>
+
+    <!-- ITEMS (checkboxes) -->
+    <div style="margin-bottom:20px">
+      <div class="label" style="margin-bottom:10px">{{ form.items.label }}</div>
+      <div class="checks">{{ form.items }}</div>
+      {% if form.items.errors %}
+        <div class="form-error" style="margin-top:8px">{{ form.items.errors }}</div>
+      {% endif %}
+    </div>
+
+    <!-- OBSERVACIONES -->
+    <div class="field" style="margin-bottom:20px">
+      <label class="label">Observaciones</label>
+      {{ form.observaciones }}
+      {% if form.observaciones.errors %}<div class="form-error">{{ form.observaciones.errors }}</div>{% endif %}
+    </div>
+
+    <div class="form-actions">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Cancelar</a>
+    </div>
+  </form>
+</div>
+
 {% endblock %}

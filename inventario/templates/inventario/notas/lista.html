@@ -1,7 +1,9 @@
 {% extends "inventario/base.html" %}
+{% block title %}Notas{% endblock %}
+
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:14px">
+<div class="page-header">
   <div>
     <div class="page-title">Notas</div>
     <div class="page-subtitle muted">Registro de notas por servicio</div>
@@ -10,58 +12,65 @@
 </div>
 
 <div class="card">
-  <table class="table">
+  <table>
     <thead>
       <tr>
         <th>Fecha</th>
         <th>Número</th>
         <th>Servicio</th>
         <th>Estado</th>
+        <th style="width:160px"></th>
       </tr>
     </thead>
     <tbody>
-      <tbody>
-{% for n in notas %}
-  <tr>
-    <td>{{ n.fecha|date:"d/m/Y" }}</td>
+      {% for n in notas %}
+      <tr>
+        <td class="muted">{{ n.fecha|date:"d/m/Y" }}</td>
 
-    <td>
-      <a href="{% url 'nota_detail' n.pk %}">
-        {{ n.numero|default:"—" }}
-      </a>
-    </td>
+        <td>
+          <a href="{% url 'nota_detail' n.pk %}">
+            {{ n.numero|default:"—" }}
+          </a>
+        </td>
 
-    <td>{{ n.servicio_solicitante|default:"—" }}</td>
-<td>
-  {% if n.estado == "CERRADA" %}
-    <span class="badge badge-ok">
-      Cerrada
-    </span>
-    <div style="font-size:12px; opacity:.7; margin-top:4px;">
-      {{ n.fecha_cierre|date:"d/m/Y H:i" }}
-    </div>
-  {% else %}
-    <span class="badge badge-bad">
-      {{ n.get_estado_display }}
-    </span>
-  {% endif %}
-</td>
-    <td style="text-align:right; white-space:nowrap;">
-      <a class="btn" href="{% url 'nota_detail' n.pk %}">Ver</a>
-      <a class="btn" href="{% url 'nota_edit' n.pk %}">Editar</a>
+        <td>{{ n.servicio_solicitante|default:"—" }}</td>
 
-      <form method="post" action="{% url 'nota_delete' n.pk %}" style="display:inline;">
-        {% csrf_token %}
-        <button class="btn danger" type="submit"
-                onclick="return confirm('¿Eliminar esta nota?');">
-          Eliminar
-        </button>
-      </form>
-    </td>
-  </tr>
-{% endfor %}
-</tbody>
+        <td>
+          {% if n.estado == "CERRADA" %}
+            <div>
+              <span class="badge badge-ok">Cerrada</span>
+              <div class="muted" style="font-size:12px;margin-top:4px">
+                {{ n.fecha_cierre|date:"d/m/Y H:i" }}
+              </div>
+            </div>
+          {% elif n.estado == "BORRADOR" %}
+            <span class="badge badge-neutral">{{ n.get_estado_display }}</span>
+          {% elif n.estado == "CANCELADA" %}
+            <span class="badge badge-danger">{{ n.get_estado_display }}</span>
+          {% else %}
+            <span class="badge badge-warn">{{ n.get_estado_display }}</span>
+          {% endif %}
+        </td>
+
+        <td style="text-align:right;white-space:nowrap">
+          <a class="btn2" href="{% url 'nota_detail' n.pk %}">Ver</a>
+          <a class="btn2" href="{% url 'nota_edit' n.pk %}">Editar</a>
+          <form method="post" action="{% url 'nota_delete' n.pk %}" style="display:inline">
+            {% csrf_token %}
+            <button class="btn2 btn-ghost" type="submit"
+                    onclick="return confirm('¿Eliminar esta nota?')">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="muted" style="padding:20px;text-align:center">
+          No hay notas registradas.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 </div>
 
-{% endblock %}s
+{% endblock %}
