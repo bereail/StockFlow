@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{% block title %}StockToner{% endblock %}</title>
+  <title>{% block title %}InventarioHEEP{% endblock %}</title>
   {% now "U" as cachebust %}
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
 </head>
@@ -30,7 +30,7 @@
       </svg>
     </button>
 
-    <a class="brand" href="{% url 'dashboard' %}">Registro</a>
+    <a class="brand" href="{% url 'dashboard' %}">InventarioHEEP</a>
 
     <!-- Nav inline (SOLO DESKTOP) -->
     <nav class="nav nav-desktop" aria-label="Navegación principal">
@@ -113,6 +113,15 @@
     <!-- Usuario / sesión -->
     {% if user.is_authenticated %}
     <div class="user-bar">
+      {% if user.is_superuser %}
+      <a href="{% url 'admin_panel' %}" class="user-admin-link" title="Panel de administración">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+        <span>Admin</span>
+      </a>
+      {% endif %}
+      <div class="user-avatar-chip">{{ user.username|slice:":2"|upper }}</div>
       <span class="username">{{ user.username }}</span>
       <form method="post" action="{% url 'logout' %}" style="margin:0">
         {% csrf_token %}
@@ -221,10 +230,16 @@
     var body    = card.querySelector('.card-collapse-body');
     if (!trigger || !body) return;
 
-    /* estado inicial: open */
-    card.classList.add('open');
-    body.style.maxHeight = body.scrollHeight + 'px';
-    trigger.setAttribute('aria-expanded', 'true');
+    /* estado inicial: cerrado — se puede forzar abierto con data-open="true" */
+    var startOpen = card.dataset.open === 'true';
+    if (startOpen) {
+      card.classList.add('open');
+      body.style.maxHeight = body.scrollHeight + 'px';
+      trigger.setAttribute('aria-expanded', 'true');
+    } else {
+      body.style.maxHeight = '0px';
+      trigger.setAttribute('aria-expanded', 'false');
+    }
 
     trigger.addEventListener('click', function (e) {
       /* no colapsar si el clic fue en un link o botón de acción */

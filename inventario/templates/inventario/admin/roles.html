@@ -1,0 +1,60 @@
+{% extends "inventario/base.html" %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<section>
+  <div class="page-header">
+    <div>
+      <div class="page-title">Roles</div>
+      <div class="page-subtitle">Grupos de usuarios con permisos específicos</div>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'admin_panel' %}" class="btn btn-ghost">← Volver</a>
+      <a href="{% url 'admin_rol_create' %}" class="btn primary">+ Nuevo rol</a>
+    </div>
+  </div>
+
+  {% if not roles %}
+    <div class="empty-state">
+      <div class="empty-state-icon">🏷️</div>
+      <div class="empty-state-title">Sin roles</div>
+      <div class="empty-state-sub">Creá el primer rol para organizar usuarios.</div>
+      <a href="{% url 'admin_rol_create' %}" class="btn primary">+ Nuevo rol</a>
+    </div>
+  {% else %}
+  <div class="card" style="margin-top:0">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Rol</th>
+            <th>Usuarios</th>
+            <th style="width:160px;text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rol in roles %}
+          <tr>
+            <td><span style="font-weight:700;">{{ rol.name }}</span></td>
+            <td>
+              <span class="chip">{{ rol.user_set.count }} usuario{{ rol.user_set.count|pluralize:"s" }}</span>
+            </td>
+            <td style="text-align:right;">
+              <div style="display:flex;gap:6px;justify-content:flex-end;">
+                <a href="{% url 'admin_rol_edit' rol.pk %}" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;">Editar</a>
+                <form method="post" action="{% url 'admin_rol_delete' rol.pk %}"
+                      onsubmit="return confirm('¿Eliminás el rol {{ rol.name }}?')"
+                      style="margin:0">
+                  {% csrf_token %}
+                  <button type="submit" class="btn danger" style="padding:5px 10px;font-size:12px;">Eliminar</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

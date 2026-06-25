@@ -18,65 +18,78 @@
   {% if q %}<a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Limpiar</a>{% endif %}
 </form>
 
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Servicio</th>
-        <th>Entregado a</th>
-        <th>Ítems</th>
-        <th style="width:130px">Retiro</th>
-        <th style="width:100px">Devol. est.</th>
-        <th style="width:110px">Días rest.</th>
-        <th style="width:100px">Estado</th>
-        <th style="width:60px"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in prestamos %}
-      <tr>
-        <td>{{ p.servicio|default:"—" }}</td>
-        <td>{{ p.entregado_a|default:"—" }}</td>
-        <td class="muted" style="font-size:12px">{{ p.items_label }}</td>
-        <td class="muted mono" style="font-size:12px">{{ p.fecha_retiro|date:"d/m/Y" }}</td>
-        <td class="muted mono" style="font-size:12px">{{ p.fecha_devolucion_estimada|date:"d/m/Y"|default:"—" }}</td>
-        <td>
-          {% if p.devuelto %}
-            <span class="muted" style="font-size:12px">—</span>
-          {% elif p.dias_restantes is not None %}
-            {% if p.dias_restantes < 0 %}
-              <span class="dias-venc">Vencido</span>
-            {% elif p.dias_restantes == 0 %}
-              <span class="dias-warn">Hoy</span>
-            {% elif p.dias_restantes <= 3 %}
-              <span class="dias-warn">{{ p.dias_restantes }} días</span>
-            {% else %}
-              <span class="dias-ok">{{ p.dias_restantes }} días</span>
-            {% endif %}
-          {% else %}
-            <span class="muted">—</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if p.devuelto %}
-            <span class="chip ok">Devuelto</span>
-          {% else %}
-            <span class="chip danger">Pendiente</span>
-          {% endif %}
-        </td>
-        <td>
-          <a class="btn2" href="{% url 'prestamo_detail' p.id %}">Ver</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="8" class="muted" style="padding:20px;text-align:center">
-          No hay préstamos registrados.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card card-collapsible">
+  <div class="card-header collapse-trigger" tabindex="0" role="button">
+    <div class="row" style="gap:8px;align-items:center">
+      <span class="card-label">Préstamos</span>
+      <span class="chip">{{ prestamos|length }}</span>
+    </div>
+    <span class="collapse-chevron" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </span>
+  </div>
+  <div class="card-collapse-body">
+    <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+      <table>
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Entregado a</th>
+            <th>Ítems</th>
+            <th style="width:130px">Retiro</th>
+            <th style="width:100px">Devol. est.</th>
+            <th style="width:110px">Días rest.</th>
+            <th style="width:100px">Estado</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in prestamos %}
+          <tr>
+            <td>{{ p.servicio|default:"—" }}</td>
+            <td>{{ p.entregado_a|default:"—" }}</td>
+            <td class="muted" style="font-size:12px">{{ p.items_label }}</td>
+            <td class="muted mono" style="font-size:12px">{{ p.fecha_retiro|date:"d/m/Y" }}</td>
+            <td class="muted mono" style="font-size:12px">{{ p.fecha_devolucion_estimada|date:"d/m/Y"|default:"—" }}</td>
+            <td>
+              {% if p.devuelto %}
+                <span class="muted" style="font-size:12px">—</span>
+              {% elif p.dias_restantes is not None %}
+                {% if p.dias_restantes < 0 %}
+                  <span class="dias-venc">Vencido</span>
+                {% elif p.dias_restantes == 0 %}
+                  <span class="dias-warn">Hoy</span>
+                {% elif p.dias_restantes <= 3 %}
+                  <span class="dias-warn">{{ p.dias_restantes }} días</span>
+                {% else %}
+                  <span class="dias-ok">{{ p.dias_restantes }} días</span>
+                {% endif %}
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.devuelto %}
+                <span class="chip ok">Devuelto</span>
+              {% else %}
+                <span class="chip danger">Pendiente</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn2" href="{% url 'prestamo_detail' p.id %}">Ver</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="muted" style="padding:20px;text-align:center">
+              No hay préstamos registrados.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

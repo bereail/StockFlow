@@ -1,0 +1,5 @@
+Django==5.2.10
+waitress==3.0.2
+whitenoise==6.11.0
+pywebview==6.1
+pyinstaller==6.17.0

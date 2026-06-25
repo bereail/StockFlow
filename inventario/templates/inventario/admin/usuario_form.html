@@ -1,0 +1,88 @@
+{% extends "inventario/base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+<section>
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ titulo }}</div>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'admin_usuarios' %}" class="btn btn-ghost">← Volver</a>
+    </div>
+  </div>
+
+  <div class="panel panel--narrow">
+    {% if form.errors %}
+    <div class="form-error" style="margin-bottom:18px;">
+      {% for field in form %}{% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}
+      {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="formgrid">
+        <div class="field col-6">
+          <label class="label">Usuario *</label>
+          {{ form.username }}
+        </div>
+        <div class="field col-6">
+          <label class="label">Email</label>
+          {{ form.email }}
+        </div>
+        <div class="field col-6">
+          <label class="label">Nombre</label>
+          {{ form.first_name }}
+        </div>
+        <div class="field col-6">
+          <label class="label">Apellido</label>
+          {{ form.last_name }}
+        </div>
+        <div class="field col-6">
+          <label class="label">{% if usuario %}Nueva contraseña (opcional){% else %}Contraseña *{% endif %}</label>
+          {{ form.password1 }}
+        </div>
+        <div class="field col-6">
+          <label class="label">Repetir contraseña</label>
+          {{ form.password2 }}
+        </div>
+
+        <div class="field col-12">
+          <label class="label">Opciones de cuenta</label>
+          <div class="toggle-grid">
+            <label class="toggle-item">
+              {{ form.is_active }}
+              <span>Cuenta activa</span>
+            </label>
+            <label class="toggle-item">
+              {{ form.is_staff }}
+              <span>Es administrador</span>
+            </label>
+          </div>
+        </div>
+
+        {% if form.groups.field.queryset.exists %}
+        <div class="field col-12">
+          <label class="label">Roles</label>
+          <div class="toggle-grid">
+            {% for group in form.groups %}
+            <label class="toggle-item">
+              {{ group.tag }}
+              <span>{{ group.choice_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="col-12 form-actions">
+          <button type="submit" class="btn primary">
+            {% if usuario %}Guardar cambios{% else %}Crear usuario{% endif %}
+          </button>
+          <a href="{% url 'admin_usuarios' %}" class="btn btn-ghost">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

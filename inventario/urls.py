@@ -83,4 +83,16 @@ urlpatterns = [
     # BÚSQUEDA GLOBAL
     path("buscar/", views.busqueda_global, name="busqueda_global"),
 
+    # PANEL ADMIN
+    path("gestion/", views.admin_panel, name="admin_panel"),
+    path("gestion/usuarios/", views.admin_usuarios, name="admin_usuarios"),
+    path("gestion/usuarios/nuevo/", views.admin_usuario_create, name="admin_usuario_create"),
+    path("gestion/usuarios/<int:pk>/editar/", views.admin_usuario_edit, name="admin_usuario_edit"),
+    path("gestion/usuarios/<int:pk>/toggle/", views.admin_usuario_toggle, name="admin_usuario_toggle"),
+    path("gestion/usuarios/<int:pk>/eliminar/", views.admin_usuario_delete, name="admin_usuario_delete"),
+    path("gestion/roles/", views.admin_roles, name="admin_roles"),
+    path("gestion/roles/nuevo/", views.admin_rol_create, name="admin_rol_create"),
+    path("gestion/roles/<int:pk>/editar/", views.admin_rol_edit, name="admin_rol_edit"),
+    path("gestion/roles/<int:pk>/eliminar/", views.admin_rol_delete, name="admin_rol_delete"),
+
 ]

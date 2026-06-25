@@ -1,12 +1,33 @@
 import os
+import sys
+import logging
+
+# ─── Modo --noconsole: evitar crash por None en stdout/stderr ───
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+if sys.stdin is None:
+    sys.stdin = open(os.devnull, "r")
+
+# Logging a archivo para diagnóstico cuando corre sin consola
+_APPDATA = os.environ.get("APPDATA", os.path.expanduser("~"))
+_LOG_DIR = os.path.join(_APPDATA, "StockToner")
+os.makedirs(_LOG_DIR, exist_ok=True)
+logging.basicConfig(
+    filename=os.path.join(_LOG_DIR, "app.log"),
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    encoding="utf-8",
+)
+
+# Forza Edge Chromium para pywebview en Windows
 os.environ["PYWEBVIEW_GUI"] = "edgechromium"
 
-import sys
 import threading
 import time
 import socket
 import urllib.request
-import urllib.error
 
 import webview
 from waitress import serve
@@ -18,28 +39,25 @@ def get_free_port() -> int:
         return s.getsockname()[1]
 
 
-def wait_for_server(url: str, timeout_seconds: float = 15.0) -> None:
+def wait_for_server(url: str, timeout_seconds: float = 30.0) -> None:
     start = time.time()
     last_error = None
-
     while True:
         try:
-            req = urllib.request.Request(url, method="GET")
-            with urllib.request.urlopen(req, timeout=2) as r:
-                # Django puede responder 200 o redirigir (301/302) si no estás logueada
+            with urllib.request.urlopen(url, timeout=3) as r:
                 if r.status in (200, 301, 302, 403):
                     return
         except Exception as e:
             last_error = e
-
         if time.time() - start > timeout_seconds:
-            raise RuntimeError(f"El servidor Django no respondió a tiempo. Último error: {last_error}")
+            raise RuntimeError(
+                f"El servidor no respondió en {timeout_seconds}s.\n"
+                f"Último error: {last_error}"
+            )
+        time.sleep(0.2)
 
-        time.sleep(0.15)
 
-
-def run_server(port: int) -> None:
-    # Soporta PyInstaller (cuando corre desde el EXE)
+def setup_django() -> None:
     BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     os.chdir(BASE_DIR)
     sys.path.insert(0, BASE_DIR)
@@ -49,30 +67,62 @@ def run_server(port: int) -> None:
     import django
     django.setup()
 
-    from django.core.wsgi import get_wsgi_application
-    app = get_wsgi_application()
+    from django.core.management import call_command
 
-    # Waitress bloquea, por eso corre en thread
-    serve(app, host="127.0.0.1", port=port, threads=8)
+    call_command("migrate", "--run-syncdb", verbosity=0)
+
+    # Genera archivos estáticos si corre desde fuente (no .exe)
+    if not getattr(sys, "frozen", False):
+        call_command("collectstatic", "--noinput", verbosity=0)
+
+    try:
+        call_command("init_usuario", verbosity=0)
+    except Exception:
+        pass
 
 
-def main():
+def run_server(port: int) -> None:
+    try:
+        setup_django()
+        from django.core.wsgi import get_wsgi_application
+        app = get_wsgi_application()
+        serve(app, host="127.0.0.1", port=port, threads=8)
+    except Exception:
+        logging.exception("Error fatal en el servidor")
+        raise
+
+
+def main() -> None:
+    logging.info("Iniciando InventarioHEEP")
     port = get_free_port()
     url = f"http://127.0.0.1:{port}/"
 
-    t = threading.Thread(target=run_server, args=(port,), daemon=True)
-    t.start()
+    server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
+    server_thread.start()
 
     wait_for_server(url)
+    logging.info("Servidor listo en %s", url)
 
     webview.create_window(
-        "StockToner",
+        "InventarioHEEP",
         url,
-        width=1200,
-        height=800,
+        width=1280,
+        height=820,
+        min_size=(800, 600),
     )
     webview.start()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        logging.exception("Error fatal al iniciar")
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            f"No se pudo iniciar InventarioHEEP.\n\nDetalle:\n{exc}\n\n"
+            f"Revisá el log en:\n{os.path.join(_LOG_DIR, 'app.log')}",
+            "InventarioHEEP — Error",
+            0x10,
+        )

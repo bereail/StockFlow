@@ -48,49 +48,62 @@
   </form>
 </div>
 
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Número</th>
-        <th>Servicio</th>
-        <th style="width:120px">Estado</th>
-        <th>Nota</th>
-        <th>Para qué</th>
-        <th style="width:130px">Creado</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in pedidos %}
-        <tr>
-          <td><a href="{% url 'pedido_detail' p.pk %}" style="font-weight:700">{{ p.numero }}</a></td>
-          <td>{{ p.servicio_solicitante|default:"—" }}</td>
-          <td>
-            {% if p.estado == "HECHO" %}
-              <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
-            {% elif p.estado == "APROBADO" %}
-              <span class="badge badge-warn">{{ p.get_estado_display }}</span>
-            {% elif p.estado == "RECIBIDO" or p.estado == "ENTREGADO" %}
-              <span class="badge badge-ok">{{ p.get_estado_display }}</span>
-            {% elif p.estado == "CANCELADO" %}
-              <span class="badge badge-danger">{{ p.get_estado_display }}</span>
-            {% else %}
-              <span class="badge">{{ p.get_estado_display }}</span>
-            {% endif %}
-          </td>
-          <td class="muted">{{ p.numero_nota|default:"—" }}</td>
-          <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
-          <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="6" class="muted" style="padding:20px;text-align:center">
-            No hay pedidos con esos filtros.
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card card-collapsible">
+  <div class="card-header collapse-trigger" tabindex="0" role="button">
+    <div class="row" style="gap:8px;align-items:center">
+      <span class="card-label">Pedidos</span>
+      <span class="chip">{{ pedidos|length }}</span>
+    </div>
+    <span class="collapse-chevron" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </span>
+  </div>
+  <div class="card-collapse-body">
+    <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+      <table>
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Servicio</th>
+            <th style="width:120px">Estado</th>
+            <th>Nota</th>
+            <th>Para qué</th>
+            <th style="width:130px">Creado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pedidos %}
+            <tr>
+              <td><a href="{% url 'pedido_detail' p.pk %}" style="font-weight:700">{{ p.numero }}</a></td>
+              <td>{{ p.servicio_solicitante|default:"—" }}</td>
+              <td>
+                {% if p.estado == "HECHO" %}
+                  <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
+                {% elif p.estado == "APROBADO" %}
+                  <span class="badge badge-warn">{{ p.get_estado_display }}</span>
+                {% elif p.estado == "RECIBIDO" or p.estado == "ENTREGADO" %}
+                  <span class="badge badge-ok">{{ p.get_estado_display }}</span>
+                {% elif p.estado == "CANCELADO" %}
+                  <span class="badge badge-danger">{{ p.get_estado_display }}</span>
+                {% else %}
+                  <span class="badge">{{ p.get_estado_display }}</span>
+                {% endif %}
+              </td>
+              <td class="muted">{{ p.numero_nota|default:"—" }}</td>
+              <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
+              <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="muted" style="padding:20px;text-align:center">
+                No hay pedidos con esos filtros.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

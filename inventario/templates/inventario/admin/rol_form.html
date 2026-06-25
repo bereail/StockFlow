@@ -1,0 +1,38 @@
+{% extends "inventario/base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+<section>
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ titulo }}</div>
+    </div>
+    <div class="page-actions">
+      <a href="{% url 'admin_roles' %}" class="btn btn-ghost">← Volver</a>
+    </div>
+  </div>
+
+  <div class="panel panel--narrow">
+    {% if form.errors %}
+    <div class="form-error" style="margin-bottom:18px;">
+      {% for field in form %}{% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="formgrid">
+        <div class="field col-12">
+          <label class="label">Nombre del rol *</label>
+          {{ form.name }}
+        </div>
+        <div class="col-12 form-actions">
+          <button type="submit" class="btn primary">
+            {% if rol %}Guardar cambios{% else %}Crear rol{% endif %}
+          </button>
+          <a href="{% url 'admin_roles' %}" class="btn btn-ghost">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
