@@ -1063,31 +1063,37 @@ tr.anulado td { opacity: .40; text-decoration: line-through; }
 }
 
 /* =========================================================
-   23) DEBUG VISUAL
+   23) DESKTOP APP — comportamiento nativo
 ========================================================= */
-@keyframes css-flash {
-  0%   { opacity: 0; transform: translateY(6px) scale(.95); }
-  12%  { opacity: 1; transform: translateY(0) scale(1); }
-  70%  { opacity: 1; }
-  100% { opacity: 0; }
+
+/* ── Cursor correcto: sin I-beam en elementos de UI ── */
+body, p, h1, h2, h3, h4, h5, h6,
+span, div, td, th, li, label,
+.topbar, .topbar-inner, .brand, .navlink,
+.card, .panel, .card-header,
+.page-title, .page-subtitle, .card-label,
+.chip, .badge, thead th, .empty-state,
+.user-bar, .username, .muted {
+  cursor: default;
 }
-body.app::before {
-  content: "✓ CSS";
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(53,208,127,.10);
-  border: 1px solid rgba(53,208,127,.25);
-  color: rgba(53,208,127,.80);
-  z-index: 99999;
-  pointer-events: none;
-  animation: css-flash 2.2s ease forwards;
+
+/* ── Sin selección de texto en el chrome de la app ── */
+.topbar, .navlink, .brand, .btn, .btn2,
+.nav-more-menu, .mas-card, .chip, .badge,
+.label, .page-title, .page-subtitle, .card-label,
+thead th, .pagination a, .pagination span,
+.user-bar, .username, .empty-state-title,
+.empty-state-sub {
+  user-select: none;
+  -webkit-user-select: none;
 }
+
+/* ── Scrollbars delgados con paleta navy ── */
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: rgba(79,140,255,.22); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(79,140,255,.42); }
+::-webkit-scrollbar-corner       { background: transparent; }
 
 /* =========================================================
    LOGIN — MEJORADO
