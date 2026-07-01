@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, Prefetch, Sum, Count
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -437,11 +438,12 @@ def backup_entregas_csv(request):
 
 @login_required
 def toner_reporte_servicios(request):
-    """Reporte de tóner agrupado por servicio. Filtros: fecha, servicio, toner."""
+    """Reporte de tóner agrupado por servicio (o por mes). Filtros: fecha, servicio, toner."""
     servicio_id = (request.GET.get("servicio") or "").strip()
     toner_id    = (request.GET.get("toner") or "").strip()
     fecha_desde = (request.GET.get("fecha_desde") or "").strip()
     fecha_hasta = (request.GET.get("fecha_hasta") or "").strip()
+    vista       = (request.GET.get("vista") or "servicio")  # 'servicio' | 'mensual'
 
     qs = (
         MovimientoDetalle.objects
@@ -475,11 +477,33 @@ def toner_reporte_servicios(request):
         .order_by("movimiento__servicio__nombre", "item__toner__nombre")
     )
 
-    total_global  = qs.aggregate(total=Sum("cantidad"))["total"] or 0
+    # Vista mensual: agrupa por mes → servicio → tóner
+    meses = None
+    if vista == "mensual":
+        filas_mes = (
+            qs.annotate(mes=TruncMonth("movimiento__fecha"))
+            .values("mes", "movimiento__servicio__nombre",
+                    "item__toner__nombre", "item__toner__marca")
+            .annotate(total=Sum("cantidad"), entregas=Count("id"))
+            .order_by("mes", "movimiento__servicio__nombre", "item__toner__nombre")
+        )
+        meses_dict = {}
+        for f in filas_mes:
+            key = f["mes"]
+            if key not in meses_dict:
+                meses_dict[key] = {"mes": key, "filas": [], "total_mes": 0, "entregas_mes": 0}
+            meses_dict[key]["filas"].append(f)
+            meses_dict[key]["total_mes"]    += f["total"]
+            meses_dict[key]["entregas_mes"] += f["entregas"]
+        meses = list(meses_dict.values())
+
+    total_global   = qs.aggregate(total=Sum("cantidad"))["total"] or 0
     total_entregas = qs.count()
 
     return render(request, "inventario/toner/toner_reporte_servicios.html", {
         "resumen":        resumen,
+        "meses":          meses,
+        "vista":          vista,
         "total_global":   total_global,
         "total_entregas": total_entregas,
         "servicios":      Servicio.objects.order_by("nombre"),

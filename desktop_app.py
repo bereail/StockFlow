@@ -184,6 +184,32 @@ SPLASH_HTML = """<!DOCTYPE html>
 </html>"""
 
 
+class AppAPI:
+    """API expuesta a JS via window.pywebview.api"""
+    _win = None
+
+    def save_csv(self, b64data: str, suggested_name: str) -> str | None:
+        """Muestra diálogo nativo de guardar y escribe el archivo."""
+        import base64
+        try:
+            result = self._win.create_file_dialog(
+                webview.SAVE_DIALOG,
+                directory=os.path.join(os.path.expanduser("~"), "Downloads"),
+                save_filename=suggested_name or "descarga.csv",
+                file_types=("Archivos CSV (*.csv)", "Todos los archivos (*.*)")
+            )
+            if result:
+                path = result if isinstance(result, str) else result[0]
+                data = base64.b64decode(b64data)
+                with open(path, "wb") as f:
+                    f.write(data)
+                logging.info("CSV guardado: %s", path)
+                return path
+        except Exception:
+            logging.exception("Error al guardar CSV")
+        return None
+
+
 def get_free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -247,13 +273,17 @@ def main() -> None:
     port  = get_free_port()
     url   = f"http://127.0.0.1:{port}/"
 
+    api = AppAPI()
+
     window = webview.create_window(
         "InventarioHEEP",
         html=SPLASH_HTML,
         width=state["width"],
         height=state["height"],
         min_size=(800, 600),
+        js_api=api,
     )
+    api._win = window
 
     # ── Inyectar JS nativo + actualizar título en cada carga de página ──
     def _on_loaded():

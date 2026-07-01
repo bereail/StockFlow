@@ -314,19 +314,53 @@
   document.querySelectorAll('.card-collapsible').forEach(initCollapsible);
 })();
 
-/* ── Descarga CSV via fetch+blob (funciona en pywebview) ── */
+/* ── Descarga CSV: diálogo nativo en pywebview, blob en browser ── */
 function downloadCsv(url, filename) {
   fetch(url, { credentials: 'same-origin' })
-    .then(function(r) { return r.blob(); })
-    .then(function(blob) {
-      var o = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = o; a.download = filename || 'descarga.csv'; a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(o); }, 500);
+    .then(function(r) { return r.arrayBuffer(); })
+    .then(function(buf) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.save_csv) {
+        /* Convertir a base64 en chunks para no explotar el stack */
+        var bytes = new Uint8Array(buf);
+        var binary = '';
+        for (var i = 0; i < bytes.length; i += 8192) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + 8192, bytes.length)));
+        }
+        var b64 = btoa(binary);
+        window.pywebview.api.save_csv(b64, filename || 'descarga.csv').then(function(path) {
+          if (path) {
+            _csvToast('✓ Guardado: ' + path.split('\\').pop(), 'success');
+          }
+        });
+      } else {
+        /* Fallback para browser estándar */
+        var blob = new Blob([buf]);
+        var o = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = o; a.download = filename || 'descarga.csv'; a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(o); }, 500);
+      }
     })
-    .catch(function(e) { console.error('CSV download error:', e); });
+    .catch(function(e) { console.error('CSV error:', e); });
+}
+
+function _csvToast(msg, type) {
+  var stack = document.querySelector('.toast-stack');
+  if (!stack) { stack = document.createElement('div'); stack.className = 'toast-stack'; document.body.appendChild(stack); }
+  var t = document.createElement('div');
+  t.className = 'toast ' + (type || 'success');
+  t.style.pointerEvents = 'auto';
+  t.style.cursor = 'pointer';
+  t.textContent = msg;
+  stack.appendChild(t);
+  setTimeout(function() {
+    t.style.transition = 'opacity .35s ease, transform .35s ease';
+    t.style.opacity = '0'; t.style.transform = 'translateX(14px)';
+    setTimeout(function() { t.remove(); }, 380);
+  }, 4500);
+  t.addEventListener('click', function() { t.remove(); });
 }
 </script>
 
