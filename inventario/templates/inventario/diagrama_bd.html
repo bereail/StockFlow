@@ -12,29 +12,29 @@
   </div>
 </div>
 
-<div class="card" style="padding:0;overflow:hidden">
-  <div id="diag-canvas" style="position:relative;width:100%;height:720px;overflow:auto;background:rgba(4,11,24,.6)">
-    <div id="diag-inner" style="position:relative;width:1380px;height:800px">
-      <!-- SVG de líneas (detrás de los nodos) -->
-      <svg id="diag-svg" width="1380" height="800"
-           style="position:absolute;top:0;left:0;pointer-events:none">
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+  <div id="diag-canvas" style="position:relative;width:100%;height:760px;overflow:auto;background:#060e1c;border-radius:var(--radius)">
+    <div id="diag-inner" style="position:relative;width:1700px;height:1020px">
+      <svg id="diag-svg" width="1700" height="1020"
+           style="position:absolute;top:0;left:0;pointer-events:none;z-index:0">
         <defs>
-          <marker id="arr-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(79,140,255,.7)"/>
+          <marker id="arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(79,140,255,.75)"/>
           </marker>
-          <marker id="arr-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(53,208,127,.7)"/>
+          <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(53,208,127,.75)"/>
           </marker>
-          <marker id="arr-y" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,204,102,.7)"/>
+          <marker id="arr-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(255,204,102,.75)"/>
           </marker>
-          <marker id="arr-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,91,110,.7)"/>
+          <marker id="arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(255,91,110,.75)"/>
           </marker>
-          <marker id="arr-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(143,176,216,.7)"/>
+          <marker id="arr-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(143,176,216,.75)"/>
           </marker>
         </defs>
+        <!-- zonas dibujadas por JS -->
       </svg>
       <!-- nodos inyectados por JS -->
     </div>
@@ -42,92 +42,206 @@
 </div>
 
 <!-- Leyenda -->
-<div class="card" style="margin-top:12px">
-  <div class="card-header"><span class="card-label">Leyenda</span></div>
-  <div style="display:flex;flex-wrap:wrap;gap:16px;padding:4px 0">
+<div class="card">
+  <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase">Leyenda</div>
     <div style="display:flex;align-items:center;gap:7px">
-      <div style="width:26px;height:2px;background:rgba(79,140,255,.6)"></div>
-      <span class="muted" style="font-size:12px">FK obligatoria</span>
+      <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="rgba(79,140,255,.65)" stroke-width="2" marker-end="url(#arr-b-leg)"/></svg>
+      <span style="font-size:11px;color:var(--muted)">FK obligatoria</span>
     </div>
     <div style="display:flex;align-items:center;gap:7px">
-      <div style="width:26px;height:0;border-top:2px dashed rgba(79,140,255,.5)"></div>
-      <span class="muted" style="font-size:12px">FK opcional (null=True)</span>
+      <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="rgba(79,140,255,.5)" stroke-width="2" stroke-dasharray="4,2"/></svg>
+      <span style="font-size:11px;color:var(--muted)">FK opcional (null=True)</span>
     </div>
-    <div style="display:flex;align-items:center;gap:7px">
-      <div style="width:14px;height:14px;border-radius:4px;background:rgba(53,208,127,.22);border:1.5px solid rgba(53,208,127,.6)"></div>
-      <span class="muted" style="font-size:12px">Central / catálogo</span>
+    <div style="width:1px;height:16px;background:var(--border)"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(53,208,127,.25);border:1.5px solid rgba(53,208,127,.6)"></div>
+      <span style="font-size:11px;color:var(--muted)">Hub central (Servicio)</span>
     </div>
-    <div style="display:flex;align-items:center;gap:7px">
-      <div style="width:14px;height:14px;border-radius:4px;background:rgba(255,204,102,.22);border:1.5px solid rgba(255,204,102,.6)"></div>
-      <span class="muted" style="font-size:12px">Polimórfico / nexo</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(255,204,102,.25);border:1.5px solid rgba(255,204,102,.6)"></div>
+      <span style="font-size:11px;color:var(--muted)">Polimórfico / Item</span>
     </div>
-    <div style="display:flex;align-items:center;gap:7px">
-      <div style="width:14px;height:14px;border-radius:4px;background:rgba(255,91,110,.15);border:1.5px solid rgba(255,91,110,.5)"></div>
-      <span class="muted" style="font-size:12px">Reparaciones / proveedor</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(255,91,110,.18);border:1.5px solid rgba(255,91,110,.5)"></div>
+      <span style="font-size:11px;color:var(--muted)">Proveedor / Reparación</span>
     </div>
-    <div style="display:flex;align-items:center;gap:7px">
-      <div style="width:14px;height:14px;border-radius:4px;background:rgba(79,140,255,.12);border:1.5px solid rgba(79,140,255,.4)"></div>
-      <span class="muted" style="font-size:12px">Módulos generales</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(79,140,255,.15);border:1.5px solid rgba(79,140,255,.45)"></div>
+      <span style="font-size:11px;color:var(--muted)">Catálogos generales</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(143,176,216,.12);border:1.5px solid rgba(143,176,216,.38)"></div>
+      <span style="font-size:11px;color:var(--muted)">Notas / Pendientes</span>
     </div>
   </div>
 </div>
 
 <script>
-/* ────────────────────────────────────────────────────
-   DEFINICIÓN DE NODOS
-──────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   ZONAS DE FONDO  (dibujadas en SVG, detrás de nodos)
+══════════════════════════════════════════════════════ */
+var ZONES = [
+  { x:5,   y:20,  w:1460, h:270, label:'CATÁLOGOS / MAESTROS',   bg:'rgba(79,140,255,.04)',  brdr:'rgba(79,140,255,.14)',  lclr:'rgba(79,140,255,.35)'  },
+  { x:555, y:305, w:290,  h:155, label:'ITEM — NEXO POLIMÓRFICO', bg:'rgba(255,204,102,.07)', brdr:'rgba(255,204,102,.22)', lclr:'rgba(255,204,102,.5)'  },
+  { x:5,   y:460, w:240,  h:400, label:'PEDIDOS / PATRIMONIO',    bg:'rgba(255,204,102,.04)', brdr:'rgba(255,204,102,.13)', lclr:'rgba(255,204,102,.38)' },
+  { x:360, y:460, w:260,  h:265, label:'MOVIMIENTOS',              bg:'rgba(53,208,127,.04)',  brdr:'rgba(53,208,127,.13)',  lclr:'rgba(53,208,127,.38)'  },
+  { x:635, y:460, w:255,  h:265, label:'PRÉSTAMOS',                bg:'rgba(79,140,255,.04)',  brdr:'rgba(79,140,255,.11)',  lclr:'rgba(79,140,255,.35)'  },
+  { x:900, y:295, w:540,  h:450, label:'GESTIÓN / SERVICIOS',      bg:'rgba(143,176,216,.03)', brdr:'rgba(143,176,216,.11)', lclr:'rgba(143,176,216,.38)' },
+];
+
+/* ══════════════════════════════════════════════════════
+   NODOS
+   clr=color texto header, bg=fondo header, brdr=borde
+   fields: líneas de detalle (las que empiezan "FK" se muestran en amarillo)
+══════════════════════════════════════════════════════ */
 var NODES = {
-  servicio:     { x:560, y:20,  w:175, h:82,  clr:'#35d07f', bg:'rgba(53,208,127,.22)',  brdr:'rgba(53,208,127,.55)', label:'Servicio',           fields:['nombre (unique)','descripcion','↳ referenciado por muchos modelos'] },
-  toner:        { x:20,  y:60,  w:165, h:82,  clr:'#4f8cff', bg:'rgba(79,140,255,.18)',  brdr:'rgba(79,140,255,.55)', label:'Toner',              fields:['nombre, marca','modelo_impresora','activo'] },
-  articulo:     { x:820, y:60,  w:165, h:82,  clr:'#4f8cff', bg:'rgba(79,140,255,.18)',  brdr:'rgba(79,140,255,.55)', label:'Articulo',           fields:['nombre, marca','descripcion, caracteristicas','activo'] },
-  impresora:    { x:240, y:60,  w:185, h:100, clr:'#4f8cff', bg:'rgba(79,140,255,.14)',  brdr:'rgba(79,140,255,.50)', label:'Impresora',          fields:['marca, modelo, tipo','patrimonio, conexion, ip','estado, activo','FK → Toner'] },
-  activo_pc:    { x:460, y:185, w:175, h:82,  clr:'#4f8cff', bg:'rgba(79,140,255,.11)',  brdr:'rgba(79,140,255,.40)', label:'ActivoPC',           fields:['nombre_pc, ip','patrimonio, serie','FK → Servicio (opt.)'] },
-  asig_imp:     { x:240, y:200, w:200, h:82,  clr:'#4f8cff', bg:'rgba(79,140,255,.11)',  brdr:'rgba(79,140,255,.40)', label:'AsignacionImpresora',fields:['fecha_desde, fecha_hasta','ubicacion, responsable','FK → Impresora  FK → Servicio'] },
-  proveedor:    { x:1000,y:200, w:160, h:75,  clr:'#ff5b6e', bg:'rgba(255,91,110,.14)',  brdr:'rgba(255,91,110,.45)', label:'Proveedor',          fields:['nombre, telefono, email','observaciones, activo'] },
-  item:         { x:490, y:310, w:200, h:100, clr:'#ffcc66', bg:'rgba(255,204,102,.22)', brdr:'rgba(255,204,102,.65)', label:'Item (polimórfico)', fields:['tipo: TONER|ARTICULO|PC|IMP','FK? → Toner','FK? → Articulo','FK? → ActivoPC  FK? → Impresora'] },
-  movimiento:   { x:490, y:440, w:170, h:82,  clr:'#35d07f', bg:'rgba(53,208,127,.15)',  brdr:'rgba(53,208,127,.45)', label:'Movimiento',         fields:['tipo: INGRESO|EGRESO|AJUSTE','fecha, observaciones, anulado','FK → Servicio?  FK → Documento?'] },
-  mov_detalle:  { x:490, y:555, w:175, h:62,  clr:'#35d07f', bg:'rgba(53,208,127,.10)',  brdr:'rgba(53,208,127,.35)', label:'MovimientoDetalle',  fields:['cantidad','FK → Movimiento  FK → Item'] },
-  pedido:       { x:40,  y:310, w:185, h:100, clr:'#ffcc66', bg:'rgba(255,204,102,.15)', brdr:'rgba(255,204,102,.45)', label:'Pedido',             fields:['numero, estado','numero_nota, para_que','fechas: aprobado/recibido/entregado','FK → Servicio?  FK → Proveedor?'] },
-  ped_detalle:  { x:40,  y:440, w:175, h:65,  clr:'#ffcc66', bg:'rgba(255,204,102,.10)', brdr:'rgba(255,204,102,.35)', label:'PedidoDetalle',      fields:['cantidad, detalle','FK → Pedido  FK → Item'] },
-  patrimonio:   { x:40,  y:540, w:175, h:82,  clr:'#ffcc66', bg:'rgba(255,204,102,.08)', brdr:'rgba(255,204,102,.30)', label:'PatrimonioUnidad',   fields:['numero_patrimonio (unique)','nombre_pc, ip, serial','FK → PedidoDetalle (req.)','FK → Servicio?  FK → User (req.)'] },
-  item_comp:    { x:490, y:185, w:185, h:75,  clr:'#ffcc66', bg:'rgba(255,204,102,.10)', brdr:'rgba(255,204,102,.40)', label:'ItemComponente',     fields:['cantidad','FK → Item (padre, CASCADE)','FK → Item (hijo, PROTECT)'] },
-  prestamo:     { x:710, y:440, w:165, h:82,  clr:'#4f8cff', bg:'rgba(79,140,255,.11)',  brdr:'rgba(79,140,255,.40)', label:'Prestamo',            fields:['entregado_a, telefono','fecha_retiro, devolucion','FK → Servicio?'] },
-  prest_detalle:{ x:710, y:555, w:170, h:62,  clr:'#4f8cff', bg:'rgba(79,140,255,.08)',  brdr:'rgba(79,140,255,.30)', label:'PrestamoDetalle',     fields:['cantidad, detalle','FK → Prestamo  FK → Item'] },
-  reparacion:   { x:960, y:340, w:195, h:100, clr:'#ff5b6e', bg:'rgba(255,91,110,.14)',  brdr:'rgba(255,91,110,.45)', label:'Reparacion',          fields:['estado, diagnostico','seguimiento','fecha_envio, fecha_retorno','FK → Item  FK → Proveedor?  FK → Servicio?'] },
-  documento:    { x:800, y:310, w:155, h:75,  clr:'#4f8cff', bg:'rgba(79,140,255,.10)',  brdr:'rgba(79,140,255,.30)', label:'Documento',           fields:['tipo: PEDIDO|NOTA|ORDEN','numero, fecha'] },
-  nota:         { x:710, y:200, w:165, h:82,  clr:'#8fb0d8', bg:'rgba(143,176,216,.10)', brdr:'rgba(143,176,216,.35)', label:'Nota',               fields:['numero, estado, fecha','detalle, fecha_cierre','FK → Servicio?'] },
-  nota_detalle: { x:710, y:640, w:165, h:60,  clr:'#8fb0d8', bg:'rgba(143,176,216,.08)', brdr:'rgba(143,176,216,.28)', label:'NotaDetalle',        fields:['cantidad, detalle','FK → Nota  FK → Item'] },
-  pendiente:    { x:490, y:660, w:165, h:75,  clr:'#8fb0d8', bg:'rgba(143,176,216,.08)', brdr:'rgba(143,176,216,.28)', label:'Pendiente',          fields:['texto, estado, fecha_limite','observacion','FK → Servicio?'] },
+  /* ── Catálogos ── */
+  toner:        { x:20,   y:45,  w:170, h:92,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.20)', brdr:'rgba(79,140,255,.55)',
+    label:'Toner',
+    fields:['nombre, marca','modelo_impresora','activo (bool)'] },
+
+  impresora:    { x:205,  y:45,  w:192, h:108,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.17)', brdr:'rgba(79,140,255,.52)',
+    label:'Impresora',
+    fields:['marca, modelo, tipo','conexion (IP|USB), ip','patrimonio, estado, activo','FK → Toner (opt.)'] },
+
+  activo_pc:    { x:415,  y:45,  w:180, h:92,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.14)', brdr:'rgba(79,140,255,.46)',
+    label:'ActivoPC',
+    fields:['nombre_pc, ip, serie','patrimonio, activo','FK → Servicio (opt.)'] },
+
+  servicio:     { x:615,  y:45,  w:195, h:80,
+    clr:'#35d07f', bg:'rgba(53,208,127,.24)', brdr:'rgba(53,208,127,.60)',
+    label:'Servicio  ★',
+    fields:['nombre (unique)','descripcion','↳ hub — lo referencia casi todo'] },
+
+  articulo:     { x:830,  y:45,  w:170, h:92,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.17)', brdr:'rgba(79,140,255,.52)',
+    label:'Articulo',
+    fields:['nombre, marca','descripcion, caracteristicas','activo (bool)'] },
+
+  proveedor:    { x:1020, y:45,  w:165, h:80,
+    clr:'#ff5b6e', bg:'rgba(255,91,110,.18)', brdr:'rgba(255,91,110,.50)',
+    label:'Proveedor',
+    fields:['nombre, telefono, email','observaciones','activo (bool)'] },
+
+  documento:    { x:1205, y:45,  w:170, h:80,
+    clr:'#8fb0d8', bg:'rgba(143,176,216,.14)', brdr:'rgba(143,176,216,.40)',
+    label:'Documento',
+    fields:['tipo (PEDIDO|NOTA|ORDEN)','numero, fecha','← referenciado por Movimiento'] },
+
+  asig_imp:     { x:205,  y:178, w:215, h:92,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.12)', brdr:'rgba(79,140,255,.42)',
+    label:'AsignacionImpresora',
+    fields:['fecha_desde, fecha_hasta','ubicacion, responsable','FK → Impresora (req.)','FK → Servicio (req.)'] },
+
+  item_comp:    { x:415,  y:178, w:200, h:92,
+    clr:'#ffcc66', bg:'rgba(255,204,102,.13)', brdr:'rgba(255,204,102,.42)',
+    label:'ItemComponente',
+    fields:['cantidad','FK → Item padre (CASCADE)','FK → Item hijo (PROTECT)','(tabla de combos)'] },
+
+  /* ── Item (nexo) ── */
+  item:         { x:570,  y:320, w:230, h:128,
+    clr:'#ffcc66', bg:'rgba(255,204,102,.25)', brdr:'rgba(255,204,102,.68)',
+    label:'Item  (polimórfico)',
+    fields:['tipo: TONER|ARTICULO|PC|IMP','FK? → Toner','FK? → Articulo','FK? → ActivoPC','FK? → Impresora','(exactamente uno activo)'] },
+
+  /* ── Pedidos ── */
+  pedido:       { x:20,   y:475, w:195, h:115,
+    clr:'#ffcc66', bg:'rgba(255,204,102,.17)', brdr:'rgba(255,204,102,.48)',
+    label:'Pedido',
+    fields:['numero (unique), estado','numero_nota, para_que','fecha: aprobado/recibido/entregado','FK → Servicio (opt.)','FK → Proveedor (opt.)'] },
+
+  ped_detalle:  { x:20,   y:620, w:185, h:75,
+    clr:'#ffcc66', bg:'rgba(255,204,102,.11)', brdr:'rgba(255,204,102,.36)',
+    label:'PedidoDetalle',
+    fields:['cantidad, detalle','FK → Pedido (CASCADE)','FK → Item (PROTECT)'] },
+
+  patrimonio:   { x:20,   y:728, w:195, h:108,
+    clr:'#ffcc66', bg:'rgba(255,204,102,.08)', brdr:'rgba(255,204,102,.28)',
+    label:'PatrimonioUnidad',
+    fields:['numero_patrimonio (unique)','nombre_pc, ip, serial','FK → PedidoDetalle (CASCADE)','FK → Servicio (opt.)','FK → User (req.)'] },
+
+  /* ── Movimientos ── */
+  movimiento:   { x:375,  y:475, w:195, h:100,
+    clr:'#35d07f', bg:'rgba(53,208,127,.17)', brdr:'rgba(53,208,127,.48)',
+    label:'Movimiento',
+    fields:['tipo: INGRESO|EGRESO|AJUSTE','fecha, observaciones, anulado','FK → Servicio (opt.)','FK → Documento (opt.)'] },
+
+  mov_detalle:  { x:375,  y:608, w:200, h:75,
+    clr:'#35d07f', bg:'rgba(53,208,127,.11)', brdr:'rgba(53,208,127,.36)',
+    label:'MovimientoDetalle',
+    fields:['cantidad','FK → Movimiento (CASCADE)','FK → Item (PROTECT)'] },
+
+  /* ── Préstamos ── */
+  prestamo:     { x:650,  y:475, w:180, h:100,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.14)', brdr:'rgba(79,140,255,.42)',
+    label:'Prestamo',
+    fields:['entregado_a, telefono_contacto','fecha_retiro, devol. estimada/real','FK → Servicio (opt.)'] },
+
+  prest_detalle:{ x:650,  y:608, w:185, h:75,
+    clr:'#4f8cff', bg:'rgba(79,140,255,.09)', brdr:'rgba(79,140,255,.30)',
+    label:'PrestamoDetalle',
+    fields:['cantidad, detalle','FK → Prestamo (CASCADE)','FK → Item (PROTECT)'] },
+
+  /* ── Gestión/Servicios ── */
+  reparacion:   { x:915,  y:315, w:210, h:122,
+    clr:'#ff5b6e', bg:'rgba(255,91,110,.16)', brdr:'rgba(255,91,110,.48)',
+    label:'Reparacion',
+    fields:['estado, diagnostico, seguimiento','fecha_envio, fecha_retorno','FK → Item (PROTECT)','FK → Proveedor (opt.)','FK → Servicio (opt.)'] },
+
+  nota:         { x:1150, y:315, w:185, h:108,
+    clr:'#8fb0d8', bg:'rgba(143,176,216,.12)', brdr:'rgba(143,176,216,.36)',
+    label:'Nota',
+    fields:['numero, estado, fecha','detalle, fecha_cierre','FK → Servicio (opt.)'] },
+
+  pendiente:    { x:915,  y:605, w:190, h:92,
+    clr:'#8fb0d8', bg:'rgba(143,176,216,.10)', brdr:'rgba(143,176,216,.30)',
+    label:'Pendiente',
+    fields:['texto, estado, fecha_limite','observacion','FK → Servicio (opt.)'] },
+
+  nota_detalle: { x:1150, y:605, w:180, h:75,
+    clr:'#8fb0d8', bg:'rgba(143,176,216,.09)', brdr:'rgba(143,176,216,.26)',
+    label:'NotaDetalle',
+    fields:['cantidad, detalle','FK → Nota (CASCADE)','FK → Item (PROTECT)'] },
 };
 
-/* ────────────────────────────────────────────────────
-   DEFINICIÓN DE ARISTAS
-   color: 'b'=blue 'g'=green 'y'=yellow 'r'=red 'm'=muted
-   dashed: true = FK opcional
-──────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   ARISTAS
+   c: 'b'=blue 'g'=green 'y'=yellow 'r'=red 'm'=muted
+   d: true = FK opcional (línea punteada)
+══════════════════════════════════════════════════════ */
 var EDGES = [
+  /* Catálogos internos */
   { from:'impresora',    to:'toner',        c:'b', d:true  },
   { from:'asig_imp',     to:'impresora',    c:'b', d:false },
   { from:'asig_imp',     to:'servicio',     c:'b', d:false },
   { from:'activo_pc',    to:'servicio',     c:'b', d:true  },
+  /* Item → catálogos */
   { from:'item',         to:'toner',        c:'y', d:true  },
   { from:'item',         to:'articulo',     c:'y', d:true  },
   { from:'item',         to:'activo_pc',    c:'y', d:true  },
   { from:'item',         to:'impresora',    c:'y', d:true  },
-  { from:'mov_detalle',  to:'movimiento',   c:'g', d:false },
-  { from:'mov_detalle',  to:'item',         c:'g', d:false },
+  { from:'item_comp',    to:'item',         c:'y', d:false },
+  /* Movimientos */
   { from:'movimiento',   to:'servicio',     c:'g', d:true  },
   { from:'movimiento',   to:'documento',    c:'g', d:true  },
+  { from:'mov_detalle',  to:'movimiento',   c:'g', d:false },
+  { from:'mov_detalle',  to:'item',         c:'g', d:false },
+  /* Pedidos */
   { from:'pedido',       to:'servicio',     c:'y', d:true  },
   { from:'pedido',       to:'proveedor',    c:'y', d:true  },
   { from:'ped_detalle',  to:'pedido',       c:'y', d:false },
   { from:'ped_detalle',  to:'item',         c:'y', d:false },
   { from:'patrimonio',   to:'ped_detalle',  c:'y', d:false },
   { from:'patrimonio',   to:'servicio',     c:'y', d:true  },
-  { from:'item_comp',    to:'item',         c:'y', d:false },
+  /* Préstamos */
   { from:'prestamo',     to:'servicio',     c:'b', d:true  },
   { from:'prest_detalle',to:'prestamo',     c:'b', d:false },
   { from:'prest_detalle',to:'item',         c:'b', d:false },
+  /* Gestión */
   { from:'reparacion',   to:'item',         c:'r', d:false },
   { from:'reparacion',   to:'proveedor',    c:'r', d:true  },
   { from:'reparacion',   to:'servicio',     c:'r', d:true  },
@@ -137,12 +251,12 @@ var EDGES = [
   { from:'pendiente',    to:'servicio',     c:'m', d:true  },
 ];
 
-/* colores de aristas */
-var EC = { b:'rgba(79,140,255,.55)', g:'rgba(53,208,127,.6)', y:'rgba(255,204,102,.55)', r:'rgba(255,91,110,.55)', m:'rgba(143,176,216,.45)' };
+/* paleta de colores y markers */
+var EC      = { b:'rgba(79,140,255,.6)', g:'rgba(53,208,127,.65)', y:'rgba(255,204,102,.6)', r:'rgba(255,91,110,.6)', m:'rgba(143,176,216,.5)' };
 var MARKERS = { b:'arr-b', g:'arr-g', y:'arr-y', r:'arr-r', m:'arr-m' };
 
-/* ── Persistencia en localStorage ── */
-var LS_KEY = 'heep-diag-v1';
+/* ── Persistencia ── */
+var LS_KEY = 'heep-diag-v2';
 
 function loadLayout() {
   try {
@@ -164,10 +278,38 @@ function resetDiagram() {
   location.reload();
 }
 
+/* ── Zonas de fondo (se dibujan una sola vez) ── */
+function drawZones() {
+  var svg = document.getElementById('diag-svg');
+  Array.from(svg.querySelectorAll('.zone')).forEach(function(el) { el.remove(); });
+
+  ZONES.forEach(function(z) {
+    var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('class', 'zone');
+    rect.setAttribute('x', z.x); rect.setAttribute('y', z.y);
+    rect.setAttribute('width', z.w); rect.setAttribute('height', z.h);
+    rect.setAttribute('rx', '14');
+    rect.setAttribute('fill', z.bg);
+    rect.setAttribute('stroke', z.brdr);
+    rect.setAttribute('stroke-width', '1');
+    svg.appendChild(rect);
+
+    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('class', 'zone');
+    text.setAttribute('x', z.x + 12); text.setAttribute('y', z.y + 17);
+    text.setAttribute('fill', z.lclr);
+    text.setAttribute('font-size', '9.5');
+    text.setAttribute('font-family', 'system-ui,sans-serif');
+    text.setAttribute('font-weight', '800');
+    text.setAttribute('letter-spacing', '1');
+    text.textContent = z.label;
+    svg.appendChild(text);
+  });
+}
+
 /* ── Render de nodos ── */
 function renderNodes() {
   var inner = document.getElementById('diag-inner');
-  /* eliminar nodos anteriores (no el SVG) */
   Array.from(inner.querySelectorAll('.dn')).forEach(function(el) { el.remove(); });
 
   for (var id in NODES) {
@@ -181,31 +323,57 @@ function renderNodes() {
         'left:' + n.x + 'px',
         'top:' + n.y + 'px',
         'width:' + n.w + 'px',
-        'background:rgba(6,12,28,.94)',
+        'background:#080f20',
         'border:1.5px solid ' + n.brdr,
         'border-radius:10px',
         'font-family:system-ui,sans-serif',
-        'font-size:11px',
         'user-select:none',
         'cursor:grab',
-        'box-shadow:0 4px 18px rgba(0,0,0,.4)',
-        'transition:box-shadow .15s ease',
+        'box-shadow:0 4px 20px rgba(0,0,0,.45)',
         'z-index:1',
+        'overflow:hidden',
       ].join(';');
 
       /* Header */
       var hdr = document.createElement('div');
-      hdr.style.cssText = 'background:' + n.bg + ';border-radius:8px 8px 0 0;padding:7px 10px 6px;border-bottom:1px solid ' + n.brdr;
-      hdr.innerHTML = '<span style="font-weight:800;font-size:11.5px;color:' + n.clr + '">' + n.label + '</span>';
+      hdr.style.cssText = [
+        'background:' + n.bg,
+        'padding:7px 10px 6px',
+        'border-bottom:1px solid ' + n.brdr,
+        'display:flex',
+        'align-items:center',
+        'gap:6px',
+        'cursor:grab',
+      ].join(';');
+
+      var dot = document.createElement('div');
+      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:' + n.clr + ';flex-shrink:0';
+      hdr.appendChild(dot);
+
+      var lbl = document.createElement('span');
+      lbl.style.cssText = 'font-weight:800;font-size:11.5px;color:' + n.clr + ';white-space:nowrap';
+      lbl.textContent = n.label;
+      hdr.appendChild(lbl);
       el.appendChild(hdr);
 
       /* Campos */
       var body = document.createElement('div');
-      body.style.cssText = 'padding:6px 10px 8px';
+      body.style.cssText = 'padding:7px 10px 9px;display:flex;flex-direction:column;gap:2px';
       n.fields.forEach(function(f) {
+        var isFK  = f.indexOf('FK') === 0;
+        var isMeta = f.indexOf('(') === 0 || f.indexOf('↳') === 0 || f.indexOf('←') === 0;
         var row = document.createElement('div');
-        var isFK = f.indexOf('FK') === 0;
-        row.style.cssText = 'padding:1.5px 0;color:' + (isFK ? 'rgba(255,204,102,.8)' : 'rgba(143,176,216,.85)') + ';font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+        row.style.cssText = [
+          'font-size:10px',
+          'color:' + (isFK ? 'rgba(255,204,102,.85)' : isMeta ? 'rgba(100,120,160,.7)' : 'rgba(143,176,216,.88)'),
+          'white-space:nowrap',
+          'overflow:hidden',
+          'text-overflow:ellipsis',
+          'padding-left:' + (isFK ? '6px' : '0'),
+        ].join(';');
+        if (isFK) {
+          row.style.borderLeft = '2px solid rgba(255,204,102,.35)';
+        }
         row.textContent = f;
         body.appendChild(row);
       });
@@ -216,9 +384,9 @@ function renderNodes() {
       hdr.addEventListener('pointerdown', function(e) {
         e.preventDefault();
         dragging = true;
-        el.style.cursor = 'grabbing';
-        el.style.zIndex = '10';
-        el.style.boxShadow = '0 8px 32px rgba(0,0,0,.6)';
+        hdr.style.cursor = 'grabbing';
+        el.style.zIndex = '20';
+        el.style.boxShadow = '0 10px 40px rgba(0,0,0,.7)';
         var canvas = document.getElementById('diag-canvas');
         ox = e.clientX - n.x + canvas.scrollLeft - canvas.getBoundingClientRect().left;
         oy = e.clientY - n.y + canvas.scrollTop  - canvas.getBoundingClientRect().top;
@@ -236,9 +404,9 @@ function renderNodes() {
       });
       hdr.addEventListener('pointerup', function() {
         dragging = false;
-        el.style.cursor = 'grab';
+        hdr.style.cursor = 'grab';
         el.style.zIndex = '1';
-        el.style.boxShadow = '0 4px 18px rgba(0,0,0,.4)';
+        el.style.boxShadow = '0 4px 20px rgba(0,0,0,.45)';
         saveLayout();
       });
 
@@ -247,48 +415,45 @@ function renderNodes() {
   }
 }
 
-/* ── Cálculo de punto en el borde de un box ── */
+/* ── Punto de intersección en borde del nodo ── */
 function edgePoint(node, tx, ty) {
   var cx = node.x + node.w / 2;
   var cy = node.y + node.h / 2;
   var dx = tx - cx, dy = ty - cy;
-  if (dx === 0 && dy === 0) return { x: cx, y: cy };
-  var sx = (node.w / 2 - 3) / Math.abs(dx);
-  var sy = (node.h / 2 - 3) / Math.abs(dy);
-  var s = Math.min(sx, sy);
+  if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) return { x: cx, y: cy };
+  var sx = (node.w / 2 - 4) / Math.abs(dx);
+  var sy = (node.h / 2 - 4) / Math.abs(dy);
+  var s  = Math.min(sx, sy);
   return { x: cx + dx * s, y: cy + dy * s };
 }
 
-/* ── Dibujo de aristas ── */
+/* ── Dibujo de aristas (sólo edges, no zones) ── */
 function drawEdges() {
   var svg = document.getElementById('diag-svg');
-  /* limpiar líneas anteriores */
   Array.from(svg.querySelectorAll('.edge')).forEach(function(el) { el.remove(); });
 
   EDGES.forEach(function(e) {
     var a = NODES[e.from], b = NODES[e.to];
     if (!a || !b) return;
-
-    var p1 = edgePoint(a, b.x + b.w/2, b.y + b.h/2);
-    var p2 = edgePoint(b, a.x + a.w/2, a.y + a.h/2);
+    var p1 = edgePoint(a, b.x + b.w / 2, b.y + b.h / 2);
+    var p2 = edgePoint(b, a.x + a.w / 2, a.y + a.h / 2);
 
     var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.className.baseVal = 'edge';
-    line.setAttribute('x1', p1.x);
-    line.setAttribute('y1', p1.y);
-    line.setAttribute('x2', p2.x);
-    line.setAttribute('y2', p2.y);
+    line.setAttribute('class', 'edge');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
     line.setAttribute('stroke', EC[e.c] || EC.b);
-    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-width', e.d ? '1.5' : '2');
     line.setAttribute('marker-end', 'url(#' + MARKERS[e.c] + ')');
     if (e.d) line.setAttribute('stroke-dasharray', '5,3');
     svg.appendChild(line);
   });
 }
 
-/* ── Inicialización ── */
+/* ── Init ── */
 loadLayout();
 renderNodes();
+drawZones();
 drawEdges();
 </script>
 
