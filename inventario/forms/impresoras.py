@@ -2,6 +2,7 @@ from django import forms
 from inventario.models import Impresora, Toner
 from django.utils import timezone
 from ..models import Servicio
+from ..services.items import item_de_impresora
 
 class ImpresoraForm(forms.ModelForm):
     class Meta:
@@ -50,6 +51,14 @@ class ImpresoraForm(forms.ModelForm):
         if conexion == "IP" and not ip:
             self.add_error("ip", "Si la conexión es por red (IP), debés cargar la IP.")
         return cleaned
+
+    def save(self, commit=True):
+        impresora = super().save(commit=commit)
+        if commit:
+            # Toda impresora necesita su Item correspondiente para poder
+            # elegirla como ítem de un pedido.
+            item_de_impresora(impresora)
+        return impresora
 
 
 class EntregaRapidaImpresoraForm(forms.Form):

@@ -51,12 +51,14 @@ class PedidoDetalleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["item"].queryset = (
             Item.objects
-            .filter(tipo="ARTICULO")
-            .select_related("articulo")
-            .order_by("articulo__nombre")
+            .filter(tipo__in=["ARTICULO", "IMPRESORA"])
+            .select_related("articulo", "impresora")
+            .order_by("tipo", "articulo__nombre", "impresora__marca", "impresora__modelo")
         )
         self.fields["item"].label_from_instance = lambda obj: (
-            obj.articulo.nombre if obj.articulo else str(obj)
+            obj.articulo.nombre if obj.articulo
+            else f"Impresora: {obj.impresora}" if obj.impresora
+            else str(obj)
         )
 
 PedidoDetalleFormSet = inlineformset_factory(
@@ -92,6 +94,22 @@ class PatrimonioUnidadForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.pedido_detalle = pedido_detalle
         self.user = user
+
+        item = pedido_detalle.item if pedido_detalle else None
+        self.es_impresora = bool(item and item.tipo == "IMPRESORA")
+
+        # Al cargar el patrimonio de una impresora, precargamos los datos
+        # que ya tiene el catálogo (marca/modelo/IP/nº patrimonio) para que
+        # solo haya que personalizar lo que cambia por unidad.
+        if self.es_impresora and self.instance.pk is None:
+            impresora = item.impresora
+            self.fields["detalle_item"].initial = f"{impresora.marca} {impresora.modelo}"
+            if impresora.patrimonio:
+                self.fields["numero_patrimonio"].initial = impresora.patrimonio
+            if impresora.ip:
+                self.fields["ip"].initial = impresora.ip
+            if impresora.servicio_actual:
+                self.fields["servicio_asignado"].initial = impresora.servicio_actual
 
     def clean(self):
         cleaned = super().clean()

@@ -35,7 +35,7 @@
     </div>
 
     <div>
-      <label class="label">Nombre del equipo (opcional)</label>
+      <label class="label">{% if form.es_impresora %}Nombre / identificador (opcional){% else %}Nombre del equipo (opcional){% endif %}</label>
       {{ form.nombre_pc }}
     </div>
     <div>
@@ -43,10 +43,12 @@
       {{ form.ip }}
     </div>
 
+    {% if not form.es_impresora %}
     <div style="grid-column:1/-1">
       <label class="label">Usuario asignado (opcional)</label>
       {{ form.usuario_asignado }}
     </div>
+    {% endif %}
 
     <div style="grid-column:1/-1">
       <label class="label">Servicio asignado (opcional)</label>
