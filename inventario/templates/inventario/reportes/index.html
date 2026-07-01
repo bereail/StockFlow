@@ -9,41 +9,6 @@
   </div>
 </div>
 
-<!-- ══ TÓNER POR SERVICIO ══ -->
-<div class="card" style="margin-bottom:14px">
-  <div class="card-header">
-    <div style="display:flex;align-items:center;gap:10px">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="6" y="2" width="12" height="8" rx="1"/>
-        <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
-        <rect x="7" y="16" width="10" height="6" rx="1"/>
-      </svg>
-      <span class="card-label">Tóner por servicio</span>
-    </div>
-    <div style="display:flex;gap:8px">
-      <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Ver reporte completo</a>
-      <button class="btn2 primary"
-              onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        Descargar CSV
-      </button>
-    </div>
-  </div>
-  <div style="display:flex;gap:24px;padding:8px 0 4px;flex-wrap:wrap">
-    <div>
-      <div style="font-size:28px;font-weight:800;color:var(--primary);line-height:1">{{ total_entregas_toner }}</div>
-      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">unidades entregadas (total)</div>
-    </div>
-  </div>
-  <div class="muted" style="font-size:12px;margin-top:4px">
-    El CSV completo incluye fecha, servicio, tóner, marca, modelo de impresora, cantidad y observaciones.
-    También podés filtrar por servicio, tóner y rango de fechas en el
-    <a href="{% url 'toner_reporte_servicios' %}" style="color:var(--primary)">reporte interactivo</a>.
-  </div>
-</div>
-
 <!-- ══ PCS / PATRIMONIOS ══ -->
 <div class="card" style="margin-bottom:14px">
   <div class="card-header">

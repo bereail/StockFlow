@@ -188,7 +188,7 @@
       <span>Notas</span>
     </a>
 
-    <a class="sidebar-link {% if name in 'reportes toner_reporte_servicios' %}active{% endif %}"
+    <a class="sidebar-link {% if name == 'reportes' %}active{% endif %}"
        href="{% url 'reportes' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
@@ -196,15 +196,6 @@
       <span>Reportes</span>
     </a>
 
-    <a class="sidebar-link sidebar-link--sub {% if name == 'toner_reporte_servicios' %}active{% endif %}"
-       href="{% url 'toner_reporte_servicios' %}">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="6" y="2" width="12" height="8" rx="1"/>
-        <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
-        <rect x="7" y="16" width="10" height="6" rx="1"/>
-      </svg>
-      <span>Reporte tóner</span>
-    </a>
 
     <a class="sidebar-link {% if name == 'diagrama_bd' %}active{% endif %}"
        href="{% url 'diagrama_bd' %}">
