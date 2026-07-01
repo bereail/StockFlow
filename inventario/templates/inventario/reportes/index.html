@@ -1,0 +1,191 @@
+{% extends "inventario/base.html" %}
+{% block title %}Reportes{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Reportes</div>
+    <div class="page-subtitle muted">Descargá datos en formato CSV compatible con Excel</div>
+  </div>
+</div>
+
+<!-- ══ TÓNER POR SERVICIO ══ -->
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="6" y="2" width="12" height="8" rx="1"/>
+        <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
+        <rect x="7" y="16" width="10" height="6" rx="1"/>
+      </svg>
+      <span class="card-label">Tóner por servicio</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Ver reporte completo</a>
+      <button class="btn2 primary"
+              onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Descargar CSV
+      </button>
+    </div>
+  </div>
+  <div style="display:flex;gap:24px;padding:8px 0 4px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:28px;font-weight:800;color:var(--primary);line-height:1">{{ total_entregas_toner }}</div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">unidades entregadas (total)</div>
+    </div>
+  </div>
+  <div class="muted" style="font-size:12px;margin-top:4px">
+    El CSV completo incluye fecha, servicio, tóner, marca, modelo de impresora, cantidad y observaciones.
+    También podés filtrar por servicio, tóner y rango de fechas en el
+    <a href="{% url 'toner_reporte_servicios' %}" style="color:var(--primary)">reporte interactivo</a>.
+  </div>
+</div>
+
+<!-- ══ PCS / PATRIMONIOS ══ -->
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span class="card-label">Equipos y patrimonios</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="btn2" href="{% url 'patrimonios_list' %}">Ver patrimonios</a>
+      <button class="btn2 primary"
+              onclick="downloadCsv('{% url 'pcs_reporte_csv' %}', 'reporte_pcs.csv')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Descargar CSV
+      </button>
+    </div>
+  </div>
+  <div style="display:flex;gap:24px;padding:8px 0 4px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:28px;font-weight:800;color:var(--ok);line-height:1">{{ pcs_count }}</div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">PCs activos</div>
+    </div>
+    <div>
+      <div style="font-size:28px;font-weight:800;color:var(--ok);line-height:1">{{ patrimonios_count }}</div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">patrimonios registrados</div>
+    </div>
+  </div>
+  <div class="muted" style="font-size:12px;margin-top:4px">
+    El CSV incluye Nº patrimonio, artículo, nombre de equipo, IP, usuario asignado, servicio asignado, serial y Nº de pedido de origen.
+  </div>
+</div>
+
+<!-- ══ PEDIDOS ══ -->
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+      </svg>
+      <span class="card-label">Pedidos</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="btn2" href="{% url 'pedidos_list' %}">Ver pedidos</a>
+      <button class="btn2 primary" id="btn-pedidos-csv"
+              onclick="downloadCsv('{% url 'pedidos_reporte_csv' %}', 'reporte_pedidos.csv')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Descargar CSV
+      </button>
+    </div>
+  </div>
+  <div style="display:flex;gap:24px;padding:8px 0 4px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:28px;font-weight:800;color:var(--warn);line-height:1">{{ pedidos_pendientes }}</div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">pedidos en curso</div>
+    </div>
+  </div>
+
+  <!-- Filtros rápidos para el CSV -->
+  <div style="margin-top:10px;padding-top:10px;border-top:var(--border)">
+    <div class="muted" style="font-size:12px;margin-bottom:8px">Filtrar el CSV por:</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <div class="label" style="margin-bottom:3px;font-size:11px">Estado</div>
+        <select id="filtro-estado" style="width:100%">
+          <option value="">Todos</option>
+          {% for val, lbl in pedidos_estados %}
+            <option value="{{ val }}">{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:2;min-width:180px">
+        <div class="label" style="margin-bottom:3px;font-size:11px">Servicio</div>
+        <select id="filtro-servicio" style="width:100%">
+          <option value="">Todos</option>
+          {% for s in servicios %}
+            <option value="{{ s.id }}">{{ s.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="min-width:130px">
+        <div class="label" style="margin-bottom:3px;font-size:11px">Desde</div>
+        <input type="date" id="filtro-desde">
+      </div>
+      <div style="min-width:130px">
+        <div class="label" style="margin-bottom:3px;font-size:11px">Hasta</div>
+        <input type="date" id="filtro-hasta">
+      </div>
+      <button class="btn2 primary" onclick="descargarPedidosCsv()">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Filtrado
+      </button>
+    </div>
+    <div class="muted" style="font-size:11px;margin-top:6px">
+      El CSV incluye: número, estado, servicio solicitante, proveedor, descripción y fechas de cada etapa.
+    </div>
+  </div>
+</div>
+
+<!-- ══ MOVIMIENTOS GENERALES ══ -->
+<div class="card">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+      </svg>
+      <span class="card-label">Movimientos de stock</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="btn2" href="{% url 'movimientos_list' %}">Ver movimientos</a>
+      <button class="btn2 primary"
+              onclick="downloadCsv('{% url 'movimientos_export_csv' %}', 'movimientos.csv')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Descargar CSV
+      </button>
+    </div>
+  </div>
+  <div class="muted" style="font-size:12px;margin-top:4px">
+    Todos los ingresos, egresos y ajustes de stock con fecha, tipo, servicio y detalle de ítems.
+  </div>
+</div>
+
+<script>
+function descargarPedidosCsv() {
+  var estado  = document.getElementById('filtro-estado').value;
+  var svc     = document.getElementById('filtro-servicio').value;
+  var desde   = document.getElementById('filtro-desde').value;
+  var hasta   = document.getElementById('filtro-hasta').value;
+  var params  = new URLSearchParams({ estado: estado, servicio: svc, fecha_desde: desde, fecha_hasta: hasta });
+  var url     = '{% url "pedidos_reporte_csv" %}?' + params.toString();
+  downloadCsv(url, 'reporte_pedidos.csv');
+}
+</script>
+
+{% endblock %}

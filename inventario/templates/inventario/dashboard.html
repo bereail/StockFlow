@@ -2,172 +2,241 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 
-<section class="dashboard">
-  <div class="page-header">
+<div class="db-wrap">
+
+  <!-- ── Header ── -->
+  <div class="db-top">
     <div>
-      <div class="page-title">Dashboard</div>
-      <div class="page-subtitle muted">Estado del sistema · {% now "d/m/Y" %}</div>
+      <div class="db-greeting">Buen día, <strong>{{ user.username }}</strong></div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{% now "l d \d\e F \d\e Y" %}</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Entrega tóner</a>
+      <a class="btn2" href="{% url 'reportes' %}">Reportes</a>
     </div>
   </div>
 
-  <!-- Estadísticas rápidas -->
-  <div class="stats-row" style="margin-bottom:20px">
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.entregas_mes }}</div>
-      <div class="stat-label">tóners entregados este mes</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.prestamos_activos }}</div>
-      <div class="stat-label">préstamos activos</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.pendientes_abiertos }}</div>
-      <div class="stat-label">tareas pendientes</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ stats.reparaciones_activas }}</div>
-      <div class="stat-label">reparaciones en curso</div>
-    </div>
+  <!-- ── Stats ── -->
+  <div class="db-stats">
+
+    <a class="db-stat" href="{% url 'toner_historial' %}" style="--ac:var(--primary)">
+      <div class="db-stat-ico" style="background:rgba(79,140,255,.14)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="6" y="2" width="12" height="8" rx="1"/>
+          <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
+          <rect x="7" y="16" width="10" height="6" rx="1"/>
+          <circle cx="18" cy="14" r="1" fill="var(--primary)" stroke="none"/>
+        </svg>
+      </div>
+      <div>
+        <div class="db-stat-num">{{ stats.entregas_mes }}</div>
+        <div class="db-stat-lbl">Tóners entregados este mes</div>
+      </div>
+    </a>
+
+    <a class="db-stat {% if stats.prestamos_activos %}db-stat--on{% endif %}" href="{% url 'prestamos_list' %}" style="--ac:var(--ok)">
+      <div class="db-stat-ico" style="background:rgba(53,208,127,.14)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
+          <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="db-stat-num">{{ stats.prestamos_activos }}</div>
+        <div class="db-stat-lbl">Préstamos activos</div>
+      </div>
+    </a>
+
+    <a class="db-stat {% if stats.pendientes_abiertos %}db-stat--warn{% endif %}" href="{% url 'pendientes_page' %}" style="--ac:var(--warn)">
+      <div class="db-stat-ico" style="background:rgba(255,204,102,.14)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div>
+        <div class="db-stat-num">{{ stats.pendientes_abiertos }}</div>
+        <div class="db-stat-lbl">Tareas pendientes</div>
+      </div>
+    </a>
+
+    <a class="db-stat {% if stats.reparaciones_activas %}db-stat--danger{% endif %}" href="{% url 'reparaciones_list' %}" style="--ac:var(--danger)">
+      <div class="db-stat-ico" style="background:rgba(255,91,110,.14)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="db-stat-num">{{ stats.reparaciones_activas }}</div>
+        <div class="db-stat-lbl">Reparaciones en curso</div>
+      </div>
+    </a>
+
   </div>
 
-  <!-- Módulos -->
-  <div class="cards-grid">
+  <!-- ── Sección Inventario ── -->
+  <div class="db-section-label">
+    <span>Inventario</span>
+    <hr>
+  </div>
+  <div class="db-modules">
 
-    <!-- TONER -->
-    <div class="card clickable p-toners" onclick="window.location.href='{% url 'toner_page' %}'">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 3h12v3H6V3zm-1 5h14a2 2 0 0 1 2 2v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-6a2 2 0 0 1 2-2zm1 2v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6H6z"/>
+    <!-- Tóner — destacado -->
+    <div class="db-mod db-mod--featured" onclick="location.href='{% url 'toner_page' %}'">
+      <div class="db-mod-ico" style="color:var(--primary)">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="6" y="2" width="12" height="8" rx="1"/>
+          <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
+          <rect x="7" y="16" width="10" height="6" rx="1"/>
+          <circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div class="card-label">Tóner</div>
-      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.toners }} tipos activos</div>
-      <div style="display:flex;gap:6px;margin-top:auto;flex-wrap:wrap">
-        <a class="btn2 primary" href="{% url 'toner_entrega' %}" onclick="event.stopPropagation()">+ Entrega</a>
-        <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}" onclick="event.stopPropagation()">Reporte</a>
+      <div class="db-mod-name">Tóner</div>
+      <div class="db-mod-count">{{ stats.toners }} tipos activos</div>
+      <div class="db-mod-actions" onclick="event.stopPropagation()">
+        <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Entrega</a>
+        <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
       </div>
     </div>
 
-    <!-- PCS -->
-    <a class="card p-pcs" href="{% url 'pcs_page' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v9h16V7H4z"/>
+    <a class="db-mod" href="{% url 'pcs_page' %}">
+      <div class="db-mod-ico" style="color:var(--primary)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
       </div>
-      <div class="card-label">PCs</div>
-      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.pcs }} equipos activos</div>
+      <div class="db-mod-name">PCs</div>
+      <div class="db-mod-count">{{ stats.pcs }} equipos activos</div>
     </a>
 
-    <!-- ARTICULOS -->
-    <a class="card p-articulos" href="{% url 'articulos_page' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2 3 6.5V17.5L12 22l9-4.5V6.5L12 2zm0 2.2L18.7 7 12 10.4 5.3 7 12 4.2zM5 9l6 3v7.6l-6-3V9zm14 0v7.6l-6 3V12l6-3z"/>
+    <a class="db-mod" href="{% url 'articulos_page' %}">
+      <div class="db-mod-ico" style="color:var(--primary)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
         </svg>
       </div>
-      <div class="card-label">Artículos</div>
-      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.articulos }} artículos activos</div>
+      <div class="db-mod-name">Artículos</div>
+      <div class="db-mod-count">{{ stats.articulos }} activos</div>
     </a>
 
-    <!-- IMPRESORAS -->
-    <a class="card p-impresoras" href="{% url 'impresoras_page' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M18 3H6v4H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2v3h12v-3h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2V3zm-2 0v4H8V3h8zM6 16v5h12v-5H6zm10-7a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    <a class="db-mod" href="{% url 'impresoras_page' %}">
+      <div class="db-mod-ico" style="color:var(--primary)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
         </svg>
       </div>
-      <div class="card-label">Impresoras</div>
-      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.impresoras }} activas</div>
+      <div class="db-mod-name">Impresoras</div>
+      <div class="db-mod-count">{{ stats.impresoras }} activas</div>
     </a>
 
-    <!-- SERVICIOS -->
-    <a class="card p-servicios" href="{% url 'servicios_page' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9 3.5a7.9 7.9 0 0 0-.2-1.8l2-1.6-2-3.4-2.4 1a8.2 8.2 0 0 0-3.1-1.8l-.4-2.6h-4l-.4 2.6a8.2 8.2 0 0 0-3.1 1.8l-2.4-1-2 3.4 2 1.6A7.9 7.9 0 0 0 3 12c0 .6.1 1.2.2 1.8l-2 1.6 2 3.4 2.4-1a8.2 8.2 0 0 0 3.1 1.8l.4 2.6h4l.4-2.6a8.2 8.2 0 0 0 3.1-1.8l2.4 1 2-3.4-2-1.6c.1-.6.2-1.2.2-1.8z"/>
+    <a class="db-mod" href="{% url 'servicios_page' %}">
+      <div class="db-mod-ico" style="color:var(--primary)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
       </div>
-      <div class="card-label">Servicios</div>
-      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.servicios }} sectores</div>
+      <div class="db-mod-name">Servicios</div>
+      <div class="db-mod-count">{{ stats.servicios }} sectores</div>
     </a>
 
-    <!-- PRESTAMOS -->
-    <a class="card p-prestamos" href="{% url 'prestamos_list' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-        </svg>
-      </div>
-      <div class="card-label">Préstamos</div>
-      {% if stats.prestamos_activos %}
-        <div class="muted" style="font-size:12px;margin-top:2px">
-          <span class="chip warn">{{ stats.prestamos_activos }} activo{% if stats.prestamos_activos != 1 %}s{% endif %}</span>
-        </div>
-      {% endif %}
-    </a>
-
-    <!-- REPARACIONES -->
-    <a class="card p-reparaciones" href="{% url 'reparaciones_list' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M13.78 3.22a4.5 4.5 0 0 0-5.56 5.56L3 14l1 1 1-1 1 1-1 1 1 1 4.22-4.22a4.5 4.5 0 0 0 5.56-5.56l-2.5 2.5-1.5-1.5 2.5-2.5zM6 17l-1 1-1-1 1-1 1 1z"/>
-        </svg>
-      </div>
-      <div class="card-label">Reparaciones</div>
-      {% if stats.reparaciones_activas %}
-        <div class="muted" style="font-size:12px;margin-top:2px">
-          <span class="chip warn">{{ stats.reparaciones_activas }} en curso</span>
-        </div>
-      {% endif %}
-    </a>
-
-    <!-- PEDIDOS -->
-    <a class="card p-pedidos" href="{% url 'pedidos_list' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-1 14H6v-2h12v2zm0-4H6v-2h12v2zm0-4H6V7h12v2z"/>
-        </svg>
-      </div>
-      <div class="card-label">Pedidos</div>
-    </a>
-
-    <!-- NOTAS -->
-    <a class="card p-notas" href="{% url 'notas_list' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8v-2zm0-4h8v2H8v-2z"/>
-        </svg>
-      </div>
-      <div class="card-label">Notas</div>
-    </a>
-
-    <!-- PENDIENTES -->
-    <a class="card p-pendientes" href="{% url 'pendientes_page' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 16.17L5.53 12.7l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-        </svg>
-      </div>
-      <div class="card-label">Pendientes</div>
-      {% if stats.pendientes_abiertos %}
-        <div class="muted" style="font-size:12px;margin-top:2px">
-          <span class="chip danger">{{ stats.pendientes_abiertos }} abierto{% if stats.pendientes_abiertos != 1 %}s{% endif %}</span>
-        </div>
-      {% endif %}
-    </a>
-
-    <!-- MOVIMIENTOS -->
-    <a class="card p-movimientos" href="{% url 'movimientos_list' %}">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
+    <a class="db-mod" href="{% url 'movimientos_list' %}">
+      <div class="db-mod-ico" style="color:var(--muted)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
         </svg>
       </div>
-      <div class="card-label">Movimientos</div>
+      <div class="db-mod-name">Movimientos</div>
     </a>
 
   </div>
-</section>
+
+  <!-- ── Sección Gestión ── -->
+  <div class="db-section-label">
+    <span>Gestión</span>
+    <hr>
+  </div>
+  <div class="db-modules">
+
+    <a class="db-mod {% if stats.prestamos_activos %}db-mod--alert{% endif %}" href="{% url 'prestamos_list' %}">
+      <div class="db-mod-ico" style="color:var(--ok)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
+          <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </div>
+      <div class="db-mod-name">Préstamos</div>
+      {% if stats.prestamos_activos %}
+        <span class="chip ok">{{ stats.prestamos_activos }} activo{% if stats.prestamos_activos != 1 %}s{% endif %}</span>
+      {% endif %}
+    </a>
+
+    <a class="db-mod {% if stats.reparaciones_activas %}db-mod--alert{% endif %}" href="{% url 'reparaciones_list' %}">
+      <div class="db-mod-ico" style="color:var(--danger)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
+        </svg>
+      </div>
+      <div class="db-mod-name">Reparaciones</div>
+      {% if stats.reparaciones_activas %}
+        <span class="chip danger">{{ stats.reparaciones_activas }} en curso</span>
+      {% endif %}
+    </a>
+
+    <a class="db-mod" href="{% url 'pedidos_list' %}">
+      <div class="db-mod-ico" style="color:var(--warn)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+      </div>
+      <div class="db-mod-name">Pedidos</div>
+    </a>
+
+    <a class="db-mod" href="{% url 'patrimonios_list' %}">
+      <div class="db-mod-ico" style="color:var(--warn)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="16"/>
+          <line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+      </div>
+      <div class="db-mod-name">Patrimonios</div>
+    </a>
+
+    <a class="db-mod" href="{% url 'notas_list' %}">
+      <div class="db-mod-ico" style="color:var(--muted)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </div>
+      <div class="db-mod-name">Notas</div>
+    </a>
+
+    <a class="db-mod {% if stats.pendientes_abiertos %}db-mod--alert{% endif %}" href="{% url 'pendientes_page' %}">
+      <div class="db-mod-ico" style="color:var(--warn)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="db-mod-name">Pendientes</div>
+      {% if stats.pendientes_abiertos %}
+        <span class="chip warn">{{ stats.pendientes_abiertos }}</span>
+      {% endif %}
+    </a>
+
+  </div>
+
+</div>
 
 {% endblock %}

@@ -196,6 +196,14 @@
       <span>Notas</span>
     </a>
 
+    <a class="sidebar-link {% if name == 'reportes' %}active{% endif %}"
+       href="{% url 'reportes' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Reportes</span>
+    </a>
+
     <a class="sidebar-link {% if name == 'diagrama_bd' %}active{% endif %}"
        href="{% url 'diagrama_bd' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -305,6 +313,21 @@
 
   document.querySelectorAll('.card-collapsible').forEach(initCollapsible);
 })();
+
+/* ── Descarga CSV via fetch+blob (funciona en pywebview) ── */
+function downloadCsv(url, filename) {
+  fetch(url, { credentials: 'same-origin' })
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var o = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = o; a.download = filename || 'descarga.csv'; a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(o); }, 500);
+    })
+    .catch(function(e) { console.error('CSV download error:', e); });
+}
 </script>
 
 </body>

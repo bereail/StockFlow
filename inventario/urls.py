@@ -19,6 +19,11 @@ urlpatterns = [
     # DIAGRAMA BD
     path("diagrama/", views.diagrama_bd, name="diagrama_bd"),
 
+    # REPORTES
+    path("reportes/", views.reportes_page, name="reportes"),
+    path("reportes/pcs.csv", views.pcs_reporte_csv, name="pcs_reporte_csv"),
+    path("reportes/pedidos.csv", views.pedidos_reporte_csv, name="pedidos_reporte_csv"),
+
     # ARTICULOS
     path("articulos/", views.articulos_page, name="articulos_page"),
     path("articulos/nuevo/", views.articulo_create, name="articulo_create"),

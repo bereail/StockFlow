@@ -1335,3 +1335,156 @@ thead th, .pagination a, .pagination span,
   .login-card { padding: 32px 24px; }
   .admin-stats-grid { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   25) DASHBOARD REDISEÑADO
+========================================================= */
+.db-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.db-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.db-greeting {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Stats 4-col */
+.db-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.db-stat {
+  background: var(--surface-1);
+  border: var(--border);
+  border-left: 3px solid var(--ac, var(--primary));
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  transition: transform .14s ease, box-shadow .14s ease;
+}
+.db-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+.db-stat-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.db-stat-num {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--ac, var(--primary));
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.db-stat-lbl {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-top: 2px;
+  font-weight: 700;
+}
+.db-stat--on   { background: rgba(53,208,127,.06); }
+.db-stat--warn { background: rgba(255,204,102,.06); }
+.db-stat--danger { background: rgba(255,91,110,.06); }
+
+/* Section labels */
+.db-section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 10px;
+}
+.db-section-label span {
+  font-size: 10.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  white-space: nowrap;
+  user-select: none;
+}
+.db-section-label hr {
+  flex: 1;
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 0;
+}
+
+/* Module grid */
+.db-modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.db-mod {
+  background: var(--surface-1);
+  border: var(--border);
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color .14s ease, transform .14s ease, box-shadow .14s ease;
+}
+.db-mod:hover {
+  border-color: rgba(79,140,255,.30);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.28);
+}
+.db-mod--featured {
+  grid-column: span 2;
+  border-color: rgba(79,140,255,.25);
+  background: rgba(10,30,60,.95);
+}
+.db-mod--alert {
+  border-color: rgba(255,204,102,.28);
+  background: rgba(255,204,102,.03);
+}
+.db-mod-ico {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+.db-mod-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text);
+}
+.db-mod-count {
+  font-size: 11px;
+  color: var(--muted);
+}
+.db-mod-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}

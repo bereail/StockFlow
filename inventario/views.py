@@ -93,6 +93,121 @@ def diagrama_bd(request):
     return render(request, "inventario/diagrama_bd.html")
 
 
+@login_required
+def reportes_page(request):
+    total_entregas = (
+        MovimientoDetalle.objects
+        .filter(movimiento__tipo="EGRESO", item__tipo="TONER", movimiento__anulado=False)
+        .aggregate(total=Sum("cantidad"))["total"] or 0
+    )
+    return render(request, "inventario/reportes/index.html", {
+        "total_entregas_toner": total_entregas,
+        "pcs_count":            ActivoPC.objects.filter(activo=True).count(),
+        "patrimonios_count":    PatrimonioUnidad.objects.count(),
+        "pedidos_pendientes":   Pedido.objects.exclude(estado__in=["ENTREGADO", "CANCELADO"]).count(),
+        "servicios":            Servicio.objects.order_by("nombre"),
+        "toners":               Toner.objects.filter(activo=True).order_by("nombre"),
+        "pedidos_estados":      Pedido.ESTADOS,
+    })
+
+
+@login_required
+def pcs_reporte_csv(request):
+    pats = (
+        PatrimonioUnidad.objects
+        .select_related(
+            "pedido_detalle__item__activo_pc",
+            "pedido_detalle__item__articulo",
+            "pedido_detalle__item__toner",
+            "pedido_detalle__pedido",
+            "servicio_asignado",
+        )
+        .order_by("servicio_asignado__nombre", "nombre_pc")
+    )
+
+    buf = io.StringIO()
+    buf.write('﻿')
+    writer = csv.writer(buf)
+    writer.writerow(["Nº Patrimonio", "Artículo", "Nombre equipo", "IP", "Usuario asignado",
+                     "Servicio asignado", "Serial", "Nº Pedido"])
+    for p in pats:
+        item = p.pedido_detalle.item if p.pedido_detalle else None
+        nombre_item = ""
+        if item:
+            if item.activo_pc:
+                nombre_item = item.activo_pc.nombre_pc
+            elif item.articulo:
+                nombre_item = item.articulo.nombre
+            elif item.toner:
+                nombre_item = f"{item.toner.marca} {item.toner.nombre}"
+        writer.writerow([
+            p.numero_patrimonio,
+            nombre_item,
+            p.nombre_pc or "",
+            p.ip or "",
+            p.usuario_asignado or "",
+            p.servicio_asignado.nombre if p.servicio_asignado else "",
+            p.serial or "",
+            p.pedido_detalle.pedido.numero if p.pedido_detalle else "",
+        ])
+
+    content = buf.getvalue().encode("utf-8")
+    response = HttpResponse(content, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="reporte_pcs_{timezone.now():%Y%m%d}.csv"'
+    return response
+
+
+@login_required
+def pedidos_reporte_csv(request):
+    estado      = (request.GET.get("estado") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    fecha_desde = (request.GET.get("fecha_desde") or "").strip()
+    fecha_hasta = (request.GET.get("fecha_hasta") or "").strip()
+
+    qs = Pedido.objects.select_related("servicio_solicitante", "proveedor").order_by("-creado")
+
+    if estado:
+        qs = qs.filter(estado=estado)
+    if servicio_id:
+        try:
+            qs = qs.filter(servicio_solicitante_id=int(servicio_id))
+        except ValueError:
+            pass
+    if fecha_desde:
+        try:
+            qs = qs.filter(creado__date__gte=datetime.strptime(fecha_desde, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            qs = qs.filter(creado__date__lte=datetime.strptime(fecha_hasta, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+
+    buf = io.StringIO()
+    buf.write('﻿')
+    writer = csv.writer(buf)
+    writer.writerow(["Número", "Estado", "Servicio solicitante", "Proveedor", "Para qué",
+                     "Creado", "Aprobado", "Recibido", "Entregado"])
+    for p in qs:
+        writer.writerow([
+            p.numero,
+            p.get_estado_display(),
+            p.servicio_solicitante.nombre if p.servicio_solicitante else "",
+            p.proveedor.nombre if p.proveedor else "",
+            (p.para_que or "").replace("\n", " "),
+            timezone.localtime(p.creado).strftime("%Y-%m-%d") if p.creado else "",
+            p.fecha_aprobado.strftime("%Y-%m-%d") if p.fecha_aprobado else "",
+            p.fecha_recibido.strftime("%Y-%m-%d") if p.fecha_recibido else "",
+            p.fecha_entregado.strftime("%Y-%m-%d") if p.fecha_entregado else "",
+        ])
+
+    content = buf.getvalue().encode("utf-8")
+    response = HttpResponse(content, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="reporte_pedidos_{timezone.now():%Y%m%d}.csv"'
+    return response
+
+
 ### TONER ####
 @login_required
 def toner_page(request):

@@ -14,12 +14,13 @@
     </form>
     <a class="btn2" href="{% url 'toner_historial' %}">Historial</a>
     <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
-    <a class="btn2" href="{% url 'backup_entregas_csv' %}" title="Descargar CSV de entregas (compatible con Excel)">
+    <button class="btn2" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
+            title="Descargar CSV de entregas (compatible con Excel)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
       </svg>
       CSV
-    </a>
+    </button>
     <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
   </div>
 </div>

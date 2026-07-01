@@ -9,13 +9,14 @@
   </div>
   <div class="page-actions">
     <a class="btn2" href="{% url 'toner_historial' %}">Historial detallado</a>
-    <a class="btn2 primary" id="btn-csv" href="{% url 'toner_reporte_csv' %}?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
-       title="Descargar CSV (abre bien en Excel)">
+    <button class="btn2 primary" id="btn-csv"
+            onclick="downloadCsv('{% url 'toner_reporte_csv' %}?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}', 'toner_por_servicio.csv')"
+            title="Descargar CSV (abre bien en Excel)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
       </svg>
       Descargar CSV
-    </a>
+    </button>
   </div>
 </div>
 
