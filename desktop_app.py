@@ -196,7 +196,7 @@ class AppAPI:
                 webview.SAVE_DIALOG,
                 directory=os.path.join(os.path.expanduser("~"), "Downloads"),
                 save_filename=suggested_name or "descarga.csv",
-                file_types=("Archivos CSV (*.csv)", "Todos los archivos (*.*)")
+                file_types=("Archivos HTML (*.html)", "Archivos CSV (*.csv)", "Todos los archivos (*.*)")
             )
             if result:
                 path = result if isinstance(result, str) else result[0]

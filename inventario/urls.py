@@ -23,6 +23,10 @@ urlpatterns = [
     path("reportes/", views.reportes_page, name="reportes"),
     path("reportes/pcs.csv", views.pcs_reporte_csv, name="pcs_reporte_csv"),
     path("reportes/pedidos.csv", views.pedidos_reporte_csv, name="pedidos_reporte_csv"),
+    path("reportes/toner.html", views.reporte_toner_html, name="reporte_toner_html"),
+    path("reportes/pcs.html", views.reporte_pcs_html, name="reporte_pcs_html"),
+    path("reportes/pedidos.html", views.reporte_pedidos_html, name="reporte_pedidos_html"),
+    path("reportes/movimientos.html", views.reporte_movimientos_html, name="reporte_movimientos_html"),
 
     # ARTICULOS
     path("articulos/", views.articulos_page, name="articulos_page"),
