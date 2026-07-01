@@ -18,17 +18,12 @@
   {% if q %}<a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Limpiar</a>{% endif %}
 </form>
 
-<div class="card card-collapsible">
-  <div class="card-header collapse-trigger" tabindex="0" role="button">
-    <div class="row" style="gap:8px;align-items:center">
-      <span class="card-label">Préstamos</span>
-      <span class="chip">{{ prestamos|length }}</span>
-    </div>
-    <span class="collapse-chevron" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </span>
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Préstamos</span>
+    <span class="chip">{{ page_obj.paginator.count }}</span>
   </div>
-  <div class="card-collapse-body">
+  <div>
     <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
       <table>
         <thead>
@@ -45,10 +40,14 @@
         </thead>
         <tbody>
           {% for p in prestamos %}
-          <tr>
+          <tr style="cursor:pointer" onclick="location.href='{% url 'prestamo_detail' p.id %}'">
             <td>{{ p.servicio|default:"—" }}</td>
             <td>{{ p.entregado_a|default:"—" }}</td>
-            <td class="muted" style="font-size:12px">{{ p.items_label }}</td>
+            <td class="muted" style="font-size:12px">
+              {% for d in p.detalles.all %}
+                {{ d.item }}{% if d.cantidad > 1 %} ×{{ d.cantidad }}{% endif %}{% if not forloop.last %}, {% endif %}
+              {% empty %}—{% endfor %}
+            </td>
             <td class="muted mono" style="font-size:12px">{{ p.fecha_retiro|date:"d/m/Y" }}</td>
             <td class="muted mono" style="font-size:12px">{{ p.fecha_devolucion_estimada|date:"d/m/Y"|default:"—" }}</td>
             <td>
@@ -75,8 +74,9 @@
                 <span class="chip danger">Pendiente</span>
               {% endif %}
             </td>
-            <td>
-              <a class="btn2" href="{% url 'prestamo_detail' p.id %}">Ver</a>
+            <td style="white-space:nowrap">
+              <a class="btn2" href="{% url 'prestamo_edit' p.id %}" onclick="event.stopPropagation()">Editar</a>
+              <a class="btn2" href="{% url 'prestamo_detail' p.id %}" onclick="event.stopPropagation()" style="margin-left:4px">Ver</a>
             </td>
           </tr>
           {% empty %}
@@ -89,6 +89,21 @@
         </tbody>
       </table>
     </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
+      {% if page_obj.has_previous %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">&#8592; Anterior</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">&#8592; Anterior</span>
+      {% endif %}
+      <span class="muted" style="font-size:.82rem">P&#225;gina <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
+      {% if page_obj.has_next %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.next_page_number }}">Siguiente &#8594;</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente &#8594;</span>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 </div>
 

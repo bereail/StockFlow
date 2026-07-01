@@ -6,105 +6,281 @@
 <div class="page-header">
   <div>
     <div class="page-title">Pedido {{ pedido.numero }}</div>
-    <div class="page-subtitle muted">
-      {{ pedido.servicio_solicitante|default:"Sin servicio" }} &middot; {{ pedido.get_estado_display }}
-    </div>
+    <div class="page-subtitle muted">{{ pedido.servicio_solicitante|default:"Sin servicio" }}</div>
   </div>
-  <div class="row" style="gap:8px">
-    {% if pedido.estado == "HECHO" %}
-      <a class="btn" href="{% url 'pedido_edit' pedido.pk %}">Editar</a>
-    {% endif %}
+  <div style="display:flex;gap:8px">
+    <button id="btn-editar" class="btn" onclick="toggleEdit()">✎ Editar</button>
     <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">← Volver</a>
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px">
-  <div class="formgrid">
-    <div class="field col-6">
-      <div class="label">Nota</div>
-      <div>{{ pedido.numero_nota|default:"—" }}</div>
-    </div>
-    <div class="field col-6">
-      <div class="label">Para qué</div>
-      <div>{{ pedido.para_que|default:"—" }}</div>
-    </div>
-    <div class="field col-6">
-      <div class="label">Creado</div>
-      <div class="muted">{{ pedido.creado|date:"d/m/Y H:i" }}</div>
-    </div>
-    {% if pedido.observaciones %}
-    <div class="field col-12">
-      <div class="label">Observaciones</div>
-      <div class="muted" style="white-space:pre-wrap">{{ pedido.observaciones }}</div>
-    </div>
+<!-- TIMELINE -->
+<div class="card" style="margin-bottom:14px;padding:20px 24px">
+  <div style="display:flex;align-items:flex-start">
+    {% for valor, label in pasos %}
+      {% with idx=forloop.counter0 %}
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="
+          width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+          font-size:.78rem;font-weight:700;flex-shrink:0;
+          {% if pedido.estado == 'CANCELADO' and idx <= paso_actual %}background:#3f1010;border:2px solid #ef4444;color:#ef4444;
+          {% elif idx < paso_actual %}background:#0f2e1a;border:2px solid #22c55e;color:#22c55e;
+          {% elif idx == paso_actual %}background:#1a3a6b;border:2px solid #3b82f6;color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15);
+          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);{% endif %}
+        ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
+        <div style="font-size:.72rem;margin-top:6px;text-align:center;white-space:nowrap;
+          {% if idx == paso_actual %}color:#3b82f6;font-weight:700;
+          {% elif idx < paso_actual %}color:#22c55e;
+          {% else %}color:var(--muted);{% endif %}">{{ label }}</div>
+        <!-- Fecha del estado -->
+        <div style="font-size:.65rem;color:var(--muted);margin-top:2px;text-align:center">
+          {% if valor == "APROBADO" and pedido.fecha_aprobado %}{{ pedido.fecha_aprobado|date:"d/m/y" }}
+          {% elif valor == "RECIBIDO" and pedido.fecha_recibido %}{{ pedido.fecha_recibido|date:"d/m/y" }}
+          {% elif valor == "ENTREGADO" and pedido.fecha_entregado %}{{ pedido.fecha_entregado|date:"d/m/y" }}
+          {% elif valor == "HECHO" %}{{ pedido.creado|date:"d/m/y" }}
+          {% else %}&nbsp;{% endif %}
+        </div>
+      </div>
+      {% if not forloop.last %}
+        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:#22c55e;{% else %}background:var(--border);{% endif %}"></div>
+      {% endif %}
+      {% endwith %}
+    {% endfor %}
+    {% if pedido.estado == "CANCELADO" %}
+      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:#3f1010;border:1px solid #ef4444;white-space:nowrap">
+        <span style="color:#ef4444;font-size:.78rem;font-weight:700">✕ Cancelado</span>
+      </div>
     {% endif %}
   </div>
 </div>
 
-<div class="card">
-  <h3 style="margin:0 0 12px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
-    Ítems y patrimonios
-  </h3>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Ítem</th>
-        <th>Cantidad</th>
-        <th>Detalle</th>
-        <th>Patrimonios</th>
-        <th style="width:140px"></th>
-      </tr>
-    </thead>
-    <tbody>
+<!-- ═══════════ VISTA NORMAL ═══════ -->
+<div id="vista-normal">
+
+  <!-- Datos | Ítems+Patrimonios — lado a lado -->
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:14px;margin-bottom:14px;align-items:start">
+
+    <!-- COLUMNA IZQUIERDA: datos -->
+    <div class="card" style="font-size:.88rem">
+      <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Datos del pedido</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><div class="label">Servicio</div><div>{{ pedido.servicio_solicitante|default:"—" }}</div></div>
+        <div><div class="label">Proveedor</div><div>{{ pedido.proveedor|default:"—" }}</div></div>
+        <div><div class="label">N° de nota</div><div>{{ pedido.numero_nota|default:"—" }}</div></div>
+        <div><div class="label">Para qué</div><div>{{ pedido.para_que|default:"—" }}</div></div>
+        {% if pedido.observaciones %}
+        <div><div class="label">Observaciones</div><div class="muted" style="white-space:pre-wrap;font-size:.83rem">{{ pedido.observaciones }}</div></div>
+        {% endif %}
+        <div><div class="label">Creado</div><div class="muted">{{ pedido.creado|date:"d/m/Y" }}</div></div>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: ítems y patrimonios -->
+    <div class="card">
+      <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Ítems y patrimonios</div>
       {% for d in detalles %}
         {% with cargados=d.patrimonios.count %}
-        <tr>
-          <td>{{ d.item }}</td>
-          <td>{{ d.cantidad }}</td>
-          <td class="muted">{{ d.detalle|default:"—" }}</td>
-          <td>
-            <span class="chip {% if cargados == d.cantidad %}ok{% endif %}">
-              {{ cargados }}/{{ d.cantidad }}
-            </span>
-          </td>
-          <td style="text-align:right">
+        <div style="border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03)">
+            <div style="flex:1;font-weight:600;font-size:.9rem">{{ d.item }}</div>
+            <span style="font-size:.8rem;color:var(--muted)">× {{ d.cantidad }}</span>
+            <span class="chip {% if cargados == d.cantidad %}ok{% endif %}" style="font-size:.75rem">{{ cargados }}/{{ d.cantidad }} pat.</span>
             {% if pedido.estado in "RECIBIDO ENTREGADO CERRADO" %}
               {% if cargados < d.cantidad %}
-                <a class="btn2" href="{% url 'patrimonio_create' d.pk %}">+ Patrimonio</a>
-              {% else %}
-                <span class="chip ok">Completo</span>
+                <a class="btn2" href="{% url 'patrimonio_create' d.pk %}" style="font-size:.78rem">+ Patrimonio</a>
               {% endif %}
-            {% else %}
-              <span class="muted" style="font-size:12px">Al recibir</span>
             {% endif %}
-          </td>
-        </tr>
-
-        {% if d.patrimonios.all %}
-          <tr style="background:rgba(255,255,255,.02)">
-            <td colspan="5" style="padding-left:20px">
-              <div class="muted" style="font-size:12px;padding:6px 0">
-                <strong>Patrimonios:</strong>
-                {% for p in d.patrimonios.all %}
-                  <span style="margin-left:8px">
-                    {{ p.numero_patrimonio }}{% if p.serial %} · SN: {{ p.serial }}{% endif %}{% if p.servicio_asignado %} → {{ p.servicio_asignado }}{% endif %}
-                  </span>{% if not forloop.last %},{% endif %}
-                {% endfor %}
-              </div>
-            </td>
-          </tr>
-        {% endif %}
+            {% if d.detalle %}<span class="muted" style="font-size:.78rem">{{ d.detalle }}</span>{% endif %}
+          </div>
+          {% if d.patrimonios.all %}
+          <div style="padding:8px 14px;display:flex;flex-direction:column;gap:6px">
+            {% for pat in d.patrimonios.all %}
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.02);border-radius:6px;font-size:.83rem;flex-wrap:wrap">
+              <span class="muted" style="font-size:.7rem">Nº PAT</span>
+              <strong>{{ pat.numero_patrimonio }}</strong>
+              {% if pat.nombre_pc %}<span class="muted">·</span><span>{{ pat.nombre_pc }}</span>{% endif %}
+              {% if pat.ip %}<span class="muted">·</span><span class="mono" style="font-size:.8rem">{{ pat.ip }}</span>{% endif %}
+              {% if pat.usuario_asignado %}<span class="muted">·</span><span>{{ pat.usuario_asignado }}</span>{% endif %}
+              {% if pat.servicio_asignado %}<span class="muted">·</span><span>{{ pat.servicio_asignado }}</span>{% endif %}
+              {% if pat.serial %}<span class="muted" style="font-size:.75rem">SN: {{ pat.serial }}</span>{% endif %}
+              <a class="btn2" href="{% url 'patrimonio_edit' pat.pk %}" style="margin-left:auto;font-size:.75rem">Editar</a>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
         {% endwith %}
       {% empty %}
-        <tr>
-          <td colspan="5" class="muted" style="padding:20px;text-align:center">
-            Este pedido no tiene ítems.
-          </td>
-        </tr>
+        <div class="muted" style="padding:20px;text-align:center">Sin ítems cargados.</div>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
+
+  </div>
+
+  <!-- BARRA DE ACCIONES al fondo -->
+  <div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    {% if siguiente %}
+      <form method="post" action="{% url 'pedido_avanzar' pedido.pk %}" style="margin:0">
+        {% csrf_token %}
+        <button class="btn primary" type="submit">Avanzar → {{ siguiente_label }}</button>
+      </form>
+    {% endif %}
+    {% if pedido.estado not in "ENTREGADO,CANCELADO" %}
+      <form method="post" action="{% url 'pedido_cancelar' pedido.pk %}" style="margin:0" onsubmit="return confirm('¿Cancelar este pedido?')">
+        {% csrf_token %}
+        <button class="btn btn-ghost" type="submit">Cancelar pedido</button>
+      </form>
+    {% endif %}
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost" onclick="toggleEdit()">✎ Editar</button>
+      <form method="post" action="{% url 'pedido_delete' pedido.pk %}" style="margin:0" onsubmit="return confirm('¿Eliminar el pedido {{ pedido.numero }}?')">
+        {% csrf_token %}
+        <button class="btn btn-ghost" type="submit" style="color:var(--danger);opacity:.7">Eliminar</button>
+      </form>
+    </div>
+  </div>
+
+</div><!-- fin #vista-normal -->
+
+
+<!-- ═══════════ PANEL EDICIÓN ═══════ -->
+<div id="panel-edicion" style="display:none">
+  <form method="post" action="{% url 'pedido_edit' pedido.pk %}">
+    {% csrf_token %}
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-label">Datos del pedido</span></div>
+      <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div><label class="label">Número</label>{{ form.numero }}</div>
+        <div><label class="label">Servicio</label>{{ form.servicio_solicitante }}</div>
+        <div><label class="label">Proveedor</label>{{ form.proveedor }}</div>
+        <div><label class="label">N° de nota</label>{{ form.numero_nota }}</div>
+        <div><label class="label">Estado</label>{{ form.estado }}</div>
+        <div style="grid-column:1/-1"><label class="label">Para qué</label>{{ form.para_que }}</div>
+        <div style="grid-column:1/-1"><label class="label">Observaciones</label>{{ form.observaciones }}</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header"><span class="card-label">Fechas de estado</span></div>
+      <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div><label class="label">Fecha aprobación</label>{{ form.fecha_aprobado }}</div>
+        <div><label class="label">Fecha recepción</label>{{ form.fecha_recibido }}</div>
+        <div><label class="label">Fecha entrega</label>{{ form.fecha_entregado }}</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <span class="card-label">Ítems del pedido</span>
+        <button type="button" class="btn2 btn-ghost" onclick="addDetalle()" style="font-size:.8rem">+ Fila</button>
+      </div>
+      {{ formset.management_form }}
+      <div class="table-wrapper" style="margin:0 -16px">
+        <table id="tabla-detalles">
+          <thead>
+            <tr>
+              <th>
+                Ítem
+                <div style="margin-top:4px">
+                  <input type="text" id="buscar-item" placeholder="Buscar artículo…"
+                         oninput="filtrarSelects(this.value)"
+                         style="font-size:.78rem;padding:3px 7px;width:100%;max-width:220px">
+                </div>
+              </th>
+              <th style="width:90px">Cantidad</th>
+              <th>Detalle</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for df in formset %}
+              <tr class="fila-detalle {% if df.instance.pk %}fila-existente{% endif %}">
+                <td>{{ df.item }}{{ df.id }}{{ df.DELETE }}</td>
+                <td>{{ df.cantidad }}</td>
+                <td>{{ df.detalle }}</td>
+                <td>
+                  <button type="button" class="btn2 btn-ghost" title="Eliminar fila"
+                          style="padding:4px 8px;color:var(--muted)"
+                          onclick="removeDetalle(this)">✕</button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" class="btn btn-ghost" onclick="toggleEdit()">Cancelar</button>
+      <button type="submit" class="btn primary">Guardar cambios</button>
+    </div>
+  </form>
 </div>
+
+
+<script>
+  function toggleEdit() {
+    var normal  = document.getElementById('vista-normal');
+    var panel   = document.getElementById('panel-edicion');
+    var btn     = document.getElementById('btn-editar');
+    var editing = panel.style.display !== 'none';
+    normal.style.display = editing ? '' : 'none';
+    panel.style.display  = editing ? 'none' : '';
+    btn.textContent      = editing ? '✎ Editar' : '✕ Cerrar edición';
+    if (!editing) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function filtrarSelects(q) {
+    var texto = q.toLowerCase().trim();
+    document.querySelectorAll('#tabla-detalles select[name$="-item"]').forEach(function(sel) {
+      Array.from(sel.options).forEach(function(opt) {
+        if (opt.value === '') { opt.style.display = ''; return; }
+        opt.style.display = (!texto || opt.text.toLowerCase().includes(texto)) ? '' : 'none';
+      });
+    });
+  }
+
+  function addDetalle() {
+    var tbody = document.querySelector('#tabla-detalles tbody');
+    var total = document.getElementById('id_detalles-TOTAL_FORMS');
+    var idx   = parseInt(total.value);
+    var primera = tbody.querySelector('tr.fila-detalle');
+    if (!primera) return;
+    var nueva = primera.cloneNode(true);
+    nueva.querySelectorAll('input, select, textarea').forEach(function(el) {
+      el.name  = el.name.replace(/-\d+-/, '-' + idx + '-');
+      el.id    = el.id.replace(/-\d+-/, '-' + idx + '-');
+      el.value = '';
+    });
+    var chk = nueva.querySelector('input[type=checkbox]');
+    if (chk) chk.checked = false;
+    tbody.appendChild(nueva);
+    total.value = idx + 1;
+    var q = document.getElementById('buscar-item');
+    if (q && q.value) filtrarSelects(q.value);
+  }
+
+  function removeDetalle(btn) {
+    var tr  = btn.closest('tr');
+    var chk = tr.querySelector('input[type=checkbox][id$="-DELETE"]');
+    if (chk) {
+      chk.checked = true;
+      tr.style.opacity = '0.3';
+      tr.style.textDecoration = 'line-through';
+      btn.textContent = '↩';
+      btn.onclick = function() {
+        chk.checked = false;
+        tr.style.opacity = '';
+        tr.style.textDecoration = '';
+        btn.textContent = '✕';
+        btn.onclick = function() { removeDetalle(btn); };
+      };
+    } else {
+      tr.remove();
+    }
+  }
+</script>
 
 {% endblock %}

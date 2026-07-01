@@ -1,0 +1,83 @@
+{% extends "inventario/base.html" %}
+{% block title %}Editar movimiento #{{ movimiento.id }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Movimiento #{{ movimiento.id }}</div>
+    <div class="page-subtitle muted">{{ movimiento.get_tipo_display }} · {{ movimiento.fecha|date:"d/m/Y H:i" }}</div>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'movimientos_list' %}">← Volver</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;color:var(--muted)">Datos del movimiento</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <label class="label">Tipo</label>
+        {{ form.tipo }}
+      </div>
+      <div>
+        <label class="label">Fecha</label>
+        {{ form.fecha }}
+      </div>
+      <div>
+        <label class="label">Servicio</label>
+        {{ form.servicio }}
+      </div>
+      <div>
+        <label class="label">Documento</label>
+        {{ form.documento }}
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="label">Observaciones</label>
+        {{ form.observaciones }}
+      </div>
+    </div>
+    {% if form.errors %}
+    <div class="form-error" style="margin-top:10px">Revisá los campos marcados.</div>
+    {% endif %}
+  </div>
+
+  <!-- Ítems (solo lectura en la edición) -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Ítems del movimiento <span class="muted" style="font-size:.72rem;font-weight:400">(no editables)</span></div>
+    <div class="table-wrapper" style="margin:0 -16px -16px">
+      <table>
+        <thead>
+          <tr>
+            <th>Ítem</th>
+            <th style="width:80px">Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in detalles %}
+          <tr>
+            <td>
+              {% if d.item.toner %}{{ d.item.toner.marca }} {{ d.item.toner.nombre }}
+              {% elif d.item.articulo %}{{ d.item.articulo.nombre }}
+              {% elif d.item.activo_pc %}PC: {{ d.item.activo_pc.nombre_pc }}
+              {% elif d.item.impresora %}{{ d.item.impresora.marca }} {{ d.item.impresora.modelo }}
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ d.cantidad }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="muted" style="padding:16px;text-align:center">Sin ítems.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end">
+    <a class="btn btn-ghost" href="{% url 'movimientos_list' %}">Cancelar</a>
+    <button class="btn primary" type="submit">Guardar cambios</button>
+  </div>
+</form>
+
+{% endblock %}

@@ -80,7 +80,30 @@
   <h3 style="margin:0 0 12px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
     Ítems prestados
   </h3>
-  <div>{{ prestamo.items_label }}</div>
+  {% if prestamo.detalles.all %}
+    <div class="table-wrapper" style="margin:0 -16px -16px">
+      <table>
+        <thead>
+          <tr>
+            <th>Artículo</th>
+            <th style="width:80px">Cantidad</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in prestamo.detalles.all %}
+          <tr>
+            <td>{{ d.item }}</td>
+            <td>{{ d.cantidad }}</td>
+            <td class="muted">{{ d.detalle|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="muted">Sin ítems registrados.</div>
+  {% endif %}
 </div>
 
 <!-- ACCIONES -->

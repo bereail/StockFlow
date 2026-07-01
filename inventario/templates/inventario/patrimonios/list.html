@@ -1,0 +1,122 @@
+{% extends "inventario/base.html" %}
+{% block title %}Patrimonios{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Patrimonios</div>
+    <div class="page-subtitle muted">Registro de artículos con número de patrimonio</div>
+  </div>
+  <div class="page-actions">
+    <a class="btn2 primary" href="{% url 'movimiento_create' %}">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo movimiento
+    </a>
+    <a class="btn2" href="{% url 'movimientos_list' %}">Ver movimientos</a>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="card" style="margin-bottom:14px">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div style="flex:2;min-width:180px">
+      <div class="label" style="margin-bottom:4px">Buscar</div>
+      <input name="q" value="{{ q }}" placeholder="Nº PAT, nombre PC, IP, serial, usuario, servicio…">
+    </div>
+    <div style="flex:1;min-width:140px">
+      <div class="label" style="margin-bottom:4px">Tipo</div>
+      <select name="tipo">
+        <option value="">Todos</option>
+        <option value="ARTICULO"   {% if tipo == "ARTICULO"   %}selected{% endif %}>Artículo</option>
+        <option value="TONER"      {% if tipo == "TONER"      %}selected{% endif %}>Tóner</option>
+        <option value="ACTIVO_PC"  {% if tipo == "ACTIVO_PC"  %}selected{% endif %}>PC</option>
+        <option value="IMPRESORA"  {% if tipo == "IMPRESORA"  %}selected{% endif %}>Impresora</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" type="submit">Filtrar</button>
+      {% if q or tipo %}<a class="btn btn-ghost" href="{% url 'patrimonios_list' %}">Limpiar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Patrimonios</span>
+    <span class="chip">{{ page_obj.paginator.count }}</span>
+  </div>
+  <div>
+    <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:130px">Nº Patrimonio</th>
+            <th>Artículo</th>
+            <th>Detalle</th>
+            <th>Nombre equipo</th>
+            <th>IP</th>
+            <th>Usuario</th>
+            <th>Servicio asignado</th>
+            <th>Pedido</th>
+            <th style="width:70px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pat in pats %}
+          <tr style="cursor:pointer" onclick="location.href='{% url 'patrimonio_edit' pat.pk %}?next={% url 'patrimonios_list' %}'">
+            <td><strong class="mono">{{ pat.numero_patrimonio }}</strong></td>
+            <td>
+              {% with it=pat.pedido_detalle.item %}
+                {% if it.articulo %}{{ it.articulo.nombre }}
+                {% elif it.toner %}{{ it.toner.marca }} {{ it.toner.nombre }}
+                {% elif it.activo_pc %}{{ it.activo_pc.nombre_pc }}
+                {% elif it.impresora %}{{ it.impresora.marca }} {{ it.impresora.modelo }}
+                {% else %}{{ it }}{% endif %}
+              {% endwith %}
+            </td>
+            <td class="muted" style="font-size:.82rem">{{ pat.detalle_item|default:"—" }}</td>
+            <td>{{ pat.nombre_pc|default:"—" }}</td>
+            <td class="mono" style="font-size:.82rem">{{ pat.ip|default:"—" }}</td>
+            <td>{{ pat.usuario_asignado|default:"—" }}</td>
+            <td>{{ pat.servicio_asignado|default:"—" }}</td>
+            <td class="muted" style="font-size:.78rem">
+              <a href="{% url 'pedido_detail' pat.pedido_detalle.pedido.pk %}" onclick="event.stopPropagation()" style="color:var(--muted)">
+                {{ pat.pedido_detalle.pedido.numero }}
+              </a>
+            </td>
+            <td>
+              <a class="btn2" href="{% url 'patrimonio_edit' pat.pk %}?next={% url 'patrimonios_list' %}" onclick="event.stopPropagation()">Editar</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="muted" style="padding:24px;text-align:center">
+              No hay patrimonios registrados{% if q or tipo %} con esos filtros{% endif %}.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
+      {% if page_obj.has_previous %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&tipo={{ tipo }}&page={{ page_obj.previous_page_number }}">← Anterior</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
+      {% endif %}
+      <span class="muted" style="font-size:.82rem">Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
+      {% if page_obj.has_next %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&tipo={{ tipo }}&page={{ page_obj.next_page_number }}">Siguiente →</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

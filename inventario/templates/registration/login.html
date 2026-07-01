@@ -27,7 +27,7 @@
       <h1 class="login-title">InventarioHEEP</h1>
       <p class="login-subtitle">Ingresá tus credenciales para continuar</p>
 
-      {% if form.errors %}
+      {% if error %}
       <div class="login-error">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex-shrink:0;">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -66,6 +66,13 @@
         </div>
 
         <input type="hidden" name="next" value="{{ next }}">
+
+        <!-- RECORDARME -->
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:4px">
+          <input type="checkbox" name="remember_me" id="remember-me"
+                 style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
+          Recordarme en este equipo
+        </label>
 
         <button type="submit" class="login-submit">
           Iniciar sesión

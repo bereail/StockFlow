@@ -11,26 +11,23 @@
   <a class="btn primary" href="{% url 'pedido_create' %}">+ Nuevo pedido</a>
 </div>
 
+<!-- FILTROS -->
 <div class="card" style="margin-bottom:14px">
   <form method="get" class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
-
+    <input type="hidden" name="page" value="1">
     <div style="flex:2;min-width:200px">
       <div class="label" style="margin-bottom:4px">Buscar</div>
       <input name="q" value="{{ q }}" placeholder="Número / nota / para qué / obs…">
     </div>
-
     <div style="flex:2;min-width:180px">
       <div class="label" style="margin-bottom:4px">Servicio</div>
       <select name="servicio">
         <option value="">Todos los servicios</option>
         {% for s in servicios %}
-          <option value="{{ s.id }}" {% if servicio_id == s.id|stringformat:"s" %}selected{% endif %}>
-            {{ s.nombre }}
-          </option>
+          <option value="{{ s.id }}" {% if servicio_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
         {% endfor %}
       </select>
     </div>
-
     <div style="flex:1;min-width:160px">
       <div class="label" style="margin-bottom:4px">Estado</div>
       <select name="estado">
@@ -40,7 +37,6 @@
         {% endfor %}
       </select>
     </div>
-
     <div class="row" style="gap:8px">
       <button class="btn" type="submit">Filtrar</button>
       <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Limpiar</a>
@@ -48,62 +44,87 @@
   </form>
 </div>
 
-<div class="card card-collapsible">
-  <div class="card-header collapse-trigger" tabindex="0" role="button">
-    <div class="row" style="gap:8px;align-items:center">
-      <span class="card-label">Pedidos</span>
-      <span class="chip">{{ pedidos|length }}</span>
-    </div>
-    <span class="collapse-chevron" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </span>
+<!-- TABLA -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Pedidos</span>
+    <span class="chip">{{ page_obj.paginator.count }} en total</span>
   </div>
-  <div class="card-collapse-body">
-    <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
-      <table>
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Servicio</th>
-            <th style="width:120px">Estado</th>
-            <th>Nota</th>
-            <th>Para qué</th>
-            <th style="width:130px">Creado</th>
+
+  <div class="table-wrapper" style="margin:0 -16px">
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Servicio</th>
+          <th style="width:120px">Estado</th>
+          <th>Nota</th>
+          <th>Para qué</th>
+          <th style="width:130px">Creado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pedidos %}
+          <tr style="cursor:pointer" onclick="location.href='{% url 'pedido_detail' p.pk %}'">
+            <td><strong>{{ p.numero }}</strong></td>
+            <td>{{ p.servicio_solicitante|default:"—" }}</td>
+            <td>
+              {% if p.estado == "HECHO" %}
+                <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
+              {% elif p.estado == "APROBADO" %}
+                <span class="badge badge-warn">{{ p.get_estado_display }}</span>
+              {% elif p.estado == "RECIBIDO" or p.estado == "ENTREGADO" %}
+                <span class="badge badge-ok">{{ p.get_estado_display }}</span>
+              {% elif p.estado == "CANCELADO" %}
+                <span class="badge badge-danger">{{ p.get_estado_display }}</span>
+              {% else %}
+                <span class="badge">{{ p.get_estado_display }}</span>
+              {% endif %}
+            </td>
+            <td class="muted">{{ p.numero_nota|default:"—" }}</td>
+            <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
+            <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
           </tr>
-        </thead>
-        <tbody>
-          {% for p in pedidos %}
-            <tr>
-              <td><a href="{% url 'pedido_detail' p.pk %}" style="font-weight:700">{{ p.numero }}</a></td>
-              <td>{{ p.servicio_solicitante|default:"—" }}</td>
-              <td>
-                {% if p.estado == "HECHO" %}
-                  <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
-                {% elif p.estado == "APROBADO" %}
-                  <span class="badge badge-warn">{{ p.get_estado_display }}</span>
-                {% elif p.estado == "RECIBIDO" or p.estado == "ENTREGADO" %}
-                  <span class="badge badge-ok">{{ p.get_estado_display }}</span>
-                {% elif p.estado == "CANCELADO" %}
-                  <span class="badge badge-danger">{{ p.get_estado_display }}</span>
-                {% else %}
-                  <span class="badge">{{ p.get_estado_display }}</span>
-                {% endif %}
-              </td>
-              <td class="muted">{{ p.numero_nota|default:"—" }}</td>
-              <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
-              <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="6" class="muted" style="padding:20px;text-align:center">
-                No hay pedidos con esos filtros.
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="muted" style="padding:20px;text-align:center">No hay pedidos con esos filtros.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+
+  <!-- PAGINACIÓN -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
+
+    {% if page_obj.has_previous %}
+      <a class="btn2 btn-ghost"
+         href="?q={{ q }}&servicio={{ servicio_id }}&estado={{ estado }}&page={{ page_obj.previous_page_number }}"
+         aria-label="Página anterior">
+        ← Anterior
+      </a>
+    {% else %}
+      <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
+    {% endif %}
+
+    <span class="muted" style="font-size:.82rem">
+      Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
+    </span>
+
+    {% if page_obj.has_next %}
+      <a class="btn2 btn-ghost"
+         href="?q={{ q }}&servicio={{ servicio_id }}&estado={{ estado }}&page={{ page_obj.next_page_number }}"
+         aria-label="Página siguiente">
+        Siguiente →
+      </a>
+    {% else %}
+      <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
+    {% endif %}
+
+  </div>
+  {% endif %}
+
 </div>
 
 {% endblock %}

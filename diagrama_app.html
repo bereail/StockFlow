@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>InventarioHEEP — Diagrama</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 20px 32px 16px;
+    border-bottom: 1px solid #21262d;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 600; color: #f0f6fc; }
+  header p  { font-size: 0.78rem; color: #484f58; margin-top: 2px; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid #21262d;
+    padding: 0 32px;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    font-size: 0.82rem;
+    border: none; background: none; cursor: pointer;
+    color: #484f58; border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tab-btn:hover { color: #c9d1d9; }
+  .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+
+  /* ── PANELS ── */
+  .tab-panel { display: none; padding: 28px 32px; }
+  .tab-panel.active { display: block; }
+
+  /* ── LEYENDA ── */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px 20px;
+    margin-bottom: 24px; font-size: 0.76rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── DIAGRAM WRAPPER ── */
+  .diagram-wrap { overflow-x: auto; }
+  .mermaid svg { max-width: 100%; }
+
+  /* ── TABLA MODELOS ── */
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .model-card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .model-card-header {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .model-card-body { padding: 0; }
+  .model-card-body table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.72rem;
+  }
+  .model-card-body tr { border-top: 1px solid #21262d; }
+  .model-card-body td { padding: 4px 14px; vertical-align: top; }
+  .model-card-body td:first-child { color: #8b949e; width: 40%; }
+  .badge {
+    display: inline-block; padding: 1px 5px; border-radius: 3px;
+    font-size: 0.62rem; font-weight: 600; vertical-align: middle;
+    margin-left: 4px;
+  }
+  .badge-pk  { background: #1f3a1f; color: #56d364; }
+  .badge-fk  { background: #1a2d40; color: #58a6ff; }
+  .badge-uniq { background: #2d1f3a; color: #bc8cff; }
+
+  /* colores por dominio */
+  .c-maestro { border-top: 3px solid #1f6feb; }
+  .c-maestro .model-card-header { background: #0d2135; color: #79c0ff; }
+  .c-item    { border-top: 3px solid #388bfd; }
+  .c-item    .model-card-header { background: #0d1f35; color: #79c0ff; }
+  .c-mov     { border-top: 3px solid #2ea043; }
+  .c-mov     .model-card-header { background: #0d2210; color: #56d364; }
+  .c-prest   { border-top: 3px solid #8957e5; }
+  .c-prest   .model-card-header { background: #1a0d30; color: #bc8cff; }
+  .c-rep     { border-top: 3px solid #da3633; }
+  .c-rep     .model-card-header { background: #2d0d0d; color: #f85149; }
+  .c-pedido  { border-top: 3px solid #1f8b8b; }
+  .c-pedido  .model-card-header { background: #0d2020; color: #39d0d0; }
+  .c-nota    { border-top: 3px solid #e3b341; }
+  .c-nota    .model-card-header { background: #2d2000; color: #e3b341; }
+  .c-pend    { border-top: 3px solid #484f58; }
+  .c-pend    .model-card-header { background: #161b22; color: #8b949e; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>InventarioHEEP — Diagrama de la aplicación</h1>
+    <p>Django + SQLite · 21 modelos · Generado 30/06/2026</p>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="showTab('mapa', this)">Mapa de relaciones</button>
+  <button class="tab-btn"        onclick="showTab('detalle', this)">Detalle de modelos</button>
+</nav>
+
+<!-- ═══════════════════════════════ TAB 1: MAPA ═══════════════════════════════ -->
+<div id="tab-mapa" class="tab-panel active">
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:#1f6feb"></div> Maestros / Catálogos</div>
+    <div class="legend-item"><div class="dot" style="background:#388bfd"></div> Item (polimórfico)</div>
+    <div class="legend-item"><div class="dot" style="background:#2ea043"></div> Movimientos de stock</div>
+    <div class="legend-item"><div class="dot" style="background:#8957e5"></div> Préstamos</div>
+    <div class="legend-item"><div class="dot" style="background:#da3633"></div> Reparaciones</div>
+    <div class="legend-item"><div class="dot" style="background:#1f8b8b"></div> Pedidos / Patrimonio</div>
+    <div class="legend-item"><div class="dot" style="background:#e3b341"></div> Notas</div>
+    <div class="legend-item"><div class="dot" style="background:#484f58"></div> Pendientes / Docs</div>
+  </div>
+
+  <div class="diagram-wrap">
+  <div class="mermaid">
+graph TD
+
+  %% ── MAESTROS ───────────────────────────────────────────
+  Servicio(["🏥 Servicio"])
+  Toner(["🖨️ Toner"])
+  Articulo(["📦 Artículo"])
+  ActivoPC(["💻 ActivoPC"])
+  Impresora(["🖨️ Impresora"])
+  Proveedor(["🏢 Proveedor"])
+
+  %% ── ITEM ───────────────────────────────────────────────
+  Item(["📋 Item\n(polimórfico)"])
+  ItemComponente(["🔗 ItemComponente\n(combos)"])
+
+  %% ── MOVIMIENTOS ────────────────────────────────────────
+  Documento(["📄 Documento"])
+  Movimiento(["↕️ Movimiento"])
+  MovDet(["MovimientoDetalle"])
+
+  %% ── PRÉSTAMOS ───────────────────────────────────────────
+  Prestamo(["🔄 Préstamo"])
+  PrestDet(["PrestamoDetalle"])
+
+  %% ── REPARACIONES ────────────────────────────────────────
+  Reparacion(["🔧 Reparación"])
+
+  %% ── PEDIDOS / PATRIMONIO ─────────────────────────────────
+  Pedido(["📋 Pedido"])
+  PedidoDet(["PedidoDetalle"])
+  Patrimonio(["🏷️ PatrimonioUnidad"])
+
+  %% ── NOTAS ────────────────────────────────────────────────
+  Nota(["📝 Nota"])
+  NotaDet(["NotaDetalle"])
+
+  %% ── PENDIENTES ───────────────────────────────────────────
+  Pendiente(["⏳ Pendiente"])
+
+  %% ── ASIGNACIÓN HISTORIAL ─────────────────────────────────
+  AsignImp(["📌 AsignacionImpresora\n(historial)"])
+
+  %% ── RELACIONES: MAESTROS ────────────────────────────────
+  Toner -->|usa| Impresora
+  Impresora -->|tiene historial| AsignImp
+  AsignImp -->|en| Servicio
+
+  Toner -.->|referenciado por| Item
+  Articulo -.->|referenciado por| Item
+  ActivoPC -.->|referenciado por| Item
+  Impresora -.->|referenciado por| Item
+
+  ActivoPC -->|asignado a| Servicio
+
+  Item -->|padre| ItemComponente
+  Item -->|hijo| ItemComponente
+
+  %% ── RELACIONES: MOVIMIENTOS ─────────────────────────────
+  Servicio -->|destino| Movimiento
+  Documento -->|respalda| Movimiento
+  Movimiento -->|tiene| MovDet
+  MovDet -->|item| Item
+
+  %% ── RELACIONES: PRÉSTAMOS ───────────────────────────────
+  Servicio -->|solicitante| Prestamo
+  Prestamo -->|tiene| PrestDet
+  PrestDet -->|item| Item
+
+  %% ── RELACIONES: REPARACIONES ────────────────────────────
+  Item -->|en reparación| Reparacion
+  Proveedor -->|realiza| Reparacion
+  Servicio -->|origen| Reparacion
+
+  %% ── RELACIONES: PEDIDOS ─────────────────────────────────
+  Servicio -->|solicitante| Pedido
+  Pedido -->|contiene| PedidoDet
+  PedidoDet -->|item| Item
+  PedidoDet -->|genera| Patrimonio
+  Servicio -->|asignado a| Patrimonio
+
+  %% ── RELACIONES: NOTAS ───────────────────────────────────
+  Servicio -->|solicitante| Nota
+  Nota -->|contiene| NotaDet
+  NotaDet -->|item| Item
+
+  %% ── RELACIONES: PENDIENTES ──────────────────────────────
+  Servicio -->|relacionado| Pendiente
+
+  %% ── ESTILOS ─────────────────────────────────────────────
+  classDef maestro  fill:#0d2135,stroke:#1f6feb,color:#79c0ff,rx:6
+  classDef item     fill:#0d1f35,stroke:#388bfd,color:#79c0ff,rx:6
+  classDef mov      fill:#0d2210,stroke:#2ea043,color:#56d364,rx:6
+  classDef prest    fill:#1a0d30,stroke:#8957e5,color:#bc8cff,rx:6
+  classDef rep      fill:#2d0d0d,stroke:#da3633,color:#f85149,rx:6
+  classDef pedido   fill:#0d2020,stroke:#1f8b8b,color:#39d0d0,rx:6
+  classDef nota     fill:#2d2000,stroke:#e3b341,color:#e3b341,rx:6
+  classDef pend     fill:#161b22,stroke:#484f58,color:#8b949e,rx:6
+
+  class Servicio,Toner,Articulo,ActivoPC,Impresora,Proveedor,AsignImp maestro
+  class Item,ItemComponente item
+  class Documento,Movimiento,MovDet mov
+  class Prestamo,PrestDet prest
+  class Reparacion rep
+  class Pedido,PedidoDet,Patrimonio pedido
+  class Nota,NotaDet nota
+  class Pendiente pend
+  </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TAB 2: DETALLE ═══════════════════════════════ -->
+<div id="tab-detalle" class="tab-panel">
+<div class="models-grid">
+
+  <!-- MAESTROS -->
+  <div class="model-card c-maestro">
+    <div class="model-card-header">🏥 Servicio</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>nombre</td><td>CharField <span class="badge badge-uniq">único</span></td></tr>
+      <tr><td>descripcion</td><td>TextField (opc.)</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-maestro">
+    <div class="model-card-header">🖨️ Toner</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>nombre</td><td>CharField</td></tr>
+      <tr><td>marca</td><td>CharField (opc.)</td></tr>
+      <tr><td>modelo_impresora</td><td>CharField (opc.)</td></tr>
+      <tr><td>activo</td><td>Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-maestro">
+    <div class="model-card-header">📦 Artículo</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>nombre</td><td>CharField</td></tr>
+      <tr><td>marca</td><td>CharField (opc.)</td></tr>
+      <tr><td>caracteristicas</td><td>TextField (opc.)</td></tr>
+      <tr><td>activo</td><td>Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-maestro">
+    <div class="model-card-header">💻 ActivoPC</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>nombre_pc</td><td>CharField</td></tr>
+      <tr><td>ip</td><td>IPv4 (opc.)</td></tr>
+      <tr><td>patrimonio</td><td>CharField (opc.)</td></tr>
+      <tr><td>serie</td><td>CharField (opc.)</td></tr>
+      <tr><td>servicio</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>activo</td><td>Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-maestro">
+    <div class="model-card-header">🖨️ Impresora</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>marca / modelo</td><td>CharField</td></tr>
+      <tr><td>tipo</td><td>CharField</td></tr>
+      <tr><td>conexion</td><td>IP | USB</td></tr>
+      <tr><td>ip</td><td>IPv4 (opc.)</td></tr>
+      <tr><td>patrimonio</td><td>CharField (opc.)</td></tr>
+      <tr><td>toner</td><td><span class="badge badge-fk">FK</span> → Toner</td></tr>
+      <tr><td>estado / activo</td><td>CharField / Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-maestro">
+    <div class="model-card-header">📌 AsignacionImpresora <small style="opacity:.6">(historial)</small></div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>impresora</td><td><span class="badge badge-fk">FK</span> → Impresora</td></tr>
+      <tr><td>servicio</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>fecha_desde</td><td>Date</td></tr>
+      <tr><td>fecha_hasta</td><td>Date (NULL = activa)</td></tr>
+      <tr><td>ubicacion / responsable</td><td>CharField</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-maestro">
+    <div class="model-card-header">🏢 Proveedor</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>nombre</td><td>CharField</td></tr>
+      <tr><td>telefono / email</td><td>Contacto</td></tr>
+      <tr><td>activo</td><td>Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <!-- ITEM -->
+  <div class="model-card c-item">
+    <div class="model-card-header">📋 Item <small style="opacity:.6">(polimórfico)</small></div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>tipo</td><td>TONER | ARTICULO | ACTIVO_PC | IMPRESORA</td></tr>
+      <tr><td>toner</td><td><span class="badge badge-fk">FK</span> → Toner (opc.)</td></tr>
+      <tr><td>articulo</td><td><span class="badge badge-fk">FK</span> → Artículo (opc.)</td></tr>
+      <tr><td>activo_pc</td><td><span class="badge badge-fk">FK</span> → ActivoPC (opc.)</td></tr>
+      <tr><td>impresora</td><td><span class="badge badge-fk">FK</span> → Impresora (opc.)</td></tr>
+      <tr><td>es_combo</td><td>Boolean</td></tr>
+      <tr><td>prestable</td><td>Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-item">
+    <div class="model-card-header">🔗 ItemComponente <small style="opacity:.6">(combos)</small></div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>item_padre</td><td><span class="badge badge-fk">FK</span> → Item (es_combo=True)</td></tr>
+      <tr><td>item_hijo</td><td><span class="badge badge-fk">FK</span> → Item</td></tr>
+      <tr><td>cantidad</td><td>Integer</td></tr>
+    </table></div>
+  </div>
+
+  <!-- MOVIMIENTOS -->
+  <div class="model-card c-mov">
+    <div class="model-card-header">📄 Documento</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>tipo</td><td>PEDIDO | NOTA | ORDEN</td></tr>
+      <tr><td>numero</td><td>CharField <span class="badge badge-uniq">único por tipo</span></td></tr>
+      <tr><td>fecha</td><td>Date</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-mov">
+    <div class="model-card-header">↕️ Movimiento</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>tipo</td><td>INGRESO | EGRESO | AJUSTE</td></tr>
+      <tr><td>fecha</td><td>DateTime</td></tr>
+      <tr><td>servicio</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>documento</td><td><span class="badge badge-fk">FK</span> → Documento</td></tr>
+      <tr><td>anulado</td><td>Boolean</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-mov">
+    <div class="model-card-header">↕️ MovimientoDetalle</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>movimiento</td><td><span class="badge badge-fk">FK</span> → Movimiento</td></tr>
+      <tr><td>item</td><td><span class="badge badge-fk">FK</span> → Item</td></tr>
+      <tr><td>cantidad</td><td>Integer</td></tr>
+    </table></div>
+  </div>
+
+  <!-- PRÉSTAMOS -->
+  <div class="model-card c-prest">
+    <div class="model-card-header">🔄 Préstamo</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>servicio</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>entregado_a</td><td>CharField</td></tr>
+      <tr><td>fecha_retiro</td><td>DateTime</td></tr>
+      <tr><td>fecha_devolucion_estimada</td><td>Date (opc.)</td></tr>
+      <tr><td>fecha_devolucion_real</td><td>DateTime (opc.)</td></tr>
+      <tr><td>proyector / webcam / notebook / prolongacion</td><td>Boolean × 4</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-prest">
+    <div class="model-card-header">🔄 PrestamoDetalle</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>prestamo</td><td><span class="badge badge-fk">FK</span> → Préstamo</td></tr>
+      <tr><td>item</td><td><span class="badge badge-fk">FK</span> → Item</td></tr>
+      <tr><td>cantidad</td><td>Integer</td></tr>
+    </table></div>
+  </div>
+
+  <!-- REPARACIONES -->
+  <div class="model-card c-rep">
+    <div class="model-card-header">🔧 Reparación</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>item</td><td><span class="badge badge-fk">FK</span> → Item</td></tr>
+      <tr><td>proveedor</td><td><span class="badge badge-fk">FK</span> → Proveedor</td></tr>
+      <tr><td>servicio</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>estado</td><td>RECIBIDO → EN_REPARACION → CERRADO</td></tr>
+      <tr><td>fecha_envio / retorno</td><td>Date (opc.)</td></tr>
+      <tr><td>diagnostico</td><td>CharField</td></tr>
+    </table></div>
+  </div>
+
+  <!-- PEDIDOS / PATRIMONIO -->
+  <div class="model-card c-pedido">
+    <div class="model-card-header">📋 Pedido</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>numero</td><td>CharField <span class="badge badge-uniq">único</span></td></tr>
+      <tr><td>servicio_solicitante</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>estado</td><td>HECHO → APROBADO → RECIBIDO → ENTREGADO</td></tr>
+      <tr><td>numero_nota / para_que</td><td>Datos del pedido</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-pedido">
+    <div class="model-card-header">📋 PedidoDetalle</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>pedido</td><td><span class="badge badge-fk">FK</span> → Pedido</td></tr>
+      <tr><td>item</td><td><span class="badge badge-fk">FK</span> → Item</td></tr>
+      <tr><td>cantidad</td><td>Integer</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-pedido">
+    <div class="model-card-header">🏷️ PatrimonioUnidad</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>pedido_detalle</td><td><span class="badge badge-fk">FK</span> → PedidoDetalle</td></tr>
+      <tr><td>numero_patrimonio</td><td>CharField <span class="badge badge-uniq">único</span></td></tr>
+      <tr><td>serial</td><td>CharField (opc.)</td></tr>
+      <tr><td>servicio_asignado</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>asignado_por</td><td><span class="badge badge-fk">FK</span> → User</td></tr>
+    </table></div>
+  </div>
+
+  <!-- NOTAS -->
+  <div class="model-card c-nota">
+    <div class="model-card-header">📝 Nota</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>numero</td><td>CharField</td></tr>
+      <tr><td>servicio_solicitante</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>estado</td><td>BORRADOR → ENVIADA → APROBADA → CERRADA</td></tr>
+      <tr><td>fecha / fecha_cierre</td><td>Date / DateTime</td></tr>
+    </table></div>
+  </div>
+
+  <div class="model-card c-nota">
+    <div class="model-card-header">📝 NotaDetalle</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>nota</td><td><span class="badge badge-fk">FK</span> → Nota</td></tr>
+      <tr><td>item</td><td><span class="badge badge-fk">FK</span> → Item</td></tr>
+      <tr><td>cantidad</td><td>Integer</td></tr>
+    </table></div>
+  </div>
+
+  <!-- PENDIENTES -->
+  <div class="model-card c-pend">
+    <div class="model-card-header">⏳ Pendiente</div>
+    <div class="model-card-body"><table>
+      <tr><td>id</td><td><span class="badge badge-pk">PK</span></td></tr>
+      <tr><td>texto</td><td>CharField</td></tr>
+      <tr><td>completado</td><td>Boolean</td></tr>
+      <tr><td>servicio</td><td><span class="badge badge-fk">FK</span> → Servicio</td></tr>
+      <tr><td>creado</td><td>DateTime (auto)</td></tr>
+    </table></div>
+  </div>
+
+</div><!-- /models-grid -->
+</div><!-- /tab-detalle -->
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    flowchart: { curve: 'basis', padding: 20, nodeSpacing: 50, rankSpacing: 60 },
+    themeVariables: {
+      primaryColor: '#161b22',
+      primaryTextColor: '#c9d1d9',
+      primaryBorderColor: '#30363d',
+      lineColor: '#484f58',
+      secondaryColor: '#0d1117',
+      background: '#0d1117',
+      mainBkg: '#161b22',
+      nodeBorder: '#30363d',
+      clusterBkg: '#161b22',
+      titleColor: '#f0f6fc',
+      edgeLabelBackground: '#161b22',
+    }
+  });
+
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

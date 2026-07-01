@@ -1,0 +1,76 @@
+{% extends "inventario/base.html" %}
+{% block title %}Reparación #{{ rep.id }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Reparación #{{ rep.id }}</div>
+    <div class="page-subtitle muted">{{ rep.item }}{% if rep.servicio %} · {{ rep.servicio }}{% endif %}</div>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'reparaciones_list' %}">← Volver</a>
+</div>
+
+<!-- TIMELINE -->
+<div class="card" style="margin-bottom:14px;padding:20px 24px;overflow-x:auto">
+  <div style="display:flex;align-items:flex-start;min-width:520px">
+    {% for valor, label in pasos %}
+      {% with idx=forloop.counter0 %}
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="
+          width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+          font-size:.74rem;font-weight:700;flex-shrink:0;
+          {% if idx < paso_actual %}background:#0f2e1a;border:2px solid #22c55e;color:#22c55e;
+          {% elif idx == paso_actual %}background:#1a3a6b;border:2px solid #3b82f6;color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15);
+          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);
+          {% endif %}
+        ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
+        <div style="font-size:.68rem;margin-top:6px;text-align:center;
+          {% if idx == paso_actual %}color:#3b82f6;font-weight:700;
+          {% elif idx < paso_actual %}color:#22c55e;
+          {% else %}color:var(--muted);{% endif %}
+        ">{{ label }}</div>
+      </div>
+      {% if not forloop.last %}
+        <div style="flex:1;height:2px;margin-top:16px;{% if idx < paso_actual %}background:#22c55e;{% else %}background:var(--border);{% endif %}"></div>
+      {% endif %}
+      {% endwith %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- INFO + ACCIONES -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+  <div class="card">
+    <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Datos de la reparación</div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:.88rem">
+      <div><div class="label">Ítem</div><div>{{ rep.item }}</div></div>
+      <div><div class="label">Proveedor</div><div>{{ rep.proveedor|default:"—" }}</div></div>
+      <div><div class="label">Servicio origen</div><div>{{ rep.servicio|default:"—" }}</div></div>
+      <div><div class="label">Fecha de envío</div><div class="muted">{{ rep.fecha_envio|date:"d/m/Y"|default:"—" }}</div></div>
+      <div><div class="label">Fecha de retorno</div><div class="muted">{{ rep.fecha_retorno|date:"d/m/Y"|default:"—" }}</div></div>
+      {% if rep.diagnostico %}
+      <div><div class="label">Diagnóstico</div><div>{{ rep.diagnostico }}</div></div>
+      {% endif %}
+      {% if rep.seguimiento %}
+      <div><div class="label">Seguimiento</div><div class="muted" style="white-space:pre-wrap;font-size:.83rem">{{ rep.seguimiento }}</div></div>
+      {% endif %}
+      <div><div class="label">Creado</div><div class="muted">{{ rep.creado|date:"d/m/Y H:i" }}</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Acciones</div>
+    <a class="btn" href="{% url 'reparacion_edit' rep.pk %}" style="text-align:center">✎ Editar reparación</a>
+    {% if siguiente %}
+      <form method="post" action="{% url 'reparacion_avanzar' rep.pk %}" style="margin:0">
+        {% csrf_token %}
+        <button class="btn primary" type="submit" style="width:100%">Avanzar → {{ siguiente_label }}</button>
+      </form>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

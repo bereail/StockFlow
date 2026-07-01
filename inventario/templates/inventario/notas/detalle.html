@@ -1,45 +1,117 @@
 {% extends "inventario/base.html" %}
+{% block title %}Nota {{ nota.numero|default:"sin número" }}{% endblock %}
+
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:14px">
+<div class="page-header">
   <div>
-    <div class="page-title">Detalle Nota</div>
-    <div class="page-subtitle muted">
-      {{ nota.fecha }} · {{ nota.servicio_solicitante.nombre|default:"Sin servicio" }} · {{ nota.get_estado_display }}
+    <div class="page-title">Nota {{ nota.numero|default:"sin número" }}</div>
+    <div class="page-subtitle muted">{{ nota.servicio_solicitante|default:"Sin servicio" }} · {{ nota.fecha|date:"d/m/Y" }}</div>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'notas_list' %}">← Volver</a>
+</div>
+
+<!-- TIMELINE -->
+<div class="card" style="margin-bottom:14px;padding:20px 24px">
+  <div style="display:flex;align-items:flex-start">
+    {% for valor, label in pasos %}
+      {% with idx=forloop.counter0 %}
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="
+          width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+          font-size:.78rem;font-weight:700;flex-shrink:0;
+          {% if nota.estado == 'CANCELADA' and idx <= paso_actual %}
+            background:#3f1010;border:2px solid #ef4444;color:#ef4444;
+          {% elif idx < paso_actual %}
+            background:#0f2e1a;border:2px solid #22c55e;color:#22c55e;
+          {% elif idx == paso_actual %}
+            background:#1a3a6b;border:2px solid #3b82f6;color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15);
+          {% else %}
+            background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);
+          {% endif %}
+        ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
+        <div style="font-size:.72rem;margin-top:6px;text-align:center;white-space:nowrap;
+          {% if idx == paso_actual %}color:#3b82f6;font-weight:700;
+          {% elif idx < paso_actual %}color:#22c55e;
+          {% else %}color:var(--muted);{% endif %}
+        ">{{ label }}</div>
+      </div>
+      {% if not forloop.last %}
+        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:#22c55e;{% else %}background:var(--border);{% endif %}"></div>
+      {% endif %}
+      {% endwith %}
+    {% endfor %}
+    {% if nota.estado == "CANCELADA" %}
+      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:#3f1010;border:1px solid #ef4444;white-space:nowrap">
+        <span style="color:#ef4444;font-size:.78rem;font-weight:700">✕ Cancelada</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- INFO + ACCIONES -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+  <div class="card">
+    <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Datos de la nota</div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:.88rem">
+      <div><div class="label">Número</div><div>{{ nota.numero|default:"—" }}</div></div>
+      <div><div class="label">Servicio</div><div>{{ nota.servicio_solicitante|default:"—" }}</div></div>
+      <div><div class="label">Fecha</div><div class="muted">{{ nota.fecha|date:"d/m/Y" }}</div></div>
+      {% if nota.fecha_cierre %}
+      <div><div class="label">Fecha de cierre</div><div class="muted">{{ nota.fecha_cierre|date:"d/m/Y H:i" }}</div></div>
+      {% endif %}
+      {% if nota.detalle %}
+      <div><div class="label">Detalle</div><div class="muted" style="white-space:pre-wrap;font-size:.83rem">{{ nota.detalle }}</div></div>
+      {% endif %}
     </div>
   </div>
-  <a class="btn" href="{% url 'notas_list' %}">Volver</a>
+
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Acciones</div>
+    <a class="btn" href="{% url 'nota_edit' nota.pk %}" style="text-align:center">✎ Editar nota</a>
+    {% if siguiente %}
+      <form method="post" action="{% url 'nota_avanzar' nota.pk %}" style="margin:0">
+        {% csrf_token %}
+        <button class="btn primary" type="submit" style="width:100%">Avanzar → {{ siguiente_label }}</button>
+      </form>
+    {% endif %}
+    <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--border)">
+      <form method="post" action="{% url 'nota_delete' nota.pk %}" style="margin:0"
+            onsubmit="return confirm('¿Eliminar esta nota? No se puede deshacer.')">
+        {% csrf_token %}
+        <button class="btn btn-ghost" type="submit" style="width:100%;font-size:.8rem;color:var(--danger);opacity:.7">Eliminar nota</button>
+      </form>
+    </div>
+  </div>
+
 </div>
 
-<div class="card" style="margin-bottom:16px">
-  <div><b>Número:</b> {{ nota.numero|default:"—" }}</div>
-  <div style="margin-top:10px"><b>Detalle:</b></div>
-  <div class="muted" style="white-space:pre-wrap">{{ nota.detalle|default:"—" }}</div>
-</div>
-
+<!-- ÍTEMS -->
 <div class="card">
-  <div class="page-subtitle muted" style="margin-bottom:10px">Items</div>
-
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Item</th>
-        <th>Cantidad</th>
-        <th>Detalle</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in detalles %}
-      <tr>
-        <td>{{ d.item }}</td>
-        <td>{{ d.cantidad }}</td>
-        <td>{{ d.detalle|default:"—" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="3" class="muted">Sin items.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Ítems de la nota</div>
+  <div class="table-wrapper" style="margin:0 -16px -16px">
+    <table>
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th style="width:80px">Cantidad</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in detalles %}
+        <tr>
+          <td>{{ d.item }}</td>
+          <td>{{ d.cantidad }}</td>
+          <td class="muted">{{ d.detalle|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="muted" style="padding:20px;text-align:center">Sin ítems.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

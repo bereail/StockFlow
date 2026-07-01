@@ -1,0 +1,177 @@
+{% extends "inventario/base.html" %}
+{% block title %}Reporte de tóner por servicio{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Tóner por servicio</div>
+    <div class="page-subtitle muted">Consumo agrupado por servicio</div>
+  </div>
+  <div class="page-actions">
+    <a class="btn2" href="{% url 'toner_historial' %}">Historial detallado</a>
+    <a class="btn2 primary" id="btn-csv" href="{% url 'toner_reporte_csv' %}?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
+       title="Descargar CSV (abre bien en Excel)">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar CSV
+    </a>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="card" style="margin-bottom:14px">
+  <form method="get" class="filter-bar">
+    <div class="filter-bar-inner">
+      <div class="field" style="min-width:180px;flex:1">
+        <label class="label">Servicio</label>
+        <select name="servicio">
+          <option value="">Todos los servicios</option>
+          {% for s in servicios %}
+            <option value="{{ s.id }}" {% if s.id|stringformat:"s" == servicio_id %}selected{% endif %}>{{ s.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:160px;flex:1">
+        <label class="label">Tóner</label>
+        <select name="toner">
+          <option value="">Todos los tóners</option>
+          {% for t in toners %}
+            <option value="{{ t.id }}" {% if t.id|stringformat:"s" == toner_id %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:130px">
+        <label class="label">Desde</label>
+        <input type="date" name="fecha_desde" value="{{ fecha_desde }}">
+      </div>
+      <div class="field" style="min-width:130px">
+        <label class="label">Hasta</label>
+        <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}">
+      </div>
+      <div class="field" style="justify-content:flex-end;padding-top:18px">
+        <div style="display:flex;gap:8px">
+          <button class="btn2 primary" type="submit">Filtrar</button>
+          <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}">Limpiar</a>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Stats globales -->
+<div class="stats-row" style="margin-bottom:14px">
+  <div class="stat-card">
+    <div class="stat-value">{{ total_global }}</div>
+    <div class="stat-label">unidades entregadas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_entregas }}</div>
+    <div class="stat-label">movimientos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ resumen|length }}</div>
+    <div class="stat-label">combinaciones servicio/tóner</div>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Detalle por servicio</span>
+    {% if fecha_desde or fecha_hasta %}
+      <span class="chip">
+        {% if fecha_desde %}Desde {{ fecha_desde }}{% endif %}
+        {% if fecha_hasta %} hasta {{ fecha_hasta }}{% endif %}
+      </span>
+    {% endif %}
+  </div>
+  <div class="table-wrapper" style="margin:-0 -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+    <table>
+      <thead>
+        <tr>
+          <th>Servicio</th>
+          <th>Tóner</th>
+          <th>Marca</th>
+          <th>Modelo impresora</th>
+          <th style="text-align:right">Entregas</th>
+          <th style="text-align:right">Total unidades</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in resumen %}
+        <tr>
+          <td>
+            <strong>{{ fila.movimiento__servicio__nombre|default:"Sin servicio" }}</strong>
+          </td>
+          <td>{{ fila.item__toner__nombre|default:"—" }}</td>
+          <td class="muted">{{ fila.item__toner__marca|default:"—" }}</td>
+          <td class="muted">{{ fila.item__toner__modelo_impresora|default:"—" }}</td>
+          <td style="text-align:right"><span class="chip">{{ fila.entregas }}</span></td>
+          <td style="text-align:right">
+            <strong style="font-size:15px;color:var(--primary)">{{ fila.total }}</strong>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-title">Sin datos para los filtros seleccionados</div>
+              <div class="empty-state-sub">Probá cambiando el rango de fechas o quitando filtros.</div>
+              <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}">Ver todo</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if resumen %}
+      <tfoot>
+        <tr style="background:rgba(79,140,255,.06)">
+          <td colspan="4" style="font-weight:800;padding:11px 10px">Total general</td>
+          <td style="text-align:right;font-weight:800">{{ total_entregas }}</td>
+          <td style="text-align:right;font-weight:900;font-size:16px;color:var(--primary)">{{ total_global }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+<style>
+.filter-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.stats-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.stat-card {
+  flex: 1;
+  min-width: 140px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  backdrop-filter: blur(8px);
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+</style>
+{% endblock %}

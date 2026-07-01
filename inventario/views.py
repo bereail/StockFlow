@@ -1,9 +1,14 @@
 import csv
+import io
+from datetime import datetime
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth.views import LogoutView
+from django.core.paginator import Paginator
 from django.forms import formset_factory, modelformset_factory
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Sum, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -15,7 +20,7 @@ from .models import (
     Item, Movimiento, MovimientoDetalle,
     Pendiente, Reparacion,
     Prestamo,
-    Pedido, PedidoDetalle,
+    Pedido, PedidoDetalle, PatrimonioUnidad,
     Nota, NotaDetalle
 )
 from .forms import (
@@ -28,7 +33,7 @@ from .forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
 from .forms.servicios import ServicioForm
 from .forms.pcs import ActivoPCForm
 from .forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
-from .forms.prestamos import PrestamoForm
+from .forms.prestamos import PrestamoForm, PrestamoDetalleFormSet
 from .forms.pendientes import PendienteForm
 from .forms.reparaciones import ReparacionForm
 from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
@@ -37,9 +42,55 @@ from .forms.nota import NotaForm, NotaDetalleFormSet
 from .services.items import item_de_toner, item_de_articulo, item_de_impresora
 
 
+def custom_login(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    error = False
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        remember  = request.POST.get("remember_me") == "on"
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            auth_login(request, user)
+            if remember:
+                request.session.set_expiry(60 * 60 * 24 * 14)  # 14 días
+            else:
+                request.session.set_expiry(0)  # se cierra con el navegador
+            next_url = request.POST.get("next") or request.GET.get("next") or "dashboard"
+            return redirect(next_url)
+        error = True
+    return render(request, "registration/login.html", {"error": error, "next": request.GET.get("next", "")})
+
+
 @login_required
 def dashboard(request):
-    return render(request, "inventario/dashboard.html")
+    stats = {
+        "toners":      Toner.objects.filter(activo=True).count(),
+        "impresoras":  Impresora.objects.filter(activo=True).count(),
+        "articulos":   Articulo.objects.filter(activo=True).count(),
+        "servicios":   Servicio.objects.count(),
+        "pcs":         ActivoPC.objects.filter(activo=True).count(),
+        "prestamos_activos": Prestamo.objects.filter(fecha_devolucion_real__isnull=True).count(),
+        "pendientes_abiertos": Pendiente.objects.filter(estado__in=["PENDIENTE", "EN_PROGRESO"]).count(),
+        "reparaciones_activas": Reparacion.objects.exclude(estado__in=["CERRADO", "RETIRADO"]).count(),
+        "entregas_mes": (
+            MovimientoDetalle.objects
+            .filter(
+                movimiento__tipo="EGRESO",
+                item__tipo="TONER",
+                movimiento__fecha__month=timezone.now().month,
+                movimiento__fecha__year=timezone.now().year,
+            )
+            .aggregate(total=Sum("cantidad"))["total"] or 0
+        ),
+    }
+    return render(request, "inventario/dashboard.html", {"stats": stats})
+
+
+@login_required
+def diagrama_bd(request):
+    return render(request, "inventario/diagrama_bd.html")
 
 
 ### TONER ####
@@ -47,7 +98,7 @@ def dashboard(request):
 def toner_page(request):
     q = (request.GET.get("q") or "").strip()
 
-    toners = Toner.objects.all().order_by("marca", "nombre")
+    toners = Toner.objects.all().order_by("-id")
     if q:
         toners = toners.filter(
             Q(nombre__icontains=q) |
@@ -59,16 +110,19 @@ def toner_page(request):
         MovimientoDetalle.objects
         .select_related("movimiento", "item", "item__toner", "movimiento__servicio")
         .filter(movimiento__tipo="EGRESO", item__tipo="TONER")
-        .order_by("-movimiento__fecha")[:4]
+        .order_by("-movimiento__fecha")[:6]
     )
 
     movimientos = list(movimientos_qs)
-    mostrar_ver_todo = len(movimientos) > 3
-    movimientos = movimientos[:3]
+    mostrar_ver_todo = len(movimientos) > 5
+    movimientos = movimientos[:5]
 
+    paginator = Paginator(toners, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/toner/toner.html", {
         "q": q,
-        "toners": toners,
+        "toners": page_obj,
+        "page_obj": page_obj,
         "movimientos": movimientos,
         "mostrar_ver_todo": mostrar_ver_todo,
     })
@@ -88,8 +142,11 @@ def toner_list(request):
 
     toners = toners.order_by("marca", "nombre")
 
+    paginator = Paginator(toners, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/toner/toner_list.html", {
-        "toners": toners,
+        "toners": page_obj,
+        "page_obj": page_obj,
         "q": q,
         "title": "Toners",
     })
@@ -174,9 +231,14 @@ def toner_toggle(request, pk: int):
 
 @login_required
 def toner_historial(request):
-    q = (request.GET.get("q") or "").strip()
+    q           = (request.GET.get("q") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    toner_id    = (request.GET.get("toner") or "").strip()
+    fecha_desde = (request.GET.get("fecha_desde") or "").strip()
+    fecha_hasta = (request.GET.get("fecha_hasta") or "").strip()
 
-    detalles = (MovimientoDetalle.objects
+    detalles = (
+        MovimientoDetalle.objects
         .select_related("movimiento", "item", "item__toner", "movimiento__servicio", "movimiento__documento")
         .filter(movimiento__tipo="EGRESO", item__tipo="TONER")
         .order_by("-movimiento__fecha")
@@ -190,8 +252,38 @@ def toner_historial(request):
             Q(movimiento__servicio__nombre__icontains=q) |
             Q(movimiento__observaciones__icontains=q)
         )
+    if servicio_id:
+        detalles = detalles.filter(movimiento__servicio_id=servicio_id)
+    if toner_id:
+        detalles = detalles.filter(item__toner_id=toner_id)
+    if fecha_desde:
+        try:
+            detalles = detalles.filter(
+                movimiento__fecha__date__gte=datetime.strptime(fecha_desde, "%Y-%m-%d").date()
+            )
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            detalles = detalles.filter(
+                movimiento__fecha__date__lte=datetime.strptime(fecha_hasta, "%Y-%m-%d").date()
+            )
+        except ValueError:
+            pass
 
-    return render(request, "inventario/toner/toner_historial.html", {"detalles": detalles, "q": q})
+    paginator = Paginator(detalles, 15)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+    return render(request, "inventario/toner/toner_historial.html", {
+        "detalles":    page_obj,
+        "page_obj":    page_obj,
+        "q":           q,
+        "servicio_id": servicio_id,
+        "toner_id":    toner_id,
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "servicios":   Servicio.objects.order_by("nombre"),
+        "toners":      Toner.objects.order_by("nombre"),
+    })
 
 
 # BACKUP #
@@ -203,11 +295,10 @@ def backup_entregas_csv(request):
         .order_by("-movimiento__fecha")
     )
 
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = 'attachment; filename="entregas_toner.csv"'
-
-    writer = csv.writer(response)
-    writer.writerow(["fecha", "servicio", "toner", "marca", "modelo_impresora", "cantidad", "documento", "observaciones"])
+    buf = io.StringIO()
+    buf.write('﻿')  # BOM UTF-8 para que Excel lo abra bien
+    writer = csv.writer(buf)
+    writer.writerow(["Fecha", "Servicio", "Toner", "Marca", "Modelo impresora", "Cantidad", "Documento", "Observaciones"])
 
     for d in detalles:
         m = d.movimiento
@@ -223,6 +314,121 @@ def backup_entregas_csv(request):
             (m.observaciones or "").replace("\n", " ").strip(),
         ])
 
+    content = buf.getvalue().encode("utf-8")
+    response = HttpResponse(content, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="entregas_toner.csv"'
+    return response
+
+
+@login_required
+def toner_reporte_servicios(request):
+    """Reporte de tóner agrupado por servicio. Filtros: fecha, servicio, toner."""
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    toner_id    = (request.GET.get("toner") or "").strip()
+    fecha_desde = (request.GET.get("fecha_desde") or "").strip()
+    fecha_hasta = (request.GET.get("fecha_hasta") or "").strip()
+
+    qs = (
+        MovimientoDetalle.objects
+        .select_related("movimiento__servicio", "item__toner")
+        .filter(movimiento__tipo="EGRESO", item__tipo="TONER", movimiento__anulado=False)
+    )
+
+    if servicio_id:
+        qs = qs.filter(movimiento__servicio_id=servicio_id)
+    if toner_id:
+        qs = qs.filter(item__toner_id=toner_id)
+    if fecha_desde:
+        try:
+            qs = qs.filter(movimiento__fecha__date__gte=datetime.strptime(fecha_desde, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            qs = qs.filter(movimiento__fecha__date__lte=datetime.strptime(fecha_hasta, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+
+    resumen = (
+        qs.values(
+            "movimiento__servicio__nombre",
+            "item__toner__nombre",
+            "item__toner__marca",
+            "item__toner__modelo_impresora",
+        )
+        .annotate(total=Sum("cantidad"), entregas=Count("id"))
+        .order_by("movimiento__servicio__nombre", "item__toner__nombre")
+    )
+
+    total_global  = qs.aggregate(total=Sum("cantidad"))["total"] or 0
+    total_entregas = qs.count()
+
+    return render(request, "inventario/toner/toner_reporte_servicios.html", {
+        "resumen":        resumen,
+        "total_global":   total_global,
+        "total_entregas": total_entregas,
+        "servicios":      Servicio.objects.order_by("nombre"),
+        "toners":         Toner.objects.filter(activo=True).order_by("nombre"),
+        "servicio_id":    servicio_id,
+        "toner_id":       toner_id,
+        "fecha_desde":    fecha_desde,
+        "fecha_hasta":    fecha_hasta,
+    })
+
+
+@login_required
+def toner_reporte_csv(request):
+    """Descarga CSV del reporte de tóner (con filtros) compatible con Excel."""
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    toner_id    = (request.GET.get("toner") or "").strip()
+    fecha_desde = (request.GET.get("fecha_desde") or "").strip()
+    fecha_hasta = (request.GET.get("fecha_hasta") or "").strip()
+
+    qs = (
+        MovimientoDetalle.objects
+        .select_related("movimiento__servicio", "item__toner")
+        .filter(movimiento__tipo="EGRESO", item__tipo="TONER", movimiento__anulado=False)
+        .order_by("movimiento__servicio__nombre", "-movimiento__fecha")
+    )
+
+    if servicio_id:
+        qs = qs.filter(movimiento__servicio_id=servicio_id)
+    if toner_id:
+        qs = qs.filter(item__toner_id=toner_id)
+    if fecha_desde:
+        try:
+            qs = qs.filter(movimiento__fecha__date__gte=datetime.strptime(fecha_desde, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            qs = qs.filter(movimiento__fecha__date__lte=datetime.strptime(fecha_hasta, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+
+    nombre = f"toner_por_servicio_{timezone.now():%Y%m%d}.csv"
+
+    buf = io.StringIO()
+    buf.write('﻿')  # BOM UTF-8 para que Excel lo abra bien
+    writer = csv.writer(buf)
+    writer.writerow(["Fecha", "Servicio", "Toner", "Marca", "Modelo impresora", "Cantidad", "Observaciones"])
+
+    for d in qs:
+        m = d.movimiento
+        t = d.item.toner
+        writer.writerow([
+            timezone.localtime(m.fecha).strftime("%Y-%m-%d %H:%M"),
+            m.servicio.nombre if m.servicio else "Sin servicio",
+            t.nombre if t else "",
+            t.marca if t else "",
+            t.modelo_impresora if t else "",
+            d.cantidad,
+            (m.observaciones or "").replace("\n", " ").strip(),
+        ])
+
+    content = buf.getvalue().encode("utf-8")
+    response = HttpResponse(content, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{nombre}"'
     return response
 
 
@@ -268,9 +474,12 @@ def articulos_page(request):
             Q(descripcion__icontains=q)
         )
 
+    paginator = Paginator(articulos, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/articulos/articulos.html", {
         "q": q,
-        "articulos": articulos,
+        "articulos": page_obj,
+        "page_obj": page_obj,
     })
 
 
@@ -368,7 +577,11 @@ def articulos_historial(request):
             Q(movimiento__observaciones__icontains=q)
         )
 
-    return render(request, "inventario/articulos/articulos_historial.html", {"detalles": detalles, "q": q})
+    paginator = Paginator(detalles, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+    return render(request, "inventario/articulos/articulos_historial.html", {
+        "detalles": page_obj, "page_obj": page_obj, "q": q,
+    })
 
 
 # PC #
@@ -376,7 +589,7 @@ def articulos_historial(request):
 def pcs_page(request):
     q = (request.GET.get("q") or "").strip()
 
-    pcs = ActivoPC.objects.select_related("servicio").order_by("nombre_pc")
+    pcs = ActivoPC.objects.select_related("servicio").order_by("-id")
     if q:
         pcs = pcs.filter(
             Q(nombre_pc__icontains=q) |
@@ -386,7 +599,37 @@ def pcs_page(request):
             Q(servicio__nombre__icontains=q)
         )
 
-    return render(request, "inventario/pcs/pcs.html", {"q": q, "pcs": pcs})
+    # PCs registradas desde pedidos (patrimonios con nombre de equipo o tipo PC/articulo)
+    pats = (
+        PatrimonioUnidad.objects
+        .select_related(
+            "pedido_detalle__item__articulo",
+            "pedido_detalle__item__activo_pc",
+            "pedido_detalle__pedido",
+            "servicio_asignado",
+        )
+        .order_by("-id")
+    )
+    if q:
+        pats = pats.filter(
+            Q(nombre_pc__icontains=q) |
+            Q(numero_patrimonio__icontains=q) |
+            Q(ip__icontains=q) |
+            Q(usuario_asignado__icontains=q) |
+            Q(servicio_asignado__nombre__icontains=q) |
+            Q(pedido_detalle__item__articulo__nombre__icontains=q)
+        )
+
+    paginator_pcs  = Paginator(pcs, 5)
+    page_obj       = paginator_pcs.get_page(request.GET.get("page", 1))
+    paginator_pats = Paginator(pats, 5)
+    page_obj_pats  = paginator_pats.get_page(request.GET.get("page_pat", 1))
+
+    return render(request, "inventario/pcs/pcs.html", {
+        "q": q,
+        "pcs": page_obj, "page_obj": page_obj,
+        "pats": page_obj_pats, "page_obj_pats": page_obj_pats,
+    })
 
 
 @login_required
@@ -433,9 +676,10 @@ def servicios_page(request):
             Q(descripcion__icontains=q)
         )
 
+    paginator = Paginator(servicios, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/servicios/servicios.html", {
-        "q": q,
-        "servicios": servicios,
+        "q": q, "servicios": page_obj, "page_obj": page_obj,
     })
 
 
@@ -489,7 +733,7 @@ def impresoras_page(request):
                 queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
             )
         )
-        .order_by("marca", "modelo")
+        .order_by("-id")
     )
 
     if q:
@@ -500,14 +744,11 @@ def impresoras_page(request):
             Q(ip__icontains=q)
         )
 
-    return render(
-        request,
-        "inventario/impresoras/impresoras.html",
-        {
-            "impresoras": impresoras,
-            "q": q,
-        },
-    )
+    paginator = Paginator(impresoras, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+    return render(request, "inventario/impresoras/impresoras.html", {
+        "impresoras": page_obj, "page_obj": page_obj, "q": q,
+    })
 
 
 @login_required
@@ -642,7 +883,11 @@ def impresora_historial(request):
             Q(movimiento__observaciones__icontains=q)
         )
 
-    return render(request, "inventario/impresoras/impresoras_historial.html", {"detalles": detalles, "q": q})
+    paginator = Paginator(detalles, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+    return render(request, "inventario/impresoras/impresoras_historial.html", {
+        "detalles": page_obj, "page_obj": page_obj, "q": q,
+    })
 
 
 # MOVIMIENTOS #
@@ -759,8 +1004,7 @@ def movimientos_list(request):
         "q": q,
     }
 
-    from django.core.paginator import Paginator
-    paginator = Paginator(movimientos, 25)
+    paginator = Paginator(movimientos, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -770,6 +1014,25 @@ def movimientos_list(request):
         "servicios": servicios,
         "toners": toners,
         "filtros": filtros,
+    })
+
+
+@login_required
+def movimiento_edit(request, pk):
+    movimiento = get_object_or_404(Movimiento, pk=pk)
+    if request.method == "POST":
+        form = MovimientoForm(request.POST, instance=movimiento)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Movimiento actualizado.")
+            return redirect("movimientos_list")
+    else:
+        form = MovimientoForm(instance=movimiento)
+    detalles = movimiento.detalles.select_related(
+        "item__toner", "item__articulo", "item__activo_pc", "item__impresora"
+    ).all()
+    return render(request, "inventario/movimientos/movimiento_edit.html", {
+        "form": form, "movimiento": movimiento, "detalles": detalles,
     })
 
 
@@ -829,9 +1092,10 @@ def prestamos_list(request):
             Q(detalles__item__tipo__icontains=q)
         ).distinct()
 
+    paginator = Paginator(prestamos, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/prestamos/list.html", {
-        "prestamos": prestamos,
-        "q": q,
+        "prestamos": page_obj, "page_obj": page_obj, "q": q,
     })
 
 
@@ -839,28 +1103,43 @@ def prestamos_list(request):
 def prestamo_create(request):
     if request.method == "POST":
         form = PrestamoForm(request.POST)
-        if form.is_valid():
-            form.save()
+        formset = PrestamoDetalleFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                prestamo = form.save()
+                formset.instance = prestamo
+                formset.save()
             return redirect("prestamos_list")
     else:
         form = PrestamoForm()
+        formset = PrestamoDetalleFormSet()
 
-    return render(request, "inventario/prestamos/form.html", {"form": form})
+    return render(request, "inventario/prestamos/form.html", {
+        "form": form,
+        "formset": formset,
+    })
 
 
 @login_required
 def prestamo_edit(request, pk):
     prestamo = get_object_or_404(Prestamo, pk=pk)
-
     if request.method == "POST":
         form = PrestamoForm(request.POST, instance=prestamo)
-        if form.is_valid():
-            form.save()
-            return redirect("prestamos_list")
+        formset = PrestamoDetalleFormSet(request.POST, instance=prestamo)
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                form.save()
+                formset.save()
+            return redirect("prestamo_detail", pk=prestamo.pk)
     else:
         form = PrestamoForm(instance=prestamo)
+        formset = PrestamoDetalleFormSet(instance=prestamo)
 
-    return render(request, "inventario/prestamos/form.html", {"form": form, "prestamo": prestamo})
+    return render(request, "inventario/prestamos/form.html", {
+        "form": form,
+        "formset": formset,
+        "prestamo": prestamo,
+    })
 
 
 @login_required
@@ -886,20 +1165,34 @@ def prestamo_devolver(request, pk):
 
 
 # PENDIENTES #
+_CICLO_ESTADO = {
+    "PENDIENTE":   "EN_PROGRESO",
+    "EN_PROGRESO": "COMPLETADO",
+    "COMPLETADO":  "PENDIENTE",
+    "CANCELADO":   "PENDIENTE",
+}
+
+
 @login_required
 def pendientes_page(request):
-    form = PendienteForm()
-
     if request.method == "POST":
         form = PendienteForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("pendientes_page")
+    else:
+        form = PendienteForm()
 
+    estado_filtro = (request.GET.get("estado") or "").strip()
     pendientes = Pendiente.objects.select_related("servicio").all()
+    if estado_filtro:
+        pendientes = pendientes.filter(estado=estado_filtro)
+
     return render(request, "inventario/pendientes/pendientes.html", {
         "form": form,
         "pendientes": pendientes,
+        "estado_filtro": estado_filtro,
+        "today": timezone.localdate(),
     })
 
 
@@ -907,8 +1200,8 @@ def pendientes_page(request):
 @require_POST
 def pendiente_toggle(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
-    p.completado = not p.completado
-    p.save(update_fields=["completado"])
+    p.estado = _CICLO_ESTADO.get(p.estado, "PENDIENTE")
+    p.save(update_fields=["estado"])
     return redirect("pendientes_page")
 
 
@@ -933,26 +1226,50 @@ def pendiente_delete(request, pk):
 @login_required
 def reparaciones_list(request):
     estado = (request.GET.get("estado") or "").strip()
-    q = (request.GET.get("q") or "").strip()
-
-    reparaciones = Reparacion.objects.select_related("item", "proveedor").all()
-
+    q      = (request.GET.get("q") or "").strip()
+    reparaciones = Reparacion.objects.select_related("item", "proveedor", "servicio").order_by("-creado")
     if estado:
         reparaciones = reparaciones.filter(estado=estado)
-
     if q:
         reparaciones = reparaciones.filter(
             Q(proveedor__nombre__icontains=q) |
             Q(diagnostico__icontains=q) |
-            Q(seguimiento__icontains=q)
+            Q(seguimiento__icontains=q) |
+            Q(servicio__nombre__icontains=q)
         )
-
+    paginator = Paginator(reparaciones, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/reparaciones/reparaciones_list.html", {
-        "reparaciones": reparaciones,
-        "estado": estado,
-        "q": q,
-        "estados": Reparacion.ESTADOS,
+        "reparaciones": page_obj, "page_obj": page_obj,
+        "estado": estado, "q": q, "estados": Reparacion.ESTADOS,
     })
+
+
+@login_required
+def reparacion_detail(request, pk):
+    rep      = get_object_or_404(Reparacion.objects.select_related("item", "proveedor", "servicio"), pk=pk)
+    labels   = dict(Reparacion.ESTADOS)
+    paso_actual = _PASOS_TIMELINE_REP.index(rep.estado) if rep.estado in _PASOS_TIMELINE_REP else -1
+    siguiente   = _SIGUIENTE_ESTADO_REP.get(rep.estado)
+    return render(request, "inventario/reparaciones/reparacion_detail.html", {
+        "rep":             rep,
+        "pasos":           [(v, labels.get(v, v)) for v in _PASOS_TIMELINE_REP],
+        "paso_actual":     paso_actual,
+        "siguiente":       siguiente,
+        "siguiente_label": labels.get(siguiente, "") if siguiente else "",
+    })
+
+
+@login_required
+@require_POST
+def reparacion_avanzar(request, pk):
+    rep       = get_object_or_404(Reparacion, pk=pk)
+    siguiente = _SIGUIENTE_ESTADO_REP.get(rep.estado)
+    if siguiente:
+        rep.estado = siguiente
+        rep.save(update_fields=["estado", "actualizado"])
+        messages.success(request, f"Reparación avanzada a {rep.get_estado_display()}.")
+    return redirect("reparacion_detail", pk=rep.pk)
 
 
 @login_required
@@ -991,6 +1308,15 @@ def reparacion_edit(request, pk):
 
 
 # PEDIDOS #
+_SIGUIENTE_ESTADO_PEDIDO = {
+    "HECHO":    "APROBADO",
+    "APROBADO": "RECIBIDO",
+    "RECIBIDO": "ENTREGADO",
+}
+
+_PASOS_TIMELINE = ["HECHO", "APROBADO", "RECIBIDO", "ENTREGADO"]
+
+
 @login_required
 def pedidos_list(request):
     q = (request.GET.get("q") or "").strip()
@@ -1020,13 +1346,18 @@ def pedidos_list(request):
     if estado:
         pedidos = pedidos.filter(estado=estado)
 
+    paginator = Paginator(pedidos, 5)
+    page_num  = request.GET.get("page", 1)
+    page_obj  = paginator.get_page(page_num)
+
     return render(request, "inventario/pedidos/list.html", {
-        "pedidos": pedidos,
-        "q": q,
+        "pedidos":     page_obj,
+        "page_obj":    page_obj,
+        "q":           q,
         "servicio_id": servicio_id if servicio_id.lower() != "none" else "",
-        "estado": estado,
-        "estados": Pedido.ESTADOS,
-        "servicios": Servicio.objects.order_by("nombre"),
+        "estado":      estado,
+        "estados":     Pedido.ESTADOS,
+        "servicios":   Servicio.objects.order_by("nombre"),
     })
 
 
@@ -1057,10 +1388,6 @@ def pedido_create(request):
 @login_required
 def pedido_edit(request, pk):
     pedido = get_object_or_404(Pedido, pk=pk)
-
-    if pedido.estado not in ("HECHO",):
-        messages.error(request, "Este pedido no se puede editar en este estado.")
-        return redirect("pedido_detail", pk=pedido.pk)
 
     if request.method == "POST":
         form = PedidoForm(request.POST, instance=pedido)
@@ -1096,9 +1423,129 @@ def pedido_detail(request, pk):
         .filter(pedido=pedido)
     )
 
+    siguiente = _SIGUIENTE_ESTADO_PEDIDO.get(pedido.estado)
+    labels   = dict(Pedido.ESTADOS)
+    paso_actual = _PASOS_TIMELINE.index(pedido.estado) if pedido.estado in _PASOS_TIMELINE else -1
+    pasos_display = [(v, labels.get(v, v)) for v in _PASOS_TIMELINE]
+
+    form    = PedidoForm(instance=pedido)
+    formset = PedidoDetalleFormSet(instance=pedido)
+
     return render(request, "inventario/pedidos/detail.html", {
-        "pedido": pedido,
-        "detalles": detalles,
+        "pedido":          pedido,
+        "detalles":        detalles,
+        "siguiente":       siguiente,
+        "siguiente_label": labels.get(siguiente, "") if siguiente else "",
+        "pasos":           pasos_display,
+        "paso_actual":     paso_actual,
+        "form":            form,
+        "formset":         formset,
+    })
+
+
+@login_required
+@require_POST
+def pedido_avanzar(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+    siguiente = _SIGUIENTE_ESTADO_PEDIDO.get(pedido.estado)
+    if siguiente:
+        pedido.estado = siguiente
+        hoy = timezone.localdate()
+        campos = ["estado", "actualizado"]
+        if siguiente == "APROBADO"  and not pedido.fecha_aprobado:
+            pedido.fecha_aprobado = hoy;  campos.append("fecha_aprobado")
+        if siguiente == "RECIBIDO"  and not pedido.fecha_recibido:
+            pedido.fecha_recibido = hoy;  campos.append("fecha_recibido")
+        if siguiente == "ENTREGADO" and not pedido.fecha_entregado:
+            pedido.fecha_entregado = hoy; campos.append("fecha_entregado")
+        pedido.save(update_fields=campos)
+        messages.success(request, f"Pedido avanzado a {pedido.get_estado_display()}.")
+    return redirect("pedido_detail", pk=pedido.pk)
+
+
+@login_required
+@require_POST
+def pedido_cancelar(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+    if pedido.estado not in ("ENTREGADO", "CANCELADO"):
+        pedido.estado = "CANCELADO"
+        pedido.save(update_fields=["estado", "actualizado"])
+        messages.success(request, "Pedido cancelado.")
+    return redirect("pedido_detail", pk=pedido.pk)
+
+
+@login_required
+@require_POST
+def pedido_delete(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+    pedido.delete()
+    messages.success(request, f"Pedido {pedido.numero} eliminado.")
+    return redirect("pedidos_list")
+
+
+@login_required
+def patrimonios_list(request):
+    q = (request.GET.get("q") or "").strip()
+    tipo = request.GET.get("tipo") or ""
+
+    pats = (
+        PatrimonioUnidad.objects
+        .select_related(
+            "pedido_detalle__item__articulo",
+            "pedido_detalle__item__toner",
+            "pedido_detalle__item__activo_pc",
+            "pedido_detalle__item__impresora",
+            "pedido_detalle__pedido",
+            "servicio_asignado",
+        )
+        .order_by("-id")
+    )
+
+    if q:
+        pats = pats.filter(
+            Q(numero_patrimonio__icontains=q) |
+            Q(nombre_pc__icontains=q) |
+            Q(ip__icontains=q) |
+            Q(usuario_asignado__icontains=q) |
+            Q(serial__icontains=q) |
+            Q(servicio_asignado__nombre__icontains=q) |
+            Q(detalle_item__icontains=q) |
+            Q(pedido_detalle__item__articulo__nombre__icontains=q) |
+            Q(pedido_detalle__item__toner__nombre__icontains=q) |
+            Q(pedido_detalle__item__toner__marca__icontains=q) |
+            Q(pedido_detalle__item__activo_pc__nombre_pc__icontains=q) |
+            Q(pedido_detalle__item__impresora__modelo__icontains=q)
+        )
+
+    if tipo:
+        pats = pats.filter(pedido_detalle__item__tipo=tipo)
+
+    paginator = Paginator(pats, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+    return render(request, "inventario/patrimonios/list.html", {
+        "pats": page_obj, "page_obj": page_obj, "q": q, "tipo": tipo,
+    })
+
+
+@login_required
+def patrimonio_edit(request, pk):
+    pat = get_object_or_404(PatrimonioUnidad.objects.select_related("pedido_detalle__pedido"), pk=pk)
+    pedido = pat.pedido_detalle.pedido
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+    if request.method == "POST":
+        form = PatrimonioUnidadForm(request.POST, instance=pat, pedido_detalle=pat.pedido_detalle, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Patrimonio actualizado.")
+            if next_url:
+                return redirect(next_url)
+            return redirect("pedido_detail", pk=pedido.pk)
+    else:
+        form = PatrimonioUnidadForm(instance=pat, pedido_detalle=pat.pedido_detalle, user=request.user)
+    return render(request, "inventario/pedidos/patrimonio_form.html", {
+        "form": form, "detalle": pat.pedido_detalle, "pedido": pedido,
+        "cargados": pat.pedido_detalle.patrimonios.count(), "maximo": pat.pedido_detalle.cantidad,
+        "modo_edicion": True, "patrimonio": pat, "next": next_url,
     })
 
 
@@ -1169,10 +1616,42 @@ def nota_delete(request, pk):
     return redirect("notas_list")
 
 
+_SIGUIENTE_ESTADO_NOTA = {
+    "BORRADOR": "ENVIADA",
+    "ENVIADA":  "APROBADA",
+    "APROBADA": "CERRADA",
+}
+_PASOS_TIMELINE_NOTA = ["BORRADOR", "ENVIADA", "APROBADA", "CERRADA"]
+
+_SIGUIENTE_ESTADO_REP = {
+    "RECIBIDO":      "ENVIADO",
+    "ENVIADO":       "EN_REPARACION",
+    "EN_REPARACION": "LISTO",
+    "LISTO":         "RETIRADO",
+    "RETIRADO":      "CERRADO",
+}
+_PASOS_TIMELINE_REP = ["RECIBIDO", "ENVIADO", "EN_REPARACION", "LISTO", "RETIRADO", "CERRADO"]
+
+
 @login_required
 def nota_list(request):
-    notas = Nota.objects.select_related("servicio_solicitante").all()
-    return render(request, "inventario/notas/lista.html", {"notas": notas})
+    q      = (request.GET.get("q") or "").strip()
+    estado = (request.GET.get("estado") or "").strip()
+    notas  = Nota.objects.select_related("servicio_solicitante").order_by("-fecha", "-creado")
+    if q:
+        notas = notas.filter(
+            Q(numero__icontains=q) |
+            Q(servicio_solicitante__nombre__icontains=q) |
+            Q(detalle__icontains=q)
+        )
+    if estado:
+        notas = notas.filter(estado=estado)
+    paginator = Paginator(notas, 5)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+    return render(request, "inventario/notas/lista.html", {
+        "notas": page_obj, "page_obj": page_obj,
+        "q": q, "estado": estado, "estados": Nota.ESTADOS,
+    })
 
 
 @login_required
@@ -1200,9 +1679,31 @@ def nota_create(request):
 
 @login_required
 def nota_detail(request, pk):
-    nota = get_object_or_404(Nota.objects.select_related("servicio_solicitante"), pk=pk)
+    nota     = get_object_or_404(Nota.objects.select_related("servicio_solicitante"), pk=pk)
     detalles = nota.detalles.select_related("item").all()
-    return render(request, "inventario/notas/detalle.html", {"nota": nota, "detalles": detalles})
+    labels   = dict(Nota.ESTADOS)
+    paso_actual = _PASOS_TIMELINE_NOTA.index(nota.estado) if nota.estado in _PASOS_TIMELINE_NOTA else -1
+    siguiente   = _SIGUIENTE_ESTADO_NOTA.get(nota.estado)
+    return render(request, "inventario/notas/detalle.html", {
+        "nota":            nota,
+        "detalles":        detalles,
+        "pasos":           [(v, labels.get(v, v)) for v in _PASOS_TIMELINE_NOTA],
+        "paso_actual":     paso_actual,
+        "siguiente":       siguiente,
+        "siguiente_label": labels.get(siguiente, "") if siguiente else "",
+    })
+
+
+@login_required
+@require_POST
+def nota_avanzar(request, pk):
+    nota      = get_object_or_404(Nota, pk=pk)
+    siguiente = _SIGUIENTE_ESTADO_NOTA.get(nota.estado)
+    if siguiente:
+        nota.estado = siguiente
+        nota.save()
+        messages.success(request, f"Nota avanzada a {nota.get_estado_display()}.")
+    return redirect("nota_detail", pk=nota.pk)
 
 
 @login_required

@@ -13,6 +13,11 @@ urlpatterns = [
     path("toner/<int:pk>/toggle/", views.toner_toggle, name="toner_toggle"),
     path("toner/historial/", views.toner_historial, name="toner_historial"),
     path("toner/backup/entregas.csv", views.backup_entregas_csv, name="backup_entregas_csv"),
+    path("toner/reporte/servicios/", views.toner_reporte_servicios, name="toner_reporte_servicios"),
+    path("toner/reporte/csv/", views.toner_reporte_csv, name="toner_reporte_csv"),
+
+    # DIAGRAMA BD
+    path("diagrama/", views.diagrama_bd, name="diagrama_bd"),
 
     # ARTICULOS
     path("articulos/", views.articulos_page, name="articulos_page"),
@@ -46,6 +51,7 @@ urlpatterns = [
     path("movimientos/", views.movimientos_list, name="movimientos_list"),
     path("movimientos/export/csv/", views.movimientos_export_csv, name="movimientos_export_csv"),
     path("movimientos/nuevo/", views.movimiento_create, name="movimiento_create"),
+    path("movimientos/<int:pk>/editar/", views.movimiento_edit, name="movimiento_edit"),
 
     # PRESTAMOS
     path("prestamos/", views.prestamos_list, name="prestamos_page"),  # <-- esta te arregla el error ya
@@ -64,14 +70,21 @@ urlpatterns = [
     # REPARACIONES #
     path("reparaciones/", views.reparaciones_list, name="reparaciones_list"),
     path("reparaciones/nueva/", views.reparacion_create, name="reparacion_create"),
+    path("reparaciones/<int:pk>/", views.reparacion_detail, name="reparacion_detail"),
     path("reparaciones/<int:pk>/editar/", views.reparacion_edit, name="reparacion_edit"),
+    path("reparaciones/<int:pk>/avanzar/", views.reparacion_avanzar, name="reparacion_avanzar"),
 
     # PEDIDOS #
     path("pedidos/", views.pedidos_list, name="pedidos_list"),
     path("pedidos/nuevo/", views.pedido_create, name="pedido_create"),
     path("pedidos/<int:pk>/", views.pedido_detail, name="pedido_detail"),
     path("pedidos/<int:pk>/editar/", views.pedido_edit, name="pedido_edit"),
+    path("pedidos/<int:pk>/avanzar/", views.pedido_avanzar, name="pedido_avanzar"),
+    path("pedidos/<int:pk>/cancelar/", views.pedido_cancelar, name="pedido_cancelar"),
+    path("pedidos/<int:pk>/eliminar/", views.pedido_delete, name="pedido_delete"),
+    path("patrimonios/", views.patrimonios_list, name="patrimonios_list"),
     path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create"),
+    path("patrimonios/<int:pk>/editar/", views.patrimonio_edit, name="patrimonio_edit"),
 
     # NOTA #
     path("notas/", views.nota_list, name="notas_list"),
@@ -79,6 +92,7 @@ urlpatterns = [
     path("notas/<int:pk>/", views.nota_detail, name="nota_detail"),
     path("notas/<int:pk>/editar/", views.nota_edit, name="nota_edit"),
     path("notas/<int:pk>/eliminar/", views.nota_delete, name="nota_delete"),
+    path("notas/<int:pk>/avanzar/", views.nota_avanzar, name="nota_avanzar"),
 
     # BÚSQUEDA GLOBAL
     path("buscar/", views.busqueda_global, name="busqueda_global"),

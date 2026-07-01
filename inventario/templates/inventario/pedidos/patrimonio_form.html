@@ -1,49 +1,72 @@
 {% extends "inventario/base.html" %}
+{% block title %}{{ modo_edicion|yesno:"Editar,Cargar" }} Patrimonio{% endblock %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
-    <div class="page-title">Cargar Patrimonio</div>
-    <div class="page-subtitle">
-      Pedido {{ pedido.numero }} · {{ detalle.item }} · {{ cargados }}/{{ maximo }}
+    <div class="page-title">{{ modo_edicion|yesno:"Editar,Cargar" }} Patrimonio</div>
+    <div class="page-subtitle muted">
+      Pedido {{ pedido.numero }} · {{ detalle.item }}
+      {% if not modo_edicion %} · {{ cargados }}/{{ maximo }} cargados{% endif %}
     </div>
   </div>
-
-  <a class="btn btn-ghost" href="{% url 'pedido_detail' pedido.pk %}">Volver</a>
+  <a class="btn btn-ghost" href="{{ next|default_if_none:'' }}{% if not next %}{% url 'pedido_detail' pedido.pk %}{% endif %}">← Volver</a>
 </div>
 
 <form method="post" class="card">
   {% csrf_token %}
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-  <div class="grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
     <div>
-      <label>Número de patrimonio</label>
+      <label class="label">Número de patrimonio</label>
       {{ form.numero_patrimonio }}
-      {{ form.numero_patrimonio.errors }}
+      {% if form.numero_patrimonio.errors %}<div style="color:var(--danger);font-size:.8rem;margin-top:4px">{{ form.numero_patrimonio.errors.0 }}</div>{% endif %}
     </div>
     <div>
-      <label>Serial (opcional)</label>
+      <label class="label">Serial (opcional)</label>
       {{ form.serial }}
     </div>
 
-    <div style="grid-column: 1 / -1;">
-      <label>Detalle del item (opcional)</label>
+    <div style="grid-column:1/-1">
+      <label class="label">Detalle del artículo (opcional)</label>
       {{ form.detalle_item }}
     </div>
 
-    <div style="grid-column: 1 / -1;">
-      <label>Servicio asignado (opcional)</label>
+    <div>
+      <label class="label">Nombre del equipo (opcional)</label>
+      {{ form.nombre_pc }}
+    </div>
+    <div>
+      <label class="label">Dirección IP (opcional)</label>
+      {{ form.ip }}
+    </div>
+
+    <div style="grid-column:1/-1">
+      <label class="label">Usuario asignado (opcional)</label>
+      {{ form.usuario_asignado }}
+    </div>
+
+    <div style="grid-column:1/-1">
+      <label class="label">Servicio asignado (opcional)</label>
       {{ form.servicio_asignado }}
     </div>
 
-    <div style="grid-column: 1 / -1;">
-      <label>Observaciones</label>
+    <div style="grid-column:1/-1">
+      <label class="label">Observaciones</label>
       {{ form.observaciones }}
     </div>
+
   </div>
 
-  <div style="margin-top:12px">
-    <button class="btn" type="submit">Guardar patrimonio</button>
+  {% if form.non_field_errors %}
+    <div style="color:var(--danger);margin-top:10px;font-size:.85rem">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div style="margin-top:16px;display:flex;gap:10px">
+    <button class="btn primary" type="submit">Guardar</button>
+    <a class="btn btn-ghost" href="{{ next|default_if_none:'' }}{% if not next %}{% url 'pedido_detail' pedido.pk %}{% endif %}">Cancelar</a>
   </div>
 
 </form>

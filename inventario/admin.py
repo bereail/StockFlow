@@ -56,10 +56,10 @@ class ItemComponenteInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "tipo", "es_combo", "prestable", "categoria_prestamo")
-    list_filter = ("tipo", "es_combo", "prestable", "categoria_prestamo")
+    list_display = ("id", "tipo", "es_combo", "prestable")
+    list_filter = ("tipo", "es_combo", "prestable")
     search_fields = ("id",)
-    list_editable = ("es_combo", "prestable", "categoria_prestamo")
+    list_editable = ("es_combo", "prestable")
 
     inlines = [ItemComponenteInline]
 # =========================
@@ -73,12 +73,11 @@ class PrestamoDetalleInline(admin.TabularInline):
 @admin.register(Prestamo)
 class PrestamoAdmin(admin.ModelAdmin):
     list_display = (
-    "id", "servicio", "fecha_retiro", "fecha_devolucion_estimada", "fecha_devolucion_real",
-    "proyector", "camara_web", "prolongacion", "notebook",
-    "telefono_contacto",
+        "id", "servicio", "entregado_a",
+        "fecha_retiro", "fecha_devolucion_estimada", "fecha_devolucion_real",
+        "telefono_contacto",
     )
-    list_filter = ("fecha_devolucion_real", "servicio", "proyector", "camara_web", "prolongacion", "notebook")
-
+    list_filter = ("fecha_devolucion_real", "servicio")
     search_fields = ("servicio__nombre", "telefono_contacto", "entregado_a", "observaciones")
     ordering = ("-fecha_retiro",)
     inlines = [PrestamoDetalleInline]

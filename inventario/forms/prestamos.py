@@ -1,77 +1,64 @@
 from django import forms
+from django.forms import inlineformset_factory
 from django.utils import timezone
 
-from inventario.models import Prestamo
-
-ITEM_CHOICES = [
-    ("PROYECTOR", "Proyector"),
-    ("WEBCAM", "Cámara web"),
-    ("NOTEBOOK", "Notebook"),
-    ("PROLONGACION", "Prolongación"),
-]
+from inventario.models import Prestamo, PrestamoDetalle, Item
 
 
 class PrestamoForm(forms.ModelForm):
-    items = forms.MultipleChoiceField(
-        choices=ITEM_CHOICES,
-        required=True,
-        widget=forms.CheckboxSelectMultiple,
-        label="Ítems a solicitar",
-    )
-
     class Meta:
         model = Prestamo
         fields = [
             "servicio",
-            "telefono_contacto",
             "entregado_a",
+            "telefono_contacto",
             "fecha_retiro",
             "fecha_devolucion_estimada",
-            "items",  # ✅ CLAVE
             "observaciones",
         ]
         widgets = {
             "fecha_retiro": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "fecha_devolucion_estimada": forms.DateInput(attrs={"type": "date"}),
-            "observaciones": forms.Textarea(attrs={"rows": 2}),
+            "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Observaciones opcionales..."}),
+            "entregado_a": forms.TextInput(attrs={"placeholder": "Nombre de quien retira"}),
+            "telefono_contacto": forms.TextInput(attrs={"placeholder": "Teléfono (opcional)"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # default fecha_retiro
         if not self.instance.pk and not self.initial.get("fecha_retiro"):
-            self.initial["fecha_retiro"] = timezone.now()
+            self.initial["fecha_retiro"] = timezone.now().strftime("%Y-%m-%dT%H:%M")
 
-        # precargar checks si editás
-        selected = []
-        if self.instance and self.instance.pk:
-            if self.instance.proyector:
-                selected.append("PROYECTOR")
-            if self.instance.camara_web:
-                selected.append("WEBCAM")
-            if self.instance.notebook:
-                selected.append("NOTEBOOK")
-            if self.instance.prolongacion:
-                selected.append("PROLONGACION")
 
-        self.fields["items"].initial = selected
+class PrestamoDetalleForm(forms.ModelForm):
+    class Meta:
+        model = PrestamoDetalle
+        fields = ["item", "cantidad", "detalle"]
+        widgets = {
+            "detalle": forms.TextInput(attrs={"placeholder": "Detalle (opcional)"}),
+        }
 
-    def clean_items(self):
-        items = self.cleaned_data.get("items") or []
-        if not items:
-            raise forms.ValidationError("Seleccioná al menos un ítem.")
-        return items
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["item"].queryset = Item.objects.filter(prestable=True).select_related(
+            "toner", "articulo", "activo_pc", "impresora"
+        )
+        self.fields["item"].required = False
+        self.fields["cantidad"].initial = 1
 
-    def save(self, commit=True):
-        obj = super().save(commit=False)
-        items = set(self.cleaned_data.get("items") or [])
+    def clean(self):
+        cleaned = super().clean()
+        item = cleaned.get("item")
+        cantidad = cleaned.get("cantidad")
+        if item and (not cantidad or cantidad < 1):
+            self.add_error("cantidad", "Ingresá una cantidad mayor a 0.")
+        return cleaned
 
-        obj.proyector = "PROYECTOR" in items
-        obj.camara_web = "WEBCAM" in items
-        obj.notebook = "NOTEBOOK" in items
-        obj.prolongacion = "PROLONGACION" in items
 
-        if commit:
-            obj.save()
-        return obj
+PrestamoDetalleFormSet = inlineformset_factory(
+    Prestamo,
+    PrestamoDetalle,
+    form=PrestamoDetalleForm,
+    extra=2,
+    can_delete=True,
+)

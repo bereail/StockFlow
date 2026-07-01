@@ -13,201 +13,223 @@
 
 {% with name=request.resolver_match.url_name %}
 
-<!-- ===== TOPBAR ===== -->
-<header class="topbar">
-  <div class="topbar-inner">
+<!-- ===== TITLEBAR ===== -->
+<header class="titlebar">
 
-    <!-- Hamburger (solo mobile) -->
-    <button class="nav-toggle" id="nav-toggle" type="button"
-            aria-label="Menú" aria-expanded="false" aria-controls="mobile-nav">
-      <svg id="hamburger-icon" viewBox="0 0 24 24">
-        <line x1="3" y1="6"  x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-      <svg id="close-icon" viewBox="0 0 24 24" style="display:none">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6"  y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
+  <a class="brand" href="{% url 'dashboard' %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="6" y="2" width="12" height="8" rx="1"/>
+      <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
+      <rect x="7" y="16" width="10" height="6" rx="1"/>
+      <circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+    InventarioHEEP
+  </a>
 
-    <a class="brand" href="{% url 'dashboard' %}">InventarioHEEP</a>
+  <div class="titlebar-spacer"></div>
 
-    <!-- Nav inline (SOLO DESKTOP) -->
-    <nav class="nav nav-desktop" aria-label="Navegación principal">
-
-      <a class="navlink {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
-         href="{% url 'toner_page' %}">Tóner</a>
-
-      <a class="navlink {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
-         href="{% url 'pcs_page' %}">PC</a>
-
-      <a class="navlink {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
-         href="{% url 'articulos_page' %}">Artículos</a>
-
-      <a class="navlink {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
-         href="{% url 'impresoras_page' %}">Impresoras</a>
-
-      <a class="navlink {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
-         href="{% url 'servicios_page' %}">Servicios</a>
-
-      <a class="navlink {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
-         href="{% url 'movimientos_list' %}">Movimientos</a>
-
-      <!-- Dropdown "Más" desktop -->
-      <div class="nav-more" id="nav-more">
-        <button class="navlink {% if nav_mas_activo %}active{% endif %}"
-                id="mas-toggle" type="button"
-                aria-haspopup="true" aria-expanded="false" aria-controls="mas-menu">
-          Más
-          <span class="mas-chevron" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-        </button>
-        <div class="nav-more-menu" id="mas-menu" role="menu">
-          <a class="mas-card {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
-             href="{% url 'prestamos_list' %}" role="menuitem">
-            <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-              <path d="M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/>
-              <path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"/></svg></div>
-            <span>Préstamos</span>
-          </a>
-          <a class="mas-card {% if name == 'pendientes_page' %}active{% endif %}"
-             href="{% url 'pendientes_page' %}" role="menuitem">
-            <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 7v5l3 3"/></svg></div>
-            <span>Pendientes</span>
-          </a>
-          <a class="mas-card {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
-             href="{% url 'reparaciones_list' %}" role="menuitem">
-            <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a5.8 5.8 0 01-7.4 7.4L5.7 21.4a2 2 0 01-2.8-2.8L11 10.7a5.8 5.8 0 017.4-7.4L14.7 6.3z"/></svg></div>
-            <span>Reparaciones</span>
-          </a>
-          <a class="mas-card {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
-             href="{% url 'pedidos_list' %}" role="menuitem">
-            <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-              <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
-            <span>Pedidos</span>
-          </a>
-          <a class="mas-card {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
-             href="{% url 'notas_list' %}" role="menuitem">
-            <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-              <path d="M9 12h6M9 16h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg></div>
-            <span>Notas</span>
-          </a>
-        </div>
-      </div>
-
-    </nav><!-- /nav-desktop -->
-
-    <!-- Búsqueda global (desktop) -->
-    <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
-      <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
-      </svg>
-      <input type="search" name="q" placeholder="Buscar…" autocomplete="off"
-             value="{% if name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
-    </form>
-
-    <!-- Usuario / sesión -->
-    {% if user.is_authenticated %}
-    <div class="user-bar">
-      {% if user.is_superuser %}
-      <a href="{% url 'admin_panel' %}" class="user-admin-link" title="Panel de administración">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-        </svg>
-        <span>Admin</span>
-      </a>
-      {% endif %}
-      <div class="user-avatar-chip">{{ user.username|slice:":2"|upper }}</div>
-      <span class="username">{{ user.username }}</span>
-      <form method="post" action="{% url 'logout' %}" style="margin:0">
-        {% csrf_token %}
-        <button type="submit" class="btn2" style="padding:6px 12px;font-size:12.5px;">Salir</button>
-      </form>
-    </div>
-    {% endif %}
-
-  </div>
-</header>
-
-<!-- ===== NAV MOBILE (FUERA del header para evitar backdrop-filter containing block) ===== -->
-<nav class="mobile-nav" id="mobile-nav" aria-label="Menú móvil" aria-hidden="true">
-
-  <!-- Búsqueda -->
-  <form class="nav-search-mobile" method="get" action="{% url 'busqueda_global' %}">
-    <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+  <!-- Búsqueda global -->
+  <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
+    <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
       <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
     </svg>
-    <input type="search" name="q" placeholder="Buscar…" autocomplete="off">
+    <input type="search" name="q" placeholder="Buscar…" autocomplete="off"
+           value="{% if name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
   </form>
 
-  <a class="navlink {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
-     href="{% url 'toner_page' %}">Tóner</a>
+  <!-- Usuario / sesión -->
+  {% if user.is_authenticated %}
+  <div class="user-bar">
+    {% if user.is_superuser %}
+    <a href="{% url 'admin_panel' %}" class="user-admin-link" title="Panel de administración">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      <span>Admin</span>
+    </a>
+    {% endif %}
+    <div class="user-avatar-chip" aria-hidden="true">{{ user.username|slice:":2"|upper }}</div>
+    <span class="username">{{ user.username }}</span>
+    <form method="post" action="{% url 'logout' %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit" class="btn2" style="padding:6px 12px;font-size:12.5px;">Salir</button>
+    </form>
+  </div>
+  {% endif %}
 
-  <a class="navlink {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
-     href="{% url 'pcs_page' %}">PC</a>
+</header>
 
-  <a class="navlink {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
-     href="{% url 'articulos_page' %}">Artículos</a>
+<!-- ===== SIDEBAR ===== -->
+{% if user.is_authenticated %}
+<nav class="sidebar" aria-label="Navegación principal">
 
-  <a class="navlink {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
-     href="{% url 'impresoras_page' %}">Impresoras</a>
+    <a class="sidebar-link {% if name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Inicio</span>
+    </a>
 
-  <a class="navlink {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
-     href="{% url 'servicios_page' %}">Servicios</a>
+    <span class="sidebar-section-title">Inventario</span>
 
-  <a class="navlink {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
-     href="{% url 'movimientos_list' %}">Movimientos</a>
+    <a class="sidebar-link {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
+       href="{% url 'toner_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="6" y="2" width="12" height="8" rx="1"/>
+        <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
+        <rect x="7" y="16" width="10" height="6" rx="1"/>
+      </svg>
+      <span>Tóner</span>
+    </a>
 
-  <!-- Sección "Más" en mobile: lista inline de cards -->
-  <div class="mobile-nav-section-title">Más secciones</div>
-  <div class="mobile-mas-grid">
-    <a class="mas-card {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
+    <a class="sidebar-link sidebar-link--sub {% if name == 'toner_reporte_servicios' %}active{% endif %}"
+       href="{% url 'toner_reporte_servicios' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Reporte tóner</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
+       href="{% url 'pcs_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span>PC</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
+       href="{% url 'articulos_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      <span>Artículos</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
+       href="{% url 'impresoras_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      <span>Impresoras</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
+       href="{% url 'servicios_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Servicios</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
+       href="{% url 'movimientos_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+      </svg>
+      <span>Movimientos</span>
+    </a>
+
+    <span class="sidebar-section-title">Gestión</span>
+
+    <a class="sidebar-link {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
        href="{% url 'prestamos_list' %}">
-      <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-        <path d="M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/>
-        <path d="M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"/></svg></div>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
+        <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
+      </svg>
       <span>Préstamos</span>
     </a>
-    <a class="mas-card {% if name == 'pendientes_page' %}active{% endif %}"
+
+    <a class="sidebar-link {% if name == 'pendientes_page' %}active{% endif %}"
        href="{% url 'pendientes_page' %}">
-      <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M12 7v5l3 3"/></svg></div>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
       <span>Pendientes</span>
     </a>
-    <a class="mas-card {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
+
+    <a class="sidebar-link {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
        href="{% url 'reparaciones_list' %}">
-      <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-        <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a5.8 5.8 0 01-7.4 7.4L5.7 21.4a2 2 0 01-2.8-2.8L11 10.7a5.8 5.8 0 017.4-7.4L14.7 6.3z"/></svg></div>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
+      </svg>
       <span>Reparaciones</span>
     </a>
-    <a class="mas-card {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
+
+    <a class="sidebar-link {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
        href="{% url 'pedidos_list' %}">
-      <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+      </svg>
       <span>Pedidos</span>
     </a>
-    <a class="mas-card {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
+
+    <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_edit patrimonio_create' %}active{% endif %}"
+       href="{% url 'patrimonios_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="16"/>
+        <line x1="10" y1="14" x2="14" y2="14"/>
+      </svg>
+      <span>Patrimonios</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
        href="{% url 'notas_list' %}">
-      <div class="mas-card-icon"><svg viewBox="0 0 24 24">
-        <path d="M9 12h6M9 16h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg></div>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
       <span>Notas</span>
     </a>
-  </div>
 
-</nav><!-- /mobile-nav -->
+    <a class="sidebar-link {% if name == 'diagrama_bd' %}active{% endif %}"
+       href="{% url 'diagrama_bd' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="3" width="6" height="4" rx="1"/>
+        <rect x="9" y="10" width="6" height="4" rx="1"/>
+        <rect x="16" y="3" width="6" height="4" rx="1"/>
+        <rect x="2" y="17" width="6" height="4" rx="1"/>
+        <line x1="5" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="5" y2="17"/><line x1="19" y1="7" x2="12" y2="10"/>
+      </svg>
+      <span>Diagrama BD</span>
+    </a>
 
-{% endwith %}
+    {% if user.is_superuser %}
+    <span class="sidebar-section-title">Administración</span>
+    <a class="sidebar-link {% if name in 'admin_panel admin_usuarios admin_usuario_create admin_usuario_edit admin_roles admin_rol_create admin_rol_edit' %}active{% endif %}"
+       href="{% url 'admin_panel' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+      </svg>
+      <span>Panel Admin</span>
+    </a>
+    {% endif %}
+
+  </nav>
+{% else %}
+<div class="sidebar"></div>
+{% endif %}
 
 <!-- ===== CONTENIDO ===== -->
 <main class="container">
   {% block content %}{% endblock %}
 </main>
+
+{% endwith %}
 
 <!-- ===== TOASTS ===== -->
 {% if messages %}
@@ -224,14 +246,26 @@
 
 <!-- ===== JS ===== -->
 <script>
-/* ── Cards colapsables (global) ── */
 (function () {
+  /* ── Toasts: auto-dismiss ── */
+  document.querySelectorAll('.toast').forEach(function (t) {
+    var delay = 4200;
+    setTimeout(function () {
+      t.style.transition = 'opacity .35s ease, transform .35s ease';
+      t.style.opacity    = '0';
+      t.style.transform  = 'translateX(18px)';
+      setTimeout(function () { t.remove(); }, 380);
+    }, delay);
+    t.addEventListener('click', function () { t.remove(); });
+    t.style.cursor = 'pointer';
+  });
+
+  /* ── Cards colapsables ── */
   function initCollapsible(card) {
     var trigger = card.querySelector('.collapse-trigger');
     var body    = card.querySelector('.card-collapse-body');
     if (!trigger || !body) return;
 
-    /* estado inicial: cerrado — se puede forzar abierto con data-open="true" */
     var startOpen = card.dataset.open === 'true';
     if (startOpen) {
       card.classList.add('open');
@@ -243,16 +277,13 @@
     }
 
     trigger.addEventListener('click', function (e) {
-      /* no colapsar si el clic fue en un link o botón de acción */
       if (e.target.closest('a[href], button:not(.collapse-trigger), form')) return;
       e.stopPropagation();
       var isOpen = card.classList.contains('open');
       if (isOpen) {
         body.style.maxHeight = body.scrollHeight + 'px';
         requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            body.style.maxHeight = '0px';
-          });
+          requestAnimationFrame(function () { body.style.maxHeight = '0px'; });
         });
         card.classList.remove('open');
         trigger.setAttribute('aria-expanded', 'false');
@@ -260,7 +291,6 @@
         card.classList.add('open');
         body.style.maxHeight = body.scrollHeight + 'px';
         trigger.setAttribute('aria-expanded', 'true');
-        /* quitar max-height fija una vez terminada la animación */
         body.addEventListener('transitionend', function fn() {
           if (card.classList.contains('open')) body.style.maxHeight = 'none';
           body.removeEventListener('transitionend', fn);
@@ -274,69 +304,6 @@
   }
 
   document.querySelectorAll('.card-collapsible').forEach(initCollapsible);
-})();
-
-(function () {
-  /* ── Dropdown "Más" (desktop) ── */
-  var navMore = document.getElementById('nav-more');
-  var masBtn  = document.getElementById('mas-toggle');
-  var masMenu = document.getElementById('mas-menu');
-
-  function masOpen()  { if(navMore){ navMore.classList.add('open');    masBtn.setAttribute('aria-expanded','true'); } }
-  function masClose() { if(navMore){ navMore.classList.remove('open'); masBtn.setAttribute('aria-expanded','false'); } }
-
-  if (masBtn) {
-    masBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      navMore.classList.contains('open') ? masClose() : masOpen();
-    });
-    if (masMenu) masMenu.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', masClose); });
-  }
-
-  /* ── Nav mobile ── */
-  var navToggle     = document.getElementById('nav-toggle');
-  var mobileNav     = document.getElementById('mobile-nav');
-  var hamburgerIcon = document.getElementById('hamburger-icon');
-  var closeIcon     = document.getElementById('close-icon');
-
-  function mobileOpen() {
-    mobileNav.classList.add('nav-open');
-    mobileNav.setAttribute('aria-hidden', 'false');
-    navToggle.setAttribute('aria-expanded', 'true');
-    hamburgerIcon.style.display = 'none';
-    closeIcon.style.display     = 'block';
-    document.body.style.overflow = 'hidden';
-  }
-  function mobileClose() {
-    mobileNav.classList.remove('nav-open');
-    mobileNav.setAttribute('aria-hidden', 'true');
-    masClose();
-    navToggle.setAttribute('aria-expanded', 'false');
-    hamburgerIcon.style.display = 'block';
-    closeIcon.style.display     = 'none';
-    document.body.style.overflow = '';
-  }
-
-  if (navToggle && mobileNav) {
-    navToggle.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileNav.classList.contains('nav-open') ? mobileClose() : mobileOpen();
-    });
-    /* Links inside mobile nav close the menu */
-    mobileNav.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', mobileClose); });
-  }
-
-  /* Click fuera cierra ambos */
-  document.addEventListener('click', function(e) {
-    if (navMore && !navMore.contains(e.target)) masClose();
-    if (mobileNav && mobileNav.classList.contains('nav-open') &&
-        !mobileNav.contains(e.target) && navToggle && !navToggle.contains(e.target)) {
-      mobileClose();
-    }
-  });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { masClose(); mobileClose(); }
-  });
 })();
 </script>
 

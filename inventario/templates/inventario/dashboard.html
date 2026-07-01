@@ -6,10 +6,31 @@
   <div class="page-header">
     <div>
       <div class="page-title">Dashboard</div>
-      <div class="page-subtitle">Accesos rápidos al sistema</div>
+      <div class="page-subtitle muted">Estado del sistema · {% now "d/m/Y" %}</div>
     </div>
   </div>
 
+  <!-- Estadísticas rápidas -->
+  <div class="stats-row" style="margin-bottom:20px">
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.entregas_mes }}</div>
+      <div class="stat-label">tóners entregados este mes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.prestamos_activos }}</div>
+      <div class="stat-label">préstamos activos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.pendientes_abiertos }}</div>
+      <div class="stat-label">tareas pendientes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.reparaciones_activas }}</div>
+      <div class="stat-label">reparaciones en curso</div>
+    </div>
+  </div>
+
+  <!-- Módulos -->
   <div class="cards-grid">
 
     <!-- TONER -->
@@ -19,10 +40,12 @@
           <path d="M6 3h12v3H6V3zm-1 5h14a2 2 0 0 1 2 2v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-6a2 2 0 0 1 2-2zm1 2v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6H6z"/>
         </svg>
       </div>
-      <div class="card-label">Toners</div>
-      <a class="btn2 primary" href="{% url 'toner_entrega' %}" onclick="event.stopPropagation()" style="margin-top:10px">
-        + Nueva entrega
-      </a>
+      <div class="card-label">Tóner</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.toners }} tipos activos</div>
+      <div style="display:flex;gap:6px;margin-top:auto;flex-wrap:wrap">
+        <a class="btn2 primary" href="{% url 'toner_entrega' %}" onclick="event.stopPropagation()">+ Entrega</a>
+        <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}" onclick="event.stopPropagation()">Reporte</a>
+      </div>
     </div>
 
     <!-- PCS -->
@@ -33,6 +56,7 @@
         </svg>
       </div>
       <div class="card-label">PCs</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.pcs }} equipos activos</div>
     </a>
 
     <!-- ARTICULOS -->
@@ -43,6 +67,7 @@
         </svg>
       </div>
       <div class="card-label">Artículos</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.articulos }} artículos activos</div>
     </a>
 
     <!-- IMPRESORAS -->
@@ -53,6 +78,7 @@
         </svg>
       </div>
       <div class="card-label">Impresoras</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.impresoras }} activas</div>
     </a>
 
     <!-- SERVICIOS -->
@@ -63,6 +89,7 @@
         </svg>
       </div>
       <div class="card-label">Servicios</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{{ stats.servicios }} sectores</div>
     </a>
 
     <!-- PRESTAMOS -->
@@ -73,6 +100,11 @@
         </svg>
       </div>
       <div class="card-label">Préstamos</div>
+      {% if stats.prestamos_activos %}
+        <div class="muted" style="font-size:12px;margin-top:2px">
+          <span class="chip warn">{{ stats.prestamos_activos }} activo{% if stats.prestamos_activos != 1 %}s{% endif %}</span>
+        </div>
+      {% endif %}
     </a>
 
     <!-- REPARACIONES -->
@@ -83,6 +115,11 @@
         </svg>
       </div>
       <div class="card-label">Reparaciones</div>
+      {% if stats.reparaciones_activas %}
+        <div class="muted" style="font-size:12px;margin-top:2px">
+          <span class="chip warn">{{ stats.reparaciones_activas }} en curso</span>
+        </div>
+      {% endif %}
     </a>
 
     <!-- PEDIDOS -->
@@ -113,6 +150,11 @@
         </svg>
       </div>
       <div class="card-label">Pendientes</div>
+      {% if stats.pendientes_abiertos %}
+        <div class="muted" style="font-size:12px;margin-top:2px">
+          <span class="chip danger">{{ stats.pendientes_abiertos }} abierto{% if stats.pendientes_abiertos != 1 %}s{% endif %}</span>
+        </div>
+      {% endif %}
     </a>
 
     <!-- MOVIMIENTOS -->

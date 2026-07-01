@@ -236,24 +236,7 @@ class Item(models.Model):
     impresora = models.ForeignKey(Impresora, null=True, blank=True, on_delete=models.PROTECT)
     es_combo = models.BooleanField(default=False)
     
-    # =========================
-    # PRÉSTAMOS
-    # =========================
-    CATEGORIA_CHOICES = [
-        ("PROYECTOR", "Proyector"),
-        ("WEBCAM", "Cámara web"),
-        ("NOTEBOOK", "Notebook"),
-        ("PROLONGACION", "Prolongación"),
-        ("OTRO", "Otro"),
-    ]
-
     prestable = models.BooleanField(default=False)
-    categoria_prestamo = models.CharField(
-        max_length=20,
-        choices=CATEGORIA_CHOICES,
-        blank=True,
-        default="",
-    )
 
     class Meta:
         constraints = [
@@ -385,12 +368,6 @@ class Prestamo(models.Model):
     fecha_devolucion_estimada = models.DateField(null=True, blank=True)
     fecha_devolucion_real = models.DateTimeField(null=True, blank=True)
 
-    # ✅ SOLO ESTO SE PUEDE PRESTAR (checks fijos)
-    proyector = models.BooleanField(default=False)
-    camara_web = models.BooleanField(default=False)
-    prolongacion = models.BooleanField(default=False)
-    notebook = models.BooleanField(default=False)
-
     observaciones = models.TextField(blank=True, default="")
 
     class Meta:
@@ -407,17 +384,11 @@ class Prestamo(models.Model):
 
     @property
     def items_label(self):
-        """Devuelve los ítems seleccionados (booleans) en formato texto."""
-        items = []
-        if self.proyector:
-            items.append("Proyector")
-        if self.camara_web:
-            items.append("Cámara web")
-        if self.notebook:
-            items.append("Notebook")
-        if self.prolongacion:
-            items.append("Prolongación")
-        return ", ".join(items) if items else "—"
+        partes = [
+            f"{d.item}" + (f" x{d.cantidad}" if d.cantidad > 1 else "") + (f" — {d.detalle}" if d.detalle else "")
+            for d in self.detalles.all()
+        ]
+        return ", ".join(partes) if partes else "—"
 
     @property
     def dias_restantes(self):
@@ -453,8 +424,16 @@ class PrestamoDetalle(models.Model):
 # PENDIENTES
 # =========================
 class Pendiente(models.Model):
+    ESTADOS = [
+        ("PENDIENTE",   "Pendiente"),
+        ("EN_PROGRESO", "En progreso"),
+        ("COMPLETADO",  "Completado"),
+        ("CANCELADO",   "Cancelado"),
+    ]
+
     texto = models.CharField(max_length=255)
-    completado = models.BooleanField(default=False)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="PENDIENTE", db_index=True)
+    fecha_limite = models.DateField(null=True, blank=True)
 
     servicio = models.ForeignKey(
         Servicio,
@@ -465,11 +444,10 @@ class Pendiente(models.Model):
     )
 
     creado = models.DateTimeField(auto_now_add=True)
-
     observacion = models.TextField(blank=True, default="")
 
     class Meta:
-        ordering = ["completado", "-creado"]
+        ordering = ["estado", "-creado"]
 
     def __str__(self):
         return self.texto
@@ -562,12 +540,24 @@ class Pedido(models.Model):
     observaciones = models.TextField(blank=True)
     para_que = models.CharField(max_length=255, blank=True)
 
+    proveedor = models.ForeignKey(
+        "Proveedor",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pedidos",
+        verbose_name="Proveedor",
+    )
+
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
         default="HECHO",
         db_index=True,
     )
+
+    fecha_aprobado  = models.DateField(null=True, blank=True, verbose_name="Fecha aprobación")
+    fecha_recibido  = models.DateField(null=True, blank=True, verbose_name="Fecha recepción")
+    fecha_entregado = models.DateField(null=True, blank=True, verbose_name="Fecha entrega")
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
@@ -608,6 +598,10 @@ class PatrimonioUnidad(models.Model):
 
     numero_patrimonio = models.CharField(max_length=50, unique=True)
     detalle_item = models.CharField(max_length=255, blank=True)
+
+    nombre_pc       = models.CharField(max_length=120, blank=True, verbose_name="Nombre del equipo")
+    ip              = models.CharField(max_length=45,  blank=True, verbose_name="Dirección IP")
+    usuario_asignado = models.CharField(max_length=120, blank=True, verbose_name="Usuario asignado")
 
     serial = models.CharField(max_length=80, blank=True)
     observaciones = models.TextField(blank=True)

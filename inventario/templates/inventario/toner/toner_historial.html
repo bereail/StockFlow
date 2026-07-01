@@ -1,45 +1,151 @@
 {% extends "inventario/base.html" %}
-{% block title %}Historial de entregas{% endblock %}
+{% block title %}Historial de entregas — Tóner{% endblock %}
 
 {% block content %}
-<div class="panel">
-  <div class="panel-head">
-    <h3 class="panel-title">Historial de entregas (Toner)</h3>
-    <a class="btn" href="{% url 'backup_entregas_csv' %}">Descargar CSV</a>
+<div class="page-header">
+  <div>
+    <div class="page-title">Historial de entregas</div>
+    <div class="page-subtitle muted">Todos los egresos de tóner registrados</div>
   </div>
+  <div class="page-actions">
+    <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte por servicio</a>
+    <a class="btn2 primary" href="{% url 'backup_entregas_csv' %}"
+       title="Descargar CSV completo (compatible con Excel)">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar CSV
+    </a>
+  </div>
+</div>
 
-  <form method="get" class="search" style="margin-bottom:12px">
-    <input name="q" placeholder="Buscar toner / servicio" value="{{ q|default:'' }}">
-    <button class="btn" type="submit">Buscar</button>
+<!-- Filtros -->
+<div class="card" style="margin-bottom:14px">
+  <form method="get">
+    <div class="filter-bar-inner">
+      <div class="field" style="flex:2;min-width:200px">
+        <label class="label">Buscar (texto libre)</label>
+        <input type="search" name="q" value="{{ q }}" placeholder="Nombre, marca, modelo, observaciones…">
+      </div>
+      <div class="field" style="flex:1;min-width:160px">
+        <label class="label">Servicio</label>
+        <select name="servicio">
+          <option value="">Todos los servicios</option>
+          {% for s in servicios %}
+            <option value="{{ s.id }}" {% if s.id|stringformat:"s" == servicio_id %}selected{% endif %}>{{ s.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="flex:1;min-width:160px">
+        <label class="label">Tóner</label>
+        <select name="toner">
+          <option value="">Todos los tóners</option>
+          {% for t in toners %}
+            <option value="{{ t.id }}" {% if t.id|stringformat:"s" == toner_id %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:130px">
+        <label class="label">Desde</label>
+        <input type="date" name="fecha_desde" value="{{ fecha_desde }}">
+      </div>
+      <div class="field" style="min-width:130px">
+        <label class="label">Hasta</label>
+        <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}">
+      </div>
+      <div class="field" style="justify-content:flex-end;padding-top:18px">
+        <div style="display:flex;gap:8px">
+          <button class="btn2 primary" type="submit">Filtrar</button>
+          <a class="btn2 btn-ghost" href="{% url 'toner_historial' %}">Limpiar</a>
+        </div>
+      </div>
+    </div>
   </form>
+</div>
 
-  <div class="tablewrap">
-    <table class="table">
+<!-- Tabla -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Entregas</span>
+    <span class="chip">{{ page_obj.paginator.count }} resultado{% if page_obj.paginator.count != 1 %}s{% endif %}</span>
+  </div>
+  <div class="table-wrapper" style="margin:0 -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+    <table>
       <thead>
         <tr>
           <th>Fecha</th>
           <th>Servicio</th>
-          <th>Toner</th>
-          <th>Cantidad</th>
+          <th>Tóner</th>
+          <th>Marca</th>
+          <th style="text-align:right">Cant.</th>
           <th>Documento</th>
-          <th>Obs</th>
+          <th>Observaciones</th>
         </tr>
       </thead>
       <tbody>
         {% for d in detalles %}
         <tr>
-          <td class="mono">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
-          <td class="muted">{{ d.movimiento.servicio|default:"-" }}</td>
-          <td>{{ d.item.toner }}</td>
-          <td><span class="badge">{{ d.cantidad }}</span></td>
-          <td class="muted">{{ d.movimiento.documento|default:"-" }}</td>
-          <td class="muted">{{ d.movimiento.observaciones|default:"-" }}</td>
+          <td class="muted mono" style="font-size:12px;white-space:nowrap">
+            {{ d.movimiento.fecha|date:"d/m/Y" }}<br>
+            <span style="opacity:.6">{{ d.movimiento.fecha|date:"H:i" }}</span>
+          </td>
+          <td>
+            {% if d.movimiento.servicio %}
+              <span class="chip">{{ d.movimiento.servicio.nombre }}</span>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+          <td><strong>{{ d.item.toner.nombre|default:"—" }}</strong></td>
+          <td class="muted">{{ d.item.toner.marca|default:"—" }}</td>
+          <td style="text-align:right">
+            <strong style="font-size:15px;color:var(--primary)">{{ d.cantidad }}</strong>
+          </td>
+          <td class="muted" style="font-size:12px">{{ d.movimiento.documento|default:"—" }}</td>
+          <td class="muted" style="font-size:12px;max-width:200px">
+            {{ d.movimiento.observaciones|truncatechars:60|default:"—" }}
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="muted">Sin entregas registradas.</td></tr>
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-state-title">Sin entregas registradas</div>
+              <div class="empty-state-sub">Intentá con otros filtros o registrá la primera entrega.</div>
+              <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Nueva entrega</a>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border-color)">
+      {% if page_obj.has_previous %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&page={{ page_obj.previous_page_number }}">← Anterior</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
+      {% endif %}
+      <span class="muted" style="font-size:.82rem">
+        Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
+      </span>
+      {% if page_obj.has_next %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&page={{ page_obj.next_page_number }}">Siguiente →</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 </div>
+
+<style>
+.filter-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+</style>
 {% endblock %}

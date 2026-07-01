@@ -7,27 +7,32 @@
     <div class="page-title">Registro de Tóner</div>
     <div class="page-subtitle muted">Gestión y entregas</div>
   </div>
-  <form method="get" class="page-actions">
-    <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)">
-    <button class="btn2 primary" type="submit">Buscar</button>
-    <a class="btn2" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
-  </form>
+  <div class="page-actions">
+    <form method="get" style="display:contents">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)">
+      <button class="btn2 primary" type="submit">Buscar</button>
+    </form>
+    <a class="btn2" href="{% url 'toner_historial' %}">Historial</a>
+    <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
+    <a class="btn2" href="{% url 'backup_entregas_csv' %}" title="Descargar CSV de entregas (compatible con Excel)">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      CSV
+    </a>
+    <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
+  </div>
 </div>
 
-<!-- Card: Últimas entregas (colapsable) -->
-<div class="card card-collapsible" style="margin-bottom:12px">
-  <div class="card-header collapse-trigger" tabindex="0" role="button" aria-expanded="true">
+<!-- Card: Últimas entregas -->
+<div class="card" style="margin-bottom:12px">
+  <div class="card-header">
     <span class="card-label">Últimas entregas</span>
-    <div class="row" style="gap:8px">
-      {% if mostrar_ver_todo %}
-        <a class="btn2" href="{% url 'toner_historial' %}">Ver todo</a>
-      {% endif %}
-      <span class="collapse-chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
-    </div>
+    {% if mostrar_ver_todo %}
+      <a class="btn2" href="{% url 'toner_historial' %}">Ver todo</a>
+    {% endif %}
   </div>
-  <div class="card-collapse-body">
+  <div>
     <div class="table-wrapper" style="margin-top:10px">
       <table>
         <thead>
@@ -36,7 +41,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for d in movimientos|slice:":3" %}
+          {% for d in movimientos %}
             <tr>
               <td class="muted mono" style="font-size:12px">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
               <td>{{ d.item.toner.marca|default_if_none:"" }} {{ d.item.toner.nombre|default_if_none:"" }}</td>
@@ -62,7 +67,7 @@
   <div class="card-header collapse-trigger" tabindex="0" role="button" aria-expanded="true">
     <div class="row" style="gap:8px;align-items:center">
       <span class="card-label">Toners</span>
-      <span class="chip">{{ toners|length }}</span>
+      <span class="chip">{{ page_obj.paginator.count }}</span>
     </div>
     <div class="row" style="gap:8px">
       <a class="btn2" href="{% url 'toner_create' %}">Nuevo</a>
@@ -113,6 +118,21 @@
         </tbody>
       </table>
     </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
+      {% if page_obj.has_previous %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">← Anterior</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
+      {% endif %}
+      <span class="muted" style="font-size:.82rem">Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
+      {% if page_obj.has_next %}
+        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.next_page_number }}">Siguiente →</a>
+      {% else %}
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 </div>
 

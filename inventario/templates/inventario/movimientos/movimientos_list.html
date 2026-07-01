@@ -69,11 +69,12 @@
             <th>Servicio</th>
             <th>Detalle</th>
             <th style="width:90px">Estado</th>
+            <th style="width:60px"></th>
           </tr>
         </thead>
         <tbody>
           {% for m in movimientos %}
-            <tr class="{% if m.anulado %}anulado{% endif %}">
+            <tr class="{% if m.anulado %}anulado{% endif %}" style="cursor:pointer" onclick="location.href='{% url 'movimiento_edit' m.pk %}'">
               <td class="muted mono">{{ m.fecha|date:"d/m/Y H:i" }}</td>
               <td>
                 {% if m.tipo == "INGRESO" %}
@@ -102,6 +103,7 @@
                   <span class="chip ok">Activo</span>
                 {% endif %}
               </td>
+              <td><a class="btn2" href="{% url 'movimiento_edit' m.pk %}" onclick="event.stopPropagation()">Editar</a></td>
             </tr>
           {% empty %}
             <tr>
@@ -115,30 +117,18 @@
     </div>
 
     {% if page_obj.paginator.num_pages > 1 %}
-    <div class="pagination">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
       {% if page_obj.has_previous %}
-        <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">←</a>
+        <a class="btn2 btn-ghost" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">← Anterior</a>
       {% else %}
-        <span class="disabled">←</span>
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
       {% endif %}
-
-      {% for num in page_obj.paginator.page_range %}
-        {% if num == page_obj.number %}
-          <span class="current">{{ num }}</span>
-        {% elif num >= page_obj.number|add:"-3" and num <= page_obj.number|add:"3" %}
-          <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
-        {% endif %}
-      {% endfor %}
-
+      <span class="muted" style="font-size:.82rem">Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
       {% if page_obj.has_next %}
-        <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">→</a>
+        <a class="btn2 btn-ghost" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Siguiente →</a>
       {% else %}
-        <span class="disabled">→</span>
+        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
       {% endif %}
-
-      <span class="muted" style="font-size:12px;margin-left:8px">
-        {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
-      </span>
     </div>
     {% endif %}
   </div>

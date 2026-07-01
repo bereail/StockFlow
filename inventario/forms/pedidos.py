@@ -10,16 +10,23 @@ class PedidoForm(forms.ModelForm):
         fields = [
             "numero",
             "servicio_solicitante",
+            "proveedor",
             "numero_nota",
             "para_que",
             "observaciones",
             "estado",
+            "fecha_aprobado",
+            "fecha_recibido",
+            "fecha_entregado",
         ]
         widgets = {
-            "observaciones": forms.Textarea(attrs={"rows": 2}),
-            "para_que": forms.TextInput(attrs={"placeholder": "Motivo / para qué"}),
-            "numero": forms.TextInput(attrs={"placeholder": "Ej: PED-2026-0001"}),
-            "numero_nota": forms.TextInput(attrs={"placeholder": "Opcional"}),
+            "observaciones":    forms.Textarea(attrs={"rows": 2}),
+            "para_que":         forms.TextInput(attrs={"placeholder": "Motivo / para qué"}),
+            "numero":           forms.TextInput(attrs={"placeholder": "Ej: PED-2026-0001"}),
+            "numero_nota":      forms.TextInput(attrs={"placeholder": "Opcional"}),
+            "fecha_aprobado":   forms.DateInput(attrs={"type": "date"}),
+            "fecha_recibido":   forms.DateInput(attrs={"type": "date"}),
+            "fecha_entregado":  forms.DateInput(attrs={"type": "date"}),
         }
 
     def clean(self):
@@ -42,12 +49,14 @@ class PedidoDetalleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # ✅ SOLO ARTICULOS (sin toners)
         self.fields["item"].queryset = (
             Item.objects
-            .filter(tipo="ARTICULO")  # <-- si tu choice es distinto, cambiá este string
-            .order_by("id")
+            .filter(tipo="ARTICULO")
+            .select_related("articulo")
+            .order_by("articulo__nombre")
+        )
+        self.fields["item"].label_from_instance = lambda obj: (
+            obj.articulo.nombre if obj.articulo else str(obj)
         )
 
 PedidoDetalleFormSet = inlineformset_factory(
@@ -64,13 +73,19 @@ class PatrimonioUnidadForm(forms.ModelForm):
         fields = [
             "numero_patrimonio",
             "detalle_item",
+            "nombre_pc",
+            "ip",
+            "usuario_asignado",
             "serial",
             "observaciones",
             "servicio_asignado",
         ]
         widgets = {
-            "detalle_item": forms.TextInput(attrs={"placeholder": "Detalle libre (ej: PC Dell...)"}),
-            "observaciones": forms.Textarea(attrs={"rows": 2}),
+            "detalle_item":     forms.TextInput(attrs={"placeholder": "Ej: PC Dell OptiPlex 3000"}),
+            "nombre_pc":        forms.TextInput(attrs={"placeholder": "Ej: HEEP-PC-042  (opcional)"}),
+            "ip":               forms.TextInput(attrs={"placeholder": "Ej: 192.168.1.42  (opcional)"}),
+            "usuario_asignado": forms.TextInput(attrs={"placeholder": "Nombre del usuario  (opcional)"}),
+            "observaciones":    forms.Textarea(attrs={"rows": 2}),
         }
 
     def __init__(self, *args, pedido_detalle=None, user=None, **kwargs):
