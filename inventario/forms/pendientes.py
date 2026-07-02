@@ -5,7 +5,7 @@ from inventario.models import Pendiente
 class PendienteForm(forms.ModelForm):
     class Meta:
         model = Pendiente
-        fields = ["texto", "fecha_limite", "servicio", "observacion"]
+        fields = ["texto", "fecha_limite", "servicio", "pedido", "observacion"]
         widgets = {
             "texto": forms.TextInput(attrs={
                 "placeholder": "Describí la tarea pendiente…",
@@ -14,3 +14,9 @@ class PendienteForm(forms.ModelForm):
             "fecha_limite": forms.DateInput(attrs={"type": "date"}),
             "observacion": forms.Textarea(attrs={"rows": 2, "placeholder": "Observaciones (opcional)"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["pedido"].queryset = self.fields["pedido"].queryset.order_by("-creado")
+        self.fields["pedido"].empty_label = "Sin pedido vinculado"
+        self.fields["pedido"].required = False

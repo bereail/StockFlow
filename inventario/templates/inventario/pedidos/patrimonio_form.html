@@ -13,9 +13,45 @@
   <a class="btn btn-ghost" href="{{ next|default_if_none:'' }}{% if not next %}{% url 'pedido_detail' pedido.pk %}{% endif %}">← Volver</a>
 </div>
 
+{% if unidades_disponibles %}
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header"><span class="card-label">Unidades ya registradas de este artículo</span></div>
+  <div style="padding:0 16px 16px">
+    <div class="muted" style="font-size:.8rem;margin-bottom:10px">
+      Ya existen unidades de "{{ detalle.item.articulo.nombre }}" con N° de patrimonio propio, cargadas desde Patrimonios. Elegí una para vincularla a este pedido, en vez de cargar un número nuevo.
+    </div>
+    {% for u in unidades_disponibles %}
+      <div class="pendiente-card" style="border-left:3px solid #3b82f6">
+        <div style="flex:1;min-width:0">
+          <strong class="mono">{{ u.numero_patrimonio }}</strong>
+          {% if u.detalle_item %}<span class="muted"> · {{ u.detalle_item }}</span>{% endif %}
+          {% if u.servicio_asignado %}<span class="muted"> · 📍 {{ u.servicio_asignado }}</span>{% endif %}
+        </div>
+        <form method="post" action="{% url 'patrimonio_attach' detalle.pk u.pk %}" style="margin:0">
+          {% csrf_token %}
+          <button type="submit" class="btn2 primary" style="font-size:.78rem">Usar esta unidad</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <form method="post" class="card">
   {% csrf_token %}
   {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+  {% if unidades_disponibles %}
+    <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--border)">
+      …o cargá una unidad nueva acá abajo.
+    </div>
+  {% endif %}
+
+  {% if form.es_impresora %}
+    <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(79,140,255,.08);border:1px solid rgba(79,140,255,.25)">
+      ℹ Esta es una impresora del catálogo: el N° de patrimonio, la IP y el servicio asignado que cargues acá se actualizan directamente sobre esa impresora.
+    </div>
+  {% endif %}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 

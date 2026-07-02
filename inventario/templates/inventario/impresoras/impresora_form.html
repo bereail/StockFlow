@@ -24,13 +24,105 @@
       </div>
     {% endif %}
 
-    {{ form.as_p }}
+    {% if mode != "edit" %}
+      <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(79,140,255,.08);border:1px solid rgba(79,140,255,.25)">
+        ℹ Si ya tenés el modelo cargado como artículo patrimonial (ej: "Impresora Brother HL 1212"), elegilo abajo para no volver a tipear marca/modelo.
+      </div>
+    {% endif %}
 
-    <div class="row" style="gap:10px; margin-top:10px">
-      <button class="btn" type="submit">Guardar</button>
-      <a class="btn" href="{% url 'impresoras_page' %}">Cancelar</a>
+    <div class="formgrid">
+      <div class="field" style="grid-column: 1 / -1;">
+        <div class="label">Artículo de catálogo (opcional)</div>
+        {{ form.articulo }}
+        {% for e in form.articulo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="field">
+        <div class="label">Marca</div>
+        {{ form.marca }}
+        {% for e in form.marca.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="field">
+        <div class="label">Modelo</div>
+        {{ form.modelo }}
+        {% for e in form.modelo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="field">
+        <div class="label">Tipo</div>
+        {{ form.tipo }}
+      </div>
+
+      <div class="field">
+        <div class="label">N° de patrimonio</div>
+        {{ form.patrimonio }}
+      </div>
+
+      <div class="field">
+        <div class="label">Estado</div>
+        {{ form.estado }}
+      </div>
+
+      <div class="field">
+        <div class="label">Conexión</div>
+        {{ form.conexion }}
+        {% for e in form.conexion.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="field">
+        <div class="label">Dirección IP</div>
+        {{ form.ip }}
+        {% for e in form.ip.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="field">
+        <div class="label">Toner</div>
+        {{ form.toner }}
+      </div>
+
+      <div class="field">
+        <div class="label">Activa</div>
+        {{ form.activo }}
+      </div>
+
+      <div class="field" style="grid-column: 1 / -1;">
+        <div class="label">Observaciones</div>
+        {{ form.observaciones }}
+      </div>
+    </div>
+
+    <div class="row" style="gap:10px; margin-top:14px">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn2" href="{% url 'impresoras_page' %}">Cancelar</a>
     </div>
   </form>
 </div>
+
+<script id="articulos-catalogo-data" type="application/json">
+{
+  {% for a in form.articulo.field.queryset %}"{{ a.pk }}": {"marca": "{{ a.marca|escapejs }}", "nombre": "{{ a.nombre|escapejs }}"}{% if not forloop.last %},{% endif %}
+  {% endfor %}
+}
+</script>
+<script>
+  (function () {
+    var select = document.getElementById('id_articulo');
+    var marca  = document.getElementById('id_marca');
+    var modelo = document.getElementById('id_modelo');
+    var dataEl = document.getElementById('articulos-catalogo-data');
+    if (!select || !dataEl) return;
+
+    var catalogo;
+    try { catalogo = JSON.parse(dataEl.textContent); } catch (e) { return; }
+
+    select.addEventListener('change', function () {
+      var datos = catalogo[select.value];
+      if (!datos) return;
+      if (marca && !marca.value && datos.marca) marca.value = datos.marca;
+      if (modelo && !modelo.value && datos.nombre) modelo.value = datos.nombre;
+    });
+  })();
+</script>
 
 {% endblock %}

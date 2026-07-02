@@ -44,7 +44,10 @@
         <tbody>
           {% for i in impresoras %}
             <tr>
-              <td><strong>{{ i.marca }}</strong></td>
+              <td>
+                <strong>{{ i.marca }}</strong>
+                {% if i.articulo %}<div class="muted" style="font-size:.7rem">🔖 {{ i.articulo.nombre }}</div>{% endif %}
+              </td>
               <td>{{ i.modelo }}</td>
               <td class="muted">{{ i.tipo|default:"-" }}</td>
               <td class="muted">{{ i.get_conexion_display }}</td>

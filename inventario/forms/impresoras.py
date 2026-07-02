@@ -1,5 +1,5 @@
 from django import forms
-from inventario.models import Impresora, Toner
+from inventario.models import Impresora, Toner, Articulo
 from django.utils import timezone
 from ..models import Servicio
 from ..services.items import item_de_impresora
@@ -8,6 +8,7 @@ class ImpresoraForm(forms.ModelForm):
     class Meta:
         model = Impresora
         fields = [
+            "articulo",
             "marca",
             "modelo",
             "tipo",
@@ -33,7 +34,7 @@ class ImpresoraForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # ✅ opcionales (sin KeyError)
-        for f in ["patrimonio", "estado", "ip", "toner", "observaciones"]:
+        for f in ["patrimonio", "estado", "ip", "toner", "observaciones", "articulo"]:
             if f in self.fields:
                 self.fields[f].required = False
 
@@ -41,6 +42,16 @@ class ImpresoraForm(forms.ModelForm):
         if "toner" in self.fields:
             self.fields["toner"].queryset = Toner.objects.filter(activo=True).order_by("marca", "nombre")
             self.fields["toner"].empty_label = "-- Sin toner / No aplica --"
+
+        # ✅ ARTICULO: solo el catálogo patrimonial (ahí es donde ya cargaste
+        # cosas como "Impresora Brother HL 1212"), para vincular esta unidad
+        # física a su tipo de catálogo.
+        if "articulo" in self.fields:
+            self.fields["articulo"].queryset = (
+                Articulo.objects.filter(es_patrimonial=True).order_by("nombre")
+            )
+            self.fields["articulo"].empty_label = "-- Sin artículo de catálogo --"
+            self.fields["articulo"].label = "Artículo de catálogo (patrimonial)"
 
     def clean(self):
         cleaned = super().clean()

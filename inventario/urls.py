@@ -91,8 +91,12 @@ urlpatterns = [
     path("pedidos/<int:pk>/avanzar/", views.pedido_avanzar, name="pedido_avanzar"),
     path("pedidos/<int:pk>/cancelar/", views.pedido_cancelar, name="pedido_cancelar"),
     path("pedidos/<int:pk>/eliminar/", views.pedido_delete, name="pedido_delete"),
+    path("pedidos/<int:pk>/pendientes/nuevo/", views.pendiente_create_for_pedido, name="pendiente_create_for_pedido"),
     path("patrimonios/", views.patrimonios_list, name="patrimonios_list"),
+    path("patrimonios/nuevo/", views.patrimonio_standalone_create, name="patrimonio_standalone_create"),
+    path("patrimonios/<int:pk>/editar-directo/", views.patrimonio_standalone_edit, name="patrimonio_standalone_edit"),
     path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create"),
+    path("patrimonios/detalle/<int:detalle_id>/vincular/<int:pk>/", views.patrimonio_attach, name="patrimonio_attach"),
     path("patrimonios/<int:pk>/editar/", views.patrimonio_edit, name="patrimonio_edit"),
 
     # NOTA #

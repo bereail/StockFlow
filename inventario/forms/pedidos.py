@@ -1,8 +1,10 @@
 from django import forms
 from django.forms import inlineformset_factory
-from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_ipv46_address
 from ..models import Pedido, PedidoDetalle, PatrimonioUnidad
 from ..models import Item  # ✅ IMPORTANTE
+from ..services.impresoras import asignar_impresora_a_servicio
 
 class PedidoForm(forms.ModelForm):
     class Meta:
@@ -55,11 +57,17 @@ class PedidoDetalleForm(forms.ModelForm):
             .select_related("articulo", "impresora")
             .order_by("tipo", "articulo__nombre", "impresora__marca", "impresora__modelo")
         )
-        self.fields["item"].label_from_instance = lambda obj: (
-            obj.articulo.nombre if obj.articulo
-            else f"Impresora: {obj.impresora}" if obj.impresora
-            else str(obj)
-        )
+
+        def _label(obj):
+            if obj.articulo:
+                if obj.articulo.es_patrimonial:
+                    return f"{obj.articulo.nombre}  🔖 Patrimonial"
+                return obj.articulo.nombre
+            if obj.impresora:
+                return f"Impresora: {obj.impresora}"
+            return str(obj)
+
+        self.fields["item"].label_from_instance = _label
 
 PedidoDetalleFormSet = inlineformset_factory(
     Pedido,
@@ -97,6 +105,9 @@ class PatrimonioUnidadForm(forms.ModelForm):
 
         item = pedido_detalle.item if pedido_detalle else None
         self.es_impresora = bool(item and item.tipo == "IMPRESORA")
+        self.es_articulo_patrimonial = bool(
+            item and item.tipo == "ARTICULO" and item.articulo and item.articulo.es_patrimonial
+        )
 
         # Al cargar el patrimonio de una impresora, precargamos los datos
         # que ya tiene el catálogo (marca/modelo/IP/nº patrimonio) para que
@@ -110,6 +121,12 @@ class PatrimonioUnidadForm(forms.ModelForm):
                 self.fields["ip"].initial = impresora.ip
             if impresora.servicio_actual:
                 self.fields["servicio_asignado"].initial = impresora.servicio_actual
+
+        # Un artículo patrimonial es un catálogo (ej: "MiniPC"), no una unidad
+        # física puntual: cada unidad cargada tiene su propio nº de patrimonio,
+        # por eso acá solo precargamos el nombre y dejamos el número en blanco.
+        elif self.es_articulo_patrimonial and self.instance.pk is None:
+            self.fields["detalle_item"].initial = item.articulo.nombre
 
     def clean(self):
         cleaned = super().clean()
@@ -130,6 +147,39 @@ class PatrimonioUnidadForm(forms.ModelForm):
         obj = super().save(commit=False)
         obj.pedido_detalle = self.pedido_detalle
         obj.asignado_por = self.user
+        if self.es_articulo_patrimonial:
+            obj.articulo = self.pedido_detalle.item.articulo
         if commit:
             obj.save()
+            if self.es_impresora:
+                self._sync_impresora(obj)
         return obj
+
+    def _sync_impresora(self, obj):
+        """
+        La impresora es una unidad física real: lo que se carga acá (patrimonio,
+        IP, servicio asignado) es el estado actual de ESA impresora, no una copia
+        aparte. Por eso se escribe de vuelta sobre el registro de Impresora.
+        """
+        impresora = self.pedido_detalle.item.impresora
+
+        campos = []
+        if obj.numero_patrimonio and impresora.patrimonio != obj.numero_patrimonio:
+            impresora.patrimonio = obj.numero_patrimonio
+            campos.append("patrimonio")
+        if obj.ip:
+            try:
+                validate_ipv46_address(obj.ip)
+                if impresora.ip != obj.ip:
+                    impresora.ip = obj.ip
+                    campos.append("ip")
+            except ValidationError:
+                pass
+        if campos:
+            impresora.save(update_fields=campos)
+
+        asignar_impresora_a_servicio(
+            impresora,
+            obj.servicio_asignado,
+            responsable=obj.usuario_asignado or "",
+        )

@@ -9,11 +9,11 @@
     <div class="page-subtitle muted">Registro de artículos con número de patrimonio</div>
   </div>
   <div class="page-actions">
-    <a class="btn2 primary" href="{% url 'movimiento_create' %}">
+    <a class="btn2 primary" href="{% url 'patrimonio_standalone_create' %}">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
-      Nuevo movimiento
+      Nuevo patrimonio
     </a>
     <a class="btn2" href="{% url 'movimientos_list' %}">Ver movimientos</a>
   </div>
@@ -66,16 +66,23 @@
         </thead>
         <tbody>
           {% for pat in pats %}
-          <tr style="cursor:pointer" onclick="location.href='{% url 'patrimonio_edit' pat.pk %}?next={% url 'patrimonios_list' %}'">
+          {% if pat.pedido_detalle %}
+            {% url 'patrimonio_edit' pat.pk as editar_url %}
+          {% else %}
+            {% url 'patrimonio_standalone_edit' pat.pk as editar_url %}
+          {% endif %}
+          <tr style="cursor:pointer" onclick="location.href='{{ editar_url }}?next={% url 'patrimonios_list' %}'">
             <td><strong class="mono">{{ pat.numero_patrimonio }}</strong></td>
             <td>
-              {% with it=pat.pedido_detalle.item %}
-                {% if it.articulo %}{{ it.articulo.nombre }}
-                {% elif it.toner %}{{ it.toner.marca }} {{ it.toner.nombre }}
-                {% elif it.activo_pc %}{{ it.activo_pc.nombre_pc }}
-                {% elif it.impresora %}{{ it.impresora.marca }} {{ it.impresora.modelo }}
-                {% else %}{{ it }}{% endif %}
-              {% endwith %}
+              {% if pat.articulo %}{{ pat.articulo.nombre }}
+              {% else %}
+                {% with it=pat.pedido_detalle.item %}
+                  {% if it.toner %}{{ it.toner.marca }} {{ it.toner.nombre }}
+                  {% elif it.activo_pc %}{{ it.activo_pc.nombre_pc }}
+                  {% elif it.impresora %}{{ it.impresora.marca }} {{ it.impresora.modelo }}
+                  {% else %}{{ it|default:"—" }}{% endif %}
+                {% endwith %}
+              {% endif %}
             </td>
             <td class="muted" style="font-size:.82rem">{{ pat.detalle_item|default:"—" }}</td>
             <td>{{ pat.nombre_pc|default:"—" }}</td>
@@ -83,12 +90,16 @@
             <td>{{ pat.usuario_asignado|default:"—" }}</td>
             <td>{{ pat.servicio_asignado|default:"—" }}</td>
             <td class="muted" style="font-size:.78rem">
-              <a href="{% url 'pedido_detail' pat.pedido_detalle.pedido.pk %}" onclick="event.stopPropagation()" style="color:var(--muted)">
-                {{ pat.pedido_detalle.pedido.numero }}
-              </a>
+              {% if pat.pedido_detalle %}
+                <a href="{% url 'pedido_detail' pat.pedido_detalle.pedido.pk %}" onclick="event.stopPropagation()" style="color:var(--muted)">
+                  {{ pat.pedido_detalle.pedido.numero }}
+                </a>
+              {% else %}
+                <span title="Todavía no está vinculado a ningún pedido">— (independiente)</span>
+              {% endif %}
             </td>
             <td>
-              <a class="btn2" href="{% url 'patrimonio_edit' pat.pk %}?next={% url 'patrimonios_list' %}" onclick="event.stopPropagation()">Editar</a>
+              <a class="btn2" href="{{ editar_url }}?next={% url 'patrimonios_list' %}" onclick="event.stopPropagation()">Editar</a>
             </td>
           </tr>
           {% empty %}

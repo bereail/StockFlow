@@ -49,6 +49,12 @@ class Articulo(models.Model):
     observaciones = models.TextField(blank=True)
     activo = models.BooleanField(default=True)
 
+    es_patrimonial = models.BooleanField(
+        default=False,
+        verbose_name="Es patrimonial",
+        help_text="Cada unidad cargada en un pedido va a pedir su propio N° de patrimonio.",
+    )
+
     class Meta:
         ordering = ["nombre"]
 
@@ -87,6 +93,16 @@ class Impresora(models.Model):
     TIPO_CONEXION = (
         ("IP", "Red"),
         ("USB", "USB"),
+    )
+
+    articulo = models.ForeignKey(
+        "Articulo",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="impresoras",
+        verbose_name="Artículo de catálogo",
+        help_text="Artículo patrimonial del que sale esta unidad (ej: 'Impresora Brother HL 1212').",
     )
 
     marca = models.CharField(max_length=100)
@@ -443,6 +459,15 @@ class Pendiente(models.Model):
         related_name="pendientes",
     )
 
+    pedido = models.ForeignKey(
+        "Pedido",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pendientes",
+        verbose_name="Pedido vinculado",
+    )
+
     creado = models.DateTimeField(auto_now_add=True)
     observacion = models.TextField(blank=True, default="")
 
@@ -586,12 +611,25 @@ class PedidoDetalle(models.Model):
 
 class PatrimonioUnidad(models.Model):
     """
-    1 fila = 1 unidad patrimonial.
-    Cuelga de PedidoDetalle (Opción A).
+    1 fila = 1 unidad patrimonial de un artículo de catálogo.
+    Puede colgar de un PedidoDetalle (unidad recibida por ese pedido) o
+    existir de forma independiente (unidad registrada directamente contra
+    el artículo, sin pasar por un pedido).
     """
+    articulo = models.ForeignKey(
+        "Articulo",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="patrimonios",
+        db_index=True,
+    )
+
     pedido_detalle = models.ForeignKey(
         PedidoDetalle,
-        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
         related_name="patrimonios",
         db_index=True
     )

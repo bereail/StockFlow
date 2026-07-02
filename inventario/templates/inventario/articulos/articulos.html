@@ -33,6 +33,7 @@
             <th>Marca</th>
             <th>Nombre</th>
             <th>Descripción</th>
+            <th>Patrimonial</th>
             <th>Estado</th>
             <th style="width:240px">Acciones</th>
           </tr>
@@ -43,6 +44,13 @@
               <td>{{ a.marca|default:"-" }}</td>
               <td><strong>{{ a.nombre }}</strong></td>
               <td class="muted">{{ a.descripcion|default:"-" }}</td>
+              <td>
+                {% if a.es_patrimonial %}
+                  <span class="chip ok" title="Cada unidad cargada en un pedido tiene su propio N° de patrimonio">🔖 Sí</span>
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
               <td>
                 {% if a.activo %}
                   <span class="chip ok">Activo</span>
@@ -62,7 +70,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="5">
+              <td colspan="6">
                 <div class="empty-state">
                   <div class="empty-state-title">No hay artículos cargados</div>
                   <div class="empty-state-sub">Creá el primer artículo para comenzar.</div>

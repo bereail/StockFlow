@@ -32,6 +32,12 @@
         {{ form.cantidad }}
       </div>
 
+      <div class="field" id="campo-unidad" style="grid-column: 1 / -1; overflow:hidden; max-height:0; opacity:0; transition:max-height .2s ease, opacity .2s ease; margin:0">
+        <div class="label">Unidad patrimonial (opcional)</div>
+        {{ form.unidad_patrimonial }}
+        {% for e in form.unidad_patrimonial.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
       <div class="field">
         <div class="label">Fecha</div>
         {{ form.fecha }}
@@ -50,5 +56,43 @@
 
   </form>
 </div>
+
+<script>
+  (function () {
+    var articuloSel = document.getElementById('id_articulo');
+    var unidadSel    = document.getElementById('id_unidad_patrimonial');
+    var campoUnidad  = document.getElementById('campo-unidad');
+    if (!articuloSel || !unidadSel || !campoUnidad) return;
+
+    var opciones = Array.prototype.slice.call(unidadSel.options);
+    var mapaUnidades = {
+      {% for u in form.unidad_patrimonial.field.queryset %}
+        {% if u.articulo_id %}"{{ u.id }}": "{{ u.articulo_id }}",{% endif %}
+      {% endfor %}
+    };
+
+    function actualizar() {
+      var articuloId = articuloSel.value;
+      var hayUnidades = false;
+      opciones.forEach(function (opt) {
+        if (!opt.value) return;
+        var visible = mapaUnidades[opt.value] === articuloId;
+        opt.hidden = !visible;
+        if (visible) hayUnidades = true;
+      });
+      unidadSel.value = '';
+      if (hayUnidades) {
+        campoUnidad.style.maxHeight = '90px';
+        campoUnidad.style.opacity = '1';
+      } else {
+        campoUnidad.style.maxHeight = '0';
+        campoUnidad.style.opacity = '0';
+      }
+    }
+
+    articuloSel.addEventListener('change', actualizar);
+    actualizar();
+  })();
+</script>
 
 {% endblock %}

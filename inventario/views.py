@@ -38,9 +38,11 @@ from .forms.prestamos import PrestamoForm, PrestamoDetalleFormSet
 from .forms.pendientes import PendienteForm
 from .forms.reparaciones import ReparacionForm
 from .forms.pedidos import PedidoForm, PedidoDetalleFormSet, PatrimonioUnidadForm
+from .forms.patrimonios import PatrimonioStandaloneForm
 from .forms.asignaciones import AsignacionImpresoraForm
 from .forms.nota import NotaForm, NotaDetalleFormSet
 from .services.items import item_de_toner, item_de_articulo, item_de_impresora
+from .services.impresoras import asignar_impresora_a_servicio
 
 
 def custom_login(request):
@@ -1137,6 +1139,7 @@ def articulo_entrega(request):
             servicio = form.cleaned_data["servicio"]
             articulo = form.cleaned_data["articulo"]
             cantidad = form.cleaned_data["cantidad"]
+            unidad = form.cleaned_data.get("unidad_patrimonial")
             observaciones = form.cleaned_data.get("observaciones") or ""
             fecha = form.cleaned_data.get("fecha") or timezone.now()
 
@@ -1153,6 +1156,13 @@ def articulo_entrega(request):
                     item=item_de_articulo(articulo),
                     cantidad=cantidad,
                 )
+
+                # La entrega de una unidad puntual es, en la práctica, su
+                # asignación actual: queda registrada la misma forma que se
+                # ve después en Patrimonios/Pedidos.
+                if unidad and unidad.servicio_asignado_id != servicio.id:
+                    unidad.servicio_asignado = servicio
+                    unidad.save(update_fields=["servicio_asignado"])
 
             return redirect("articulos_page")
     else:
@@ -1328,7 +1338,7 @@ def impresoras_page(request):
 
     impresoras = (
         Impresora.objects
-        .select_related("toner")
+        .select_related("toner", "articulo")
         .prefetch_related(
             Prefetch(
                 "asignaciones",
@@ -1451,6 +1461,16 @@ def impresora_entrega(request):
                         movimiento=movimiento,
                         item=item_de_impresora(impresora),
                         cantidad=1,
+                    )
+
+                    # La entrega es, en la práctica, una asignación a ese
+                    # servicio: se refleja igual que si se hiciera desde
+                    # "Asignar / Mover" o desde la carga de Patrimonio.
+                    asignar_impresora_a_servicio(
+                        impresora,
+                        servicio,
+                        fecha=fecha.date(),
+                        observaciones=observaciones,
                     )
 
                 messages.success(request, "Movimiento de impresora registrado correctamente.")
@@ -1783,10 +1803,12 @@ def pendientes_page(request):
             form.save()
             return redirect("pendientes_page")
     else:
-        form = PendienteForm()
+        pedido_id = request.GET.get("pedido")
+        initial = {"pedido": pedido_id} if pedido_id else None
+        form = PendienteForm(initial=initial)
 
     estado_filtro = (request.GET.get("estado") or "").strip()
-    pendientes = Pendiente.objects.select_related("servicio").all()
+    pendientes = Pendiente.objects.select_related("servicio", "pedido").all()
     if estado_filtro:
         pendientes = pendientes.filter(estado=estado_filtro)
 
@@ -1798,13 +1820,22 @@ def pendientes_page(request):
     })
 
 
+def _redirect_pendiente(request, pendiente):
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url:
+        return redirect(next_url)
+    if pendiente.pedido_id:
+        return redirect("pedido_detail", pk=pendiente.pedido_id)
+    return redirect("pendientes_page")
+
+
 @login_required
 @require_POST
 def pendiente_toggle(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
     p.estado = _CICLO_ESTADO.get(p.estado, "PENDIENTE")
     p.save(update_fields=["estado"])
-    return redirect("pendientes_page")
+    return _redirect_pendiente(request, p)
 
 
 @login_required
@@ -1813,15 +1844,31 @@ def pendiente_obs(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
     p.observacion = (request.POST.get("observacion") or "").strip()
     p.save(update_fields=["observacion"])
-    return redirect("pendientes_page")
+    return _redirect_pendiente(request, p)
 
 
 @login_required
 @require_POST
 def pendiente_delete(request, pk):
     p = get_object_or_404(Pendiente, pk=pk)
+    destino = _redirect_pendiente(request, p)
     p.delete()
-    return redirect("pendientes_page")
+    return destino
+
+
+@login_required
+@require_POST
+def pendiente_create_for_pedido(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+    form = PendienteForm(request.POST)
+    if form.is_valid():
+        pendiente = form.save(commit=False)
+        pendiente.pedido = pedido
+        pendiente.save()
+        messages.success(request, "Tarea vinculada al pedido.")
+    else:
+        messages.error(request, "No se pudo crear la tarea: revisá los datos.")
+    return redirect("pedido_detail", pk=pedido.pk)
 
 
 # REPARACIONES #
@@ -2033,6 +2080,9 @@ def pedido_detail(request, pk):
     form    = PedidoForm(instance=pedido)
     formset = PedidoDetalleFormSet(instance=pedido)
 
+    pendientes = pedido.pendientes.select_related("servicio").all()
+    pendiente_form = PendienteForm()
+
     return render(request, "inventario/pedidos/detail.html", {
         "pedido":          pedido,
         "detalles":        detalles,
@@ -2042,6 +2092,9 @@ def pedido_detail(request, pk):
         "paso_actual":     paso_actual,
         "form":            form,
         "formset":         formset,
+        "pendientes":      pendientes,
+        "pendiente_form":  pendiente_form,
+        "today":           timezone.localdate(),
     })
 
 
@@ -2093,6 +2146,7 @@ def patrimonios_list(request):
     pats = (
         PatrimonioUnidad.objects
         .select_related(
+            "articulo",
             "pedido_detalle__item__articulo",
             "pedido_detalle__item__toner",
             "pedido_detalle__item__activo_pc",
@@ -2112,14 +2166,16 @@ def patrimonios_list(request):
             Q(serial__icontains=q) |
             Q(servicio_asignado__nombre__icontains=q) |
             Q(detalle_item__icontains=q) |
-            Q(pedido_detalle__item__articulo__nombre__icontains=q) |
+            Q(articulo__nombre__icontains=q) |
             Q(pedido_detalle__item__toner__nombre__icontains=q) |
             Q(pedido_detalle__item__toner__marca__icontains=q) |
             Q(pedido_detalle__item__activo_pc__nombre_pc__icontains=q) |
             Q(pedido_detalle__item__impresora__modelo__icontains=q)
         )
 
-    if tipo:
+    if tipo == "ARTICULO":
+        pats = pats.filter(Q(pedido_detalle__item__tipo="ARTICULO") | Q(articulo__isnull=False))
+    elif tipo:
         pats = pats.filter(pedido_detalle__item__tipo=tipo)
 
     paginator = Paginator(pats, 5)
@@ -2130,8 +2186,42 @@ def patrimonios_list(request):
 
 
 @login_required
+def patrimonio_standalone_create(request):
+    if request.method == "POST":
+        form = PatrimonioStandaloneForm(request.POST, user=request.user)
+        if form.is_valid():
+            unidad = form.save()
+            messages.success(request, f"Patrimonio {unidad.numero_patrimonio} registrado.")
+            return redirect("patrimonios_list")
+    else:
+        form = PatrimonioStandaloneForm(user=request.user)
+
+    return render(request, "inventario/patrimonios/standalone_form.html", {"form": form, "mode": "create"})
+
+
+@login_required
+def patrimonio_standalone_edit(request, pk):
+    pat = get_object_or_404(PatrimonioUnidad, pk=pk, pedido_detalle__isnull=True)
+
+    if request.method == "POST":
+        form = PatrimonioStandaloneForm(request.POST, instance=pat, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Patrimonio actualizado.")
+            return redirect("patrimonios_list")
+    else:
+        form = PatrimonioStandaloneForm(instance=pat, user=request.user)
+
+    return render(request, "inventario/patrimonios/standalone_form.html", {
+        "form": form, "mode": "edit", "patrimonio": pat,
+    })
+
+
+@login_required
 def patrimonio_edit(request, pk):
     pat = get_object_or_404(PatrimonioUnidad.objects.select_related("pedido_detalle__pedido"), pk=pk)
+    if not pat.pedido_detalle_id:
+        return redirect("patrimonio_standalone_edit", pk=pat.pk)
     pedido = pat.pedido_detalle.pedido
     next_url = request.GET.get("next") or request.POST.get("next") or ""
     if request.method == "POST":
@@ -2172,13 +2262,44 @@ def patrimonio_create(request, detalle_id):
     else:
         form = PatrimonioUnidadForm(pedido_detalle=detalle, user=request.user)
 
+    unidades_disponibles = []
+    if form.es_articulo_patrimonial:
+        unidades_disponibles = (
+            PatrimonioUnidad.objects
+            .filter(articulo=detalle.item.articulo, pedido_detalle__isnull=True)
+            .select_related("servicio_asignado")
+            .order_by("numero_patrimonio")
+        )
+
     return render(request, "inventario/pedidos/patrimonio_form.html", {
         "form": form,
         "detalle": detalle,
         "pedido": pedido,
         "cargados": detalle.patrimonios.count(),
         "maximo": detalle.cantidad,
+        "unidades_disponibles": unidades_disponibles,
     })
+
+
+@login_required
+@require_POST
+def patrimonio_attach(request, detalle_id, pk):
+    detalle = get_object_or_404(
+        PedidoDetalle.objects.select_related("pedido", "item"),
+        pk=detalle_id
+    )
+    pedido = detalle.pedido
+    unidad = get_object_or_404(PatrimonioUnidad, pk=pk, pedido_detalle__isnull=True)
+
+    ya_cargados = detalle.patrimonios.count()
+    if ya_cargados >= detalle.cantidad:
+        messages.error(request, f"Ya cargaste {ya_cargados}/{detalle.cantidad} patrimonios para este ítem.")
+    else:
+        unidad.pedido_detalle = detalle
+        unidad.save(update_fields=["pedido_detalle"])
+        messages.success(request, f"Unidad {unidad.numero_patrimonio} vinculada al pedido.")
+
+    return redirect("pedido_detail", pk=pedido.pk)
 
 
 # NOTA #
