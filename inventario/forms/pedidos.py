@@ -2,18 +2,19 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv46_address
-from ..models import Pedido, PedidoDetalle, PatrimonioUnidad
+from ..models import Pedido, PedidoDetalle, PatrimonioUnidad, Nota
 from ..models import Item  # ✅ IMPORTANTE
 from ..services.impresoras import asignar_impresora_a_servicio
+from ..services.patrimonios import generar_ficha_desde_articulo
 
 class PedidoForm(forms.ModelForm):
     class Meta:
         model = Pedido
         fields = [
             "numero",
-            "servicio_solicitante",
+            "servicios",
             "proveedor",
-            "numero_nota",
+            "nota",
             "para_que",
             "observaciones",
             "estado",
@@ -25,11 +26,19 @@ class PedidoForm(forms.ModelForm):
             "observaciones":    forms.Textarea(attrs={"rows": 2}),
             "para_que":         forms.TextInput(attrs={"placeholder": "Motivo / para qué"}),
             "numero":           forms.TextInput(attrs={"placeholder": "Ej: PED-2026-0001"}),
-            "numero_nota":      forms.TextInput(attrs={"placeholder": "Opcional"}),
             "fecha_aprobado":   forms.DateInput(attrs={"type": "date"}),
             "fecha_recibido":   forms.DateInput(attrs={"type": "date"}),
             "fecha_entregado":  forms.DateInput(attrs={"type": "date"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nota"].queryset = Nota.objects.select_related("servicio_solicitante").order_by("-fecha", "-creado")
+        self.fields["nota"].required = False
+        self.fields["nota"].empty_label = "— Sin nota asociada —"
+        self.fields["nota"].label_from_instance = (
+            lambda n: f"{n.numero.strip() or 'Sin número'} — {getattr(n.servicio_solicitante, 'nombre', None) or 'Sin servicio'} ({n.get_estado_display()})"
+        )
 
     def clean(self):
         cleaned = super().clean()
@@ -60,9 +69,10 @@ class PedidoDetalleForm(forms.ModelForm):
 
         def _label(obj):
             if obj.articulo:
+                nombre = str(obj.articulo)
                 if obj.articulo.es_patrimonial:
-                    return f"{obj.articulo.nombre}  🔖 Patrimonial"
-                return obj.articulo.nombre
+                    return f"{nombre}  🔖 Patrimonial"
+                return nombre
             if obj.impresora:
                 return f"Impresora: {obj.impresora}"
             return str(obj)
@@ -108,6 +118,7 @@ class PatrimonioUnidadForm(forms.ModelForm):
         self.es_articulo_patrimonial = bool(
             item and item.tipo == "ARTICULO" and item.articulo and item.articulo.es_patrimonial
         )
+        self.genera_ficha = item.articulo.genera_ficha if (item and item.articulo) else ""
 
         # Al cargar el patrimonio de una impresora, precargamos los datos
         # que ya tiene el catálogo (marca/modelo/IP/nº patrimonio) para que
@@ -153,7 +164,12 @@ class PatrimonioUnidadForm(forms.ModelForm):
             obj.save()
             if self.es_impresora:
                 self._sync_impresora(obj)
+            elif self.es_articulo_patrimonial:
+                self._generar_ficha_desde_articulo(obj)
         return obj
+
+    def _generar_ficha_desde_articulo(self, obj):
+        generar_ficha_desde_articulo(obj, self.pedido_detalle.item.articulo)
 
     def _sync_impresora(self, obj):
         """

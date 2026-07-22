@@ -55,13 +55,13 @@
       </thead>
       <tbody>
         {% for n in notas %}
-        <tr style="cursor:pointer" onclick="location.href='{% url 'nota_detail' n.pk %}'">
+        <tr style="cursor:pointer" data-href="{% url 'nota_detail' n.pk %}">
           <td class="muted mono" style="font-size:12px">{{ n.fecha|date:"d/m/Y" }}</td>
           <td><strong>{{ n.numero|default:"—" }}</strong></td>
           <td>{{ n.servicio_solicitante|default:"—" }}</td>
           <td>
-            {% if n.estado == "CERRADA" %}
-              <span class="badge badge-ok">Cerrada</span>
+            {% if n.estado == "FINALIZADA" %}
+              <span class="badge badge-ok">Finalizada</span>
             {% elif n.estado == "BORRADOR" %}
               <span class="badge badge-neutral">{{ n.get_estado_display }}</span>
             {% elif n.estado == "CANCELADA" %}

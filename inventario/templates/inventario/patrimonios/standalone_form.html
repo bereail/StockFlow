@@ -1,13 +1,21 @@
 {% extends "inventario/base.html" %}
-{% block title %}{% if mode == "edit" %}Editar{% else %}Registrar{% endif %} Patrimonio{% endblock %}
+{% block title %}{% if mode == "edit" %}Editar{% else %}Registrar{% endif %} {% if es_donacion %}Donación{% else %}Patrimonio{% endif %}{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">{% if mode == "edit" %}Editar patrimonio{% else %}Registrar patrimonio{% endif %}</div>
-    <div class="page-subtitle muted">Unidad de un artículo patrimonial, sin necesidad de un pedido</div>
+    <div class="page-title">
+      {% if es_donacion %}
+        {% if mode == "edit" %}Editar donación{% else %}Registrar donación{% endif %}
+      {% else %}
+        {% if mode == "edit" %}Editar patrimonio{% else %}Registrar patrimonio{% endif %}
+      {% endif %}
+    </div>
+    <div class="page-subtitle muted">
+      {% if es_donacion %}Unidad patrimonial recibida como donación{% else %}Unidad de un artículo patrimonial, sin necesidad de un pedido{% endif %}
+    </div>
   </div>
-  <a class="btn btn-ghost" href="{% url 'patrimonios_list' %}">← Volver</a>
+  <a class="btn btn-ghost" href="{% if es_donacion %}{% url 'donaciones_list' %}{% else %}{% url 'patrimonios_list' %}{% endif %}">← Volver</a>
 </div>
 
 <div class="card" style="max-width:820px">
@@ -60,6 +68,18 @@
         <div class="label">Servicio asignado (opcional)</div>
         {{ form.servicio_asignado }}
       </div>
+
+      {% if form.donante %}
+      <div class="field">
+        <div class="label">Donado por (opcional)</div>
+        {{ form.donante }}
+      </div>
+
+      <div class="field">
+        <div class="label">Contacto del donante (opcional)</div>
+        {{ form.donante_contacto }}
+      </div>
+      {% endif %}
 
       <div class="field" style="grid-column: 1 / -1;">
         <div class="label">Observaciones</div>

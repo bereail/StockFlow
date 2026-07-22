@@ -339,6 +339,82 @@ function downloadCsv(url, filename) {
     .catch(function(e) { console.error('CSV error:', e); });
 }
 
+/* ── Confirmación in-app para acciones destructivas ── */
+/* Reemplaza confirm() nativo: un <form data-confirm="mensaje"> se intercepta
+   y muestra un popover propio anclado al botón, en vez de un diálogo del navegador. */
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  if (!(form instanceof HTMLFormElement)) return;
+  var msg = form.dataset.confirm;
+  if (!msg || form.dataset.confirmed === '1') return;
+  e.preventDefault();
+  var anchor = (document.activeElement && form.contains(document.activeElement))
+    ? document.activeElement
+    : form.querySelector('button[type="submit"], button:not([type])') || form;
+  _showConfirmPopover(anchor, msg, function () {
+    form.dataset.confirmed = '1';
+    if (form.requestSubmit) form.requestSubmit(); else form.submit();
+  });
+}, true);
+
+function _showConfirmPopover(anchor, message, onConfirm) {
+  document.querySelectorAll('.confirm-pop').forEach(function (p) { p.remove(); });
+
+  var pop = document.createElement('div');
+  pop.className = 'confirm-pop';
+  pop.innerHTML =
+    '<p></p>' +
+    '<div class="confirm-pop-actions">' +
+      '<button type="button" class="btn2 btn-ghost" data-act="cancel">Cancelar</button>' +
+      '<button type="button" class="btn2 danger" data-act="ok">Confirmar</button>' +
+    '</div>';
+  pop.querySelector('p').textContent = message;
+  document.body.appendChild(pop);
+
+  var rect = anchor.getBoundingClientRect();
+  var top  = rect.bottom + 8;
+  var left = Math.min(rect.left, window.innerWidth - pop.offsetWidth - 12);
+  if (top > window.innerHeight - pop.offsetHeight - 12) top = rect.top - pop.offsetHeight - 8;
+  pop.style.top  = Math.max(8, top) + 'px';
+  pop.style.left = Math.max(8, left) + 'px';
+
+  function close() {
+    pop.remove();
+    document.removeEventListener('mousedown', onOutside, true);
+    document.removeEventListener('keydown', onKey, true);
+  }
+  function onOutside(ev) { if (!pop.contains(ev.target)) close(); }
+  function onKey(ev) { if (ev.key === 'Escape') close(); }
+
+  pop.querySelector('[data-act="cancel"]').addEventListener('click', close);
+  pop.querySelector('[data-act="ok"]').addEventListener('click', function () {
+    close();
+    onConfirm();
+  });
+  document.addEventListener('mousedown', onOutside, true);
+  document.addEventListener('keydown', onKey, true);
+  pop.querySelector('[data-act="ok"]').focus();
+}
+
+/* ── Filas de tabla clickeables: navegación accesible por teclado ── */
+(function () {
+  document.querySelectorAll('tr[data-href]').forEach(function (tr) {
+    if (!tr.hasAttribute('tabindex')) tr.setAttribute('tabindex', '0');
+    if (!tr.hasAttribute('role')) tr.setAttribute('role', 'link');
+    tr.addEventListener('click', function (e) {
+      if (e.target.closest('a, button, form, input, select, textarea, label')) return;
+      window.location.href = tr.dataset.href;
+    });
+    tr.addEventListener('keydown', function (e) {
+      if (e.target !== tr) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.location.href = tr.dataset.href;
+      }
+    });
+  });
+})();
+
 function _csvToast(msg, type) {
   var stack = document.querySelector('.toast-stack');
   if (!stack) { stack = document.createElement('div'); stack.className = 'toast-stack'; document.body.appendChild(stack); }
@@ -356,6 +432,8 @@ function _csvToast(msg, type) {
   t.addEventListener('click', function() { t.remove(); });
 }
 </script>
+
+<script src="{% static 'inventario/searchable_select.js' %}?v={{ cachebust }}"></script>
 
 </body>
 </html>

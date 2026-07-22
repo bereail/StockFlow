@@ -20,6 +20,9 @@ db.sqlite3-journal
 
 # Archivos generados en runtime
 *.log
+err.txt
+out.txt
+*.db
 
 # Migraciones compiladas
 **/migrations/__pycache__/
@@ -37,6 +40,8 @@ dist/
 # Cache de PyInstaller
 *.toc
 *.manifest
+
+screenshots_desktop/
 
 # ===============================
 # Desktop / OS

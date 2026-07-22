@@ -18,23 +18,23 @@
     <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;color:var(--muted)">Datos del movimiento</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div>
-        <label class="label">Tipo</label>
+        <label class="label" for="{{ form.tipo.id_for_label }}">Tipo</label>
         {{ form.tipo }}
       </div>
       <div>
-        <label class="label">Fecha</label>
+        <label class="label" for="{{ form.fecha.id_for_label }}">Fecha</label>
         {{ form.fecha }}
       </div>
       <div>
-        <label class="label">Servicio</label>
+        <label class="label" for="{{ form.servicio.id_for_label }}">Servicio</label>
         {{ form.servicio }}
       </div>
       <div>
-        <label class="label">Documento</label>
+        <label class="label" for="{{ form.documento.id_for_label }}">Documento</label>
         {{ form.documento }}
       </div>
       <div style="grid-column:1/-1">
-        <label class="label">Observaciones</label>
+        <label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
         {{ form.observaciones }}
       </div>
     </div>

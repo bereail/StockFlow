@@ -68,7 +68,7 @@
           </button>
         </form>
         <form method="post" action="{% url 'admin_usuario_delete' u.pk %}"
-              onsubmit="return confirm('¿Eliminás al usuario {{ u.username }}? Esta acción no se puede deshacer.')"
+              data-confirm="¿Eliminás al usuario {{ u.username }}? Esta acción no se puede deshacer."
               style="margin:0">
           {% csrf_token %}
           <button type="submit" class="btn danger" title="Eliminar">

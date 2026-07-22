@@ -6,10 +6,10 @@
 <div class="page-header">
   <div>
     <div class="page-title">Pedido {{ pedido.numero }}</div>
-    <div class="page-subtitle muted">{{ pedido.servicio_solicitante|default:"Sin servicio" }}</div>
+    <div class="page-subtitle muted">{{ pedido.servicios.all|join:", "|default:"Sin servicio" }}</div>
   </div>
   <div style="display:flex;gap:8px">
-    <button id="btn-editar" class="btn" onclick="toggleEdit()">✎ Editar</button>
+    <button class="btn js-toggle-edit" onclick="toggleEdit()">✎ Editar</button>
     <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">← Volver</a>
   </div>
 </div>
@@ -23,14 +23,14 @@
         <div style="
           width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
           font-size:.78rem;font-weight:700;flex-shrink:0;
-          {% if pedido.estado == 'CANCELADO' and idx <= paso_actual %}background:#3f1010;border:2px solid #ef4444;color:#ef4444;
-          {% elif idx < paso_actual %}background:#0f2e1a;border:2px solid #22c55e;color:#22c55e;
-          {% elif idx == paso_actual %}background:#1a3a6b;border:2px solid #3b82f6;color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15);
-          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);{% endif %}
+          {% if pedido.estado == 'CANCELADO' and idx <= paso_actual %}background:rgba(var(--danger-rgb),.15);border:2px solid var(--danger);color:var(--danger);
+          {% elif idx < paso_actual %}background:rgba(var(--ok-rgb),.12);border:2px solid var(--ok);color:var(--ok);
+          {% elif idx == paso_actual %}background:rgba(var(--primary-rgb),.15);border:2px solid var(--primary);color:var(--primary);box-shadow:0 0 0 4px rgba(var(--primary-rgb),.15);
+          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border-color);color:var(--muted);{% endif %}
         ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
         <div style="font-size:.72rem;margin-top:6px;text-align:center;white-space:nowrap;
-          {% if idx == paso_actual %}color:#3b82f6;font-weight:700;
-          {% elif idx < paso_actual %}color:#22c55e;
+          {% if idx == paso_actual %}color:var(--primary);font-weight:700;
+          {% elif idx < paso_actual %}color:var(--ok);
           {% else %}color:var(--muted);{% endif %}">{{ label }}</div>
         <!-- Fecha del estado -->
         <div style="font-size:.65rem;color:var(--muted);margin-top:2px;text-align:center">
@@ -42,13 +42,13 @@
         </div>
       </div>
       {% if not forloop.last %}
-        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:#22c55e;{% else %}background:var(--border);{% endif %}"></div>
+        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:var(--ok);{% else %}background:var(--border-color);{% endif %}"></div>
       {% endif %}
       {% endwith %}
     {% endfor %}
     {% if pedido.estado == "CANCELADO" %}
-      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:#3f1010;border:1px solid #ef4444;white-space:nowrap">
-        <span style="color:#ef4444;font-size:.78rem;font-weight:700">✕ Cancelado</span>
+      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:rgba(var(--danger-rgb),.15);border:1px solid var(--danger);white-space:nowrap">
+        <span style="color:var(--danger);font-size:.78rem;font-weight:700">✕ Cancelado</span>
       </div>
     {% endif %}
   </div>
@@ -65,9 +65,14 @@
     <div class="card" style="font-size:.88rem">
       <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Datos del pedido</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div><div class="label">Servicio</div><div>{{ pedido.servicio_solicitante|default:"—" }}</div></div>
+        <div><div class="label">Servicios</div><div>{{ pedido.servicios.all|join:", "|default:"—" }}</div></div>
         <div><div class="label">Proveedor</div><div>{{ pedido.proveedor|default:"—" }}</div></div>
-        <div><div class="label">N° de nota</div><div>{{ pedido.numero_nota|default:"—" }}</div></div>
+        <div><div class="label">Nota asociada</div><div>
+          {% if pedido.nota %}
+            <a href="{% url 'nota_detail' pedido.nota.pk %}">{{ pedido.nota.numero|default:"Sin número" }}</a>
+            <span class="muted">— {{ pedido.nota.get_estado_display }}</span>
+          {% else %}—{% endif %}
+        </div></div>
         <div><div class="label">Para qué</div><div>{{ pedido.para_que|default:"—" }}</div></div>
         {% if pedido.observaciones %}
         <div><div class="label">Observaciones</div><div class="muted" style="white-space:pre-wrap;font-size:.83rem">{{ pedido.observaciones }}</div></div>
@@ -78,6 +83,38 @@
 
     <!-- COLUMNA DERECHA: ítems y patrimonios + pendientes vinculados -->
     <div style="display:flex;flex-direction:column;gap:14px">
+
+    {% if pedido.nota %}
+    <div class="card">
+      <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">
+        Artículos solicitados en la nota {{ pedido.nota.numero|default:"" }}
+      </div>
+      {% if nota_detalles %}
+        <div class="table-wrapper" style="margin:0 -16px -16px">
+          <table>
+            <thead>
+              <tr>
+                <th>Ítem</th>
+                <th style="width:80px">Cantidad</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for nd in nota_detalles %}
+              <tr>
+                <td>{{ nd.item }}</td>
+                <td>{{ nd.cantidad }}</td>
+                <td class="muted">{{ nd.detalle|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="muted" style="font-size:.85rem">Esta nota no tiene artículos cargados.</div>
+      {% endif %}
+    </div>
+    {% endif %}
     <div class="card">
       <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Ítems y patrimonios</div>
       {% for d in detalles %}
@@ -128,19 +165,19 @@
 
       {% for p in pendientes %}
         {% if p.estado == 'COMPLETADO' %}
-          <div class="pendiente-card" style="border-left:3px solid #22c55e;background:rgba(34,197,94,.08)">
+          <div class="pendiente-card" style="border-left:3px solid var(--ok);background:rgba(var(--ok-rgb),.08)">
         {% elif p.estado == 'CANCELADO' %}
-          <div class="pendiente-card" style="border-left:3px solid #6b7280;background:rgba(107,114,128,.06)">
+          <div class="pendiente-card" style="border-left:3px solid var(--muted);background:rgba(148,163,184,.06)">
         {% else %}
-          <div class="pendiente-card" style="border-left:3px solid #f0a500;background:rgba(240,165,0,.08)">
+          <div class="pendiente-card" style="border-left:3px solid var(--warn);background:rgba(var(--warn-rgb),.08)">
         {% endif %}
           <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
             {% csrf_token %}
             <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
                     style="min-width:110px;font-size:.75rem
-                    {% if p.estado == 'COMPLETADO' %};border-color:#22c55e;color:#22c55e
-                    {% elif p.estado == 'CANCELADO' %};border-color:#6b7280;color:#6b7280
-                    {% else %};border-color:#f0a500;color:#f0a500{% endif %}">
+                    {% if p.estado == 'COMPLETADO' %};border-color:var(--ok);color:var(--ok)
+                    {% elif p.estado == 'CANCELADO' %};border-color:var(--muted);color:var(--muted)
+                    {% else %};border-color:var(--warn);color:var(--warn){% endif %}">
               {{ p.get_estado_display }}
             </button>
           </form>
@@ -159,7 +196,7 @@
             </div>
           </div>
           <form method="post" action="{% url 'pendiente_delete' p.id %}" style="margin:0"
-                onsubmit="return confirm('¿Eliminar esta tarea?');">
+                data-confirm="¿Eliminar esta tarea?">
             {% csrf_token %}
             <button class="btn2 btn-ghost" type="submit" title="Eliminar" style="padding:6px 10px;color:var(--muted)">✕</button>
           </form>
@@ -195,14 +232,14 @@
       </form>
     {% endif %}
     {% if pedido.estado not in "ENTREGADO,CANCELADO" %}
-      <form method="post" action="{% url 'pedido_cancelar' pedido.pk %}" style="margin:0" onsubmit="return confirm('¿Cancelar este pedido?')">
+      <form method="post" action="{% url 'pedido_cancelar' pedido.pk %}" style="margin:0" data-confirm="¿Cancelar este pedido?">
         {% csrf_token %}
         <button class="btn btn-ghost" type="submit">Cancelar pedido</button>
       </form>
     {% endif %}
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-      <button class="btn btn-ghost" onclick="toggleEdit()">✎ Editar</button>
-      <form method="post" action="{% url 'pedido_delete' pedido.pk %}" style="margin:0" onsubmit="return confirm('¿Eliminar el pedido {{ pedido.numero }}?')">
+      <button class="btn btn-ghost js-toggle-edit" onclick="toggleEdit()">✎ Editar</button>
+      <form method="post" action="{% url 'pedido_delete' pedido.pk %}" style="margin:0" data-confirm="¿Eliminar el pedido {{ pedido.numero }}?">
         {% csrf_token %}
         <button class="btn btn-ghost" type="submit" style="color:var(--danger);opacity:.7">Eliminar</button>
       </form>
@@ -220,22 +257,22 @@
     <div class="card" style="margin-bottom:14px">
       <div class="card-header"><span class="card-label">Datos del pedido</span></div>
       <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div><label class="label">Número</label>{{ form.numero }}</div>
-        <div><label class="label">Servicio</label>{{ form.servicio_solicitante }}</div>
-        <div><label class="label">Proveedor</label>{{ form.proveedor }}</div>
-        <div><label class="label">N° de nota</label>{{ form.numero_nota }}</div>
-        <div><label class="label">Estado</label>{{ form.estado }}</div>
-        <div style="grid-column:1/-1"><label class="label">Para qué</label>{{ form.para_que }}</div>
-        <div style="grid-column:1/-1"><label class="label">Observaciones</label>{{ form.observaciones }}</div>
+        <div><label class="label" for="{{ form.numero.id_for_label }}">Número</label>{{ form.numero }}</div>
+        <div><label class="label" for="{{ form.servicios.id_for_label }}">Servicios</label>{{ form.servicios }}</div>
+        <div><label class="label" for="{{ form.proveedor.id_for_label }}">Proveedor</label>{{ form.proveedor }}</div>
+        <div><label class="label" for="{{ form.nota.id_for_label }}">Nota asociada</label>{{ form.nota }}</div>
+        <div><label class="label" for="{{ form.estado.id_for_label }}">Estado</label>{{ form.estado }}</div>
+        <div style="grid-column:1/-1"><label class="label" for="{{ form.para_que.id_for_label }}">Para qué</label>{{ form.para_que }}</div>
+        <div style="grid-column:1/-1"><label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>{{ form.observaciones }}</div>
       </div>
     </div>
 
     <div class="card" style="margin-bottom:14px">
       <div class="card-header"><span class="card-label">Fechas de estado</span></div>
       <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
-        <div><label class="label">Fecha aprobación</label>{{ form.fecha_aprobado }}</div>
-        <div><label class="label">Fecha recepción</label>{{ form.fecha_recibido }}</div>
-        <div><label class="label">Fecha entrega</label>{{ form.fecha_entregado }}</div>
+        <div><label class="label" for="{{ form.fecha_aprobado.id_for_label }}">Fecha aprobación</label>{{ form.fecha_aprobado }}</div>
+        <div><label class="label" for="{{ form.fecha_recibido.id_for_label }}">Fecha recepción</label>{{ form.fecha_recibido }}</div>
+        <div><label class="label" for="{{ form.fecha_entregado.id_for_label }}">Fecha entrega</label>{{ form.fecha_entregado }}</div>
       </div>
     </div>
 
@@ -292,11 +329,11 @@
   function toggleEdit() {
     var normal  = document.getElementById('vista-normal');
     var panel   = document.getElementById('panel-edicion');
-    var btn     = document.getElementById('btn-editar');
+    var btns    = document.querySelectorAll('.js-toggle-edit');
     var editing = panel.style.display !== 'none';
     normal.style.display = editing ? '' : 'none';
     panel.style.display  = editing ? 'none' : '';
-    btn.textContent      = editing ? '✎ Editar' : '✕ Cerrar edición';
+    btns.forEach(function (btn) { btn.textContent = editing ? '✎ Editar' : '✕ Cerrar edición'; });
     if (!editing) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 

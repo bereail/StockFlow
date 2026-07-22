@@ -28,31 +28,31 @@
 
     <div class="formgrid">
       <div class="field col-4">
-        <label class="label">Número</label>
+        <label class="label" for="{{ form.numero.id_for_label }}">Número</label>
         {{ form.numero }}
         {% if form.numero.errors %}<div class="form-error">{{ form.numero.errors }}</div>{% endif %}
       </div>
 
       <div class="field col-4">
-        <label class="label">Fecha</label>
+        <label class="label" for="{{ form.fecha.id_for_label }}">Fecha</label>
         {{ form.fecha }}
         {% if form.fecha.errors %}<div class="form-error">{{ form.fecha.errors }}</div>{% endif %}
       </div>
 
       <div class="field col-4">
-        <label class="label">Estado</label>
+        <label class="label" for="{{ form.estado.id_for_label }}">Estado</label>
         {{ form.estado }}
         {% if form.estado.errors %}<div class="form-error">{{ form.estado.errors }}</div>{% endif %}
       </div>
 
       <div class="field col-6">
-        <label class="label">Servicio solicitante</label>
+        <label class="label" for="{{ form.servicio_solicitante.id_for_label }}">Servicio solicitante</label>
         {{ form.servicio_solicitante }}
         {% if form.servicio_solicitante.errors %}<div class="form-error">{{ form.servicio_solicitante.errors }}</div>{% endif %}
       </div>
 
       <div class="field col-12">
-        <label class="label">Detalle</label>
+        <label class="label" for="{{ form.detalle.id_for_label }}">Detalle</label>
         {{ form.detalle }}
         {% if form.detalle.errors %}<div class="form-error">{{ form.detalle.errors }}</div>{% endif %}
       </div>
@@ -60,9 +60,12 @@
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <h3 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
-      Ítems
-    </h3>
+    <div class="row space-between" style="margin-bottom:14px">
+      <h3 style="margin:0;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+        Ítems
+      </h3>
+      <button type="button" class="btn btn-ghost" id="btn-add-item">+ Agregar artículo</button>
+    </div>
 
     {{ formset.management_form }}
 
@@ -79,10 +82,10 @@
           {% if formset.can_delete %}<th style="width:80px">Quitar</th>{% endif %}
         </tr>
       </thead>
-      <tbody>
+      <tbody id="nota-detalle-tbody">
         {% for f in formset %}
           {{ f.id }}
-          <tr>
+          <tr class="nota-detalle-row">
             <td>
               {{ f.item }}
               {% if f.item.errors %}<div class="form-error">{{ f.item.errors }}</div>{% endif %}
@@ -102,6 +105,23 @@
         {% endfor %}
       </tbody>
     </table>
+
+    <!-- template de fila vacía -->
+    <template id="nota-detalle-empty-row">
+      <tr class="nota-detalle-row">
+        <td>__ITEM__</td>
+        <td>__CANTIDAD__</td>
+        <td>__DETALLE__</td>
+        {% if formset.can_delete %}<td style="text-align:center">__DELETE__</td>{% endif %}
+      </tr>
+    </template>
+
+    <div id="nota-detalle-empty-form"
+         data-item='{{ formset.empty_form.item|escapejs }}'
+         data-cantidad='{{ formset.empty_form.cantidad|escapejs }}'
+         data-detalle='{{ formset.empty_form.detalle|escapejs }}'
+         data-delete='{{ formset.empty_form.DELETE|escapejs }}'>
+    </div>
   </div>
 
   <div class="form-actions">
@@ -113,5 +133,31 @@
     {% endif %}
   </div>
 </form>
+
+<script>
+  document.getElementById("btn-add-item")?.addEventListener("click", () => {
+    const tbody = document.getElementById("nota-detalle-tbody");
+    const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
+    const emptyDiv = document.getElementById("nota-detalle-empty-form");
+    const tpl = document.getElementById("nota-detalle-empty-row");
+    if (!tbody || !totalForms || !emptyDiv || !tpl) return;
+
+    const index = parseInt(totalForms.value, 10);
+
+    const item = emptyDiv.dataset.item.replaceAll("__prefix__", index);
+    const cantidad = emptyDiv.dataset.cantidad.replaceAll("__prefix__", index);
+    const detalle = emptyDiv.dataset.detalle.replaceAll("__prefix__", index);
+    const del = emptyDiv.dataset.delete.replaceAll("__prefix__", index);
+
+    const rowHtml = tpl.innerHTML
+      .replace("__ITEM__", item)
+      .replace("__CANTIDAD__", cantidad)
+      .replace("__DETALLE__", detalle)
+      .replace("__DELETE__", del);
+
+    tbody.insertAdjacentHTML("beforeend", rowHtml);
+    totalForms.value = index + 1;
+  });
+</script>
 
 {% endblock %}

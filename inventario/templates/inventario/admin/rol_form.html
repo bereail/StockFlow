@@ -22,7 +22,7 @@
       {% csrf_token %}
       <div class="formgrid">
         <div class="field col-12">
-          <label class="label">Nombre del rol *</label>
+          <label class="label" for="{{ form.name.id_for_label }}">Nombre del rol *</label>
           {{ form.name }}
         </div>
         <div class="col-12 form-actions">

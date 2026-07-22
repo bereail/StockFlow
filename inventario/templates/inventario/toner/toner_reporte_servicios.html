@@ -25,8 +25,8 @@
   <form method="get">
     <div class="filter-bar-inner">
       <div class="field" style="min-width:180px;flex:1">
-        <label class="label">Servicio</label>
-        <select name="servicio">
+        <label class="label" for="id_servicio">Servicio</label>
+        <select name="servicio" id="id_servicio">
           <option value="">Todos los servicios</option>
           {% for s in servicios %}
             <option value="{{ s.id }}" {% if s.id|stringformat:"s" == servicio_id %}selected{% endif %}>{{ s.nombre }}</option>
@@ -34,8 +34,8 @@
         </select>
       </div>
       <div class="field" style="min-width:160px;flex:1">
-        <label class="label">Tóner</label>
-        <select name="toner">
+        <label class="label" for="id_toner">Tóner</label>
+        <select name="toner" id="id_toner">
           <option value="">Todos los tóners</option>
           {% for t in toners %}
             <option value="{{ t.id }}" {% if t.id|stringformat:"s" == toner_id %}selected{% endif %}>{{ t }}</option>
@@ -43,12 +43,12 @@
         </select>
       </div>
       <div class="field" style="min-width:130px">
-        <label class="label">Desde</label>
-        <input type="date" name="fecha_desde" value="{{ fecha_desde }}">
+        <label class="label" for="id_fecha_desde">Desde</label>
+        <input type="date" name="fecha_desde" id="id_fecha_desde" value="{{ fecha_desde }}">
       </div>
       <div class="field" style="min-width:130px">
-        <label class="label">Hasta</label>
-        <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}">
+        <label class="label" for="id_fecha_hasta">Hasta</label>
+        <input type="date" name="fecha_hasta" id="id_fecha_hasta" value="{{ fecha_hasta }}">
       </div>
       <!-- campo oculto para preservar la vista activa -->
       <input type="hidden" name="vista" value="{{ vista }}">

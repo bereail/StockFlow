@@ -9,7 +9,7 @@
     <div class="page-subtitle muted">Ingresos, egresos y ajustes de stock</div>
   </div>
   <div class="page-actions">
-    <a class="btn2" href="/movimientos/export/csv/?{{ request.GET.urlencode }}">Exportar CSV</a>
+    <a class="btn2" href="{% url 'movimientos_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
     <a class="btn primary" href="{% url 'movimiento_create' %}">+ Nuevo</a>
   </div>
 </div>
@@ -74,7 +74,7 @@
         </thead>
         <tbody>
           {% for m in movimientos %}
-            <tr class="{% if m.anulado %}anulado{% endif %}" style="cursor:pointer" onclick="location.href='{% url 'movimiento_edit' m.pk %}'">
+            <tr class="{% if m.anulado %}anulado{% endif %}" style="cursor:pointer" data-href="{% url 'movimiento_edit' m.pk %}">
               <td class="muted mono">{{ m.fecha|date:"d/m/Y H:i" }}</td>
               <td>
                 {% if m.tipo == "INGRESO" %}
@@ -103,7 +103,16 @@
                   <span class="chip ok">Activo</span>
                 {% endif %}
               </td>
-              <td><a class="btn2" href="{% url 'movimiento_edit' m.pk %}" onclick="event.stopPropagation()">Editar</a></td>
+              <td style="display:flex;gap:6px">
+                <a class="btn2" href="{% url 'movimiento_edit' m.pk %}" onclick="event.stopPropagation()">Editar</a>
+                {% if not m.anulado %}
+                <form method="post" action="{% url 'movimiento_anular' m.pk %}" onclick="event.stopPropagation()"
+                      data-confirm="¿Anular este movimiento? Deja de contarse en el stock.">
+                  {% csrf_token %}
+                  <button class="btn2 btn-ghost" type="submit" title="Anular">Anular</button>
+                </form>
+                {% endif %}
+              </td>
             </tr>
           {% empty %}
             <tr>

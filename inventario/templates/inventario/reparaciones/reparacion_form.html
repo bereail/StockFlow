@@ -15,44 +15,44 @@
     {% csrf_token %}
 
     <div>
-      <label class="label">Item</label>
+      <label class="label" for="{{ form.item.id_for_label }}">Item</label>
       {{ form.item }}
     </div>
 
     <div>
-      <label class="label">Proveedor (opcional)</label>
+      <label class="label" for="{{ form.proveedor.id_for_label }}">Proveedor (opcional)</label>
       {{ form.proveedor }}
     </div>
 <div>
-  <label class="label">Servicio al que pertenece</label>
+  <label class="label" for="{{ form.servicio.id_for_label }}">Servicio al que pertenece</label>
   {{ form.servicio }}
 </div>
 
 
     <div class="row" style="gap:12px; flex-wrap:wrap">
       <div style="min-width:220px">
-        <label class="label">Estado</label>
+        <label class="label" for="{{ form.estado.id_for_label }}">Estado</label>
         {{ form.estado }}
       </div>
 
       <div style="min-width:220px">
-        <label class="label">Fecha envío</label>
+        <label class="label" for="{{ form.fecha_envio.id_for_label }}">Fecha envío</label>
         {{ form.fecha_envio }}
       </div>
 
       <div style="min-width:220px">
-        <label class="label">Fecha retorno</label>
+        <label class="label" for="{{ form.fecha_retorno.id_for_label }}">Fecha retorno</label>
         {{ form.fecha_retorno }}
       </div>
     </div>
 
     <div>
-      <label class="label">Diagnóstico</label>
+      <label class="label" for="{{ form.diagnostico.id_for_label }}">Diagnóstico</label>
       {{ form.diagnostico }}
     </div>
 
     <div>
-      <label class="label">Seguimiento</label>
+      <label class="label" for="{{ form.seguimiento.id_for_label }}">Seguimiento</label>
       {{ form.seguimiento }}
     </div>
 

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
 
@@ -9,7 +10,7 @@ class UsuarioCreateForm(forms.ModelForm):
     password1 = forms.CharField(
         label="Contraseña",
         widget=forms.PasswordInput(attrs={"placeholder": "••••••••"}),
-        min_length=6,
+        min_length=8,
     )
     password2 = forms.CharField(
         label="Repetir contraseña",
@@ -39,6 +40,8 @@ class UsuarioCreateForm(forms.ModelForm):
         p2 = self.cleaned_data.get("password2")
         if p1 and p2 and p1 != p2:
             raise forms.ValidationError("Las contraseñas no coinciden.")
+        if p1:
+            validate_password(p1)
         return p2
 
     def save(self, commit=True):
@@ -55,7 +58,7 @@ class UsuarioEditForm(forms.ModelForm):
         label="Nueva contraseña (opcional)",
         widget=forms.PasswordInput(attrs={"placeholder": "Dejar vacío para no cambiar"}),
         required=False,
-        min_length=6,
+        min_length=8,
     )
     password2 = forms.CharField(
         label="Repetir contraseña",
@@ -88,6 +91,8 @@ class UsuarioEditForm(forms.ModelForm):
             raise forms.ValidationError("Las contraseñas no coinciden.")
         if p1 and not p2:
             raise forms.ValidationError("Repetí la contraseña.")
+        if p1:
+            validate_password(p1)
         return p2
 
     def save(self, commit=True):

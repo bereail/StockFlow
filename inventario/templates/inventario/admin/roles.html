@@ -42,7 +42,7 @@
               <div style="display:flex;gap:6px;justify-content:flex-end;">
                 <a href="{% url 'admin_rol_edit' rol.pk %}" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;">Editar</a>
                 <form method="post" action="{% url 'admin_rol_delete' rol.pk %}"
-                      onsubmit="return confirm('¿Eliminás el rol {{ rol.name }}?')"
+                      data-confirm="¿Eliminás el rol {{ rol.name }}?"
                       style="margin:0">
                   {% csrf_token %}
                   <button type="submit" class="btn danger" style="padding:5px 10px;font-size:12px;">Eliminar</button>

@@ -20,6 +20,10 @@
       <input name="q" value="{{ q }}" placeholder="Número / nota / para qué / obs…">
     </div>
     <div style="flex:2;min-width:180px">
+      <div class="label" style="margin-bottom:4px">Ítem</div>
+      <input name="item" value="{{ item_q }}" placeholder="Nombre / marca / modelo del ítem…">
+    </div>
+    <div style="flex:2;min-width:180px">
       <div class="label" style="margin-bottom:4px">Servicio</div>
       <select name="servicio">
         <option value="">Todos los servicios</option>
@@ -65,9 +69,9 @@
       </thead>
       <tbody>
         {% for p in pedidos %}
-          <tr style="cursor:pointer" onclick="location.href='{% url 'pedido_detail' p.pk %}'">
+          <tr style="cursor:pointer" data-href="{% url 'pedido_detail' p.pk %}">
             <td><strong>{{ p.numero }}</strong></td>
-            <td>{{ p.servicio_solicitante|default:"—" }}</td>
+            <td>{{ p.servicios.all|join:", "|default:"—" }}</td>
             <td>
               {% if p.estado == "HECHO" %}
                 <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
@@ -81,7 +85,7 @@
                 <span class="badge">{{ p.get_estado_display }}</span>
               {% endif %}
             </td>
-            <td class="muted">{{ p.numero_nota|default:"—" }}</td>
+            <td class="muted">{{ p.nota.numero|default:"—" }}</td>
             <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
             <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
           </tr>
@@ -100,7 +104,7 @@
 
     {% if page_obj.has_previous %}
       <a class="btn2 btn-ghost"
-         href="?q={{ q }}&servicio={{ servicio_id }}&estado={{ estado }}&page={{ page_obj.previous_page_number }}"
+         href="?q={{ q }}&item={{ item_q }}&servicio={{ servicio_id }}&estado={{ estado }}&page={{ page_obj.previous_page_number }}"
          aria-label="Página anterior">
         ← Anterior
       </a>
@@ -114,7 +118,7 @@
 
     {% if page_obj.has_next %}
       <a class="btn2 btn-ghost"
-         href="?q={{ q }}&servicio={{ servicio_id }}&estado={{ estado }}&page={{ page_obj.next_page_number }}"
+         href="?q={{ q }}&item={{ item_q }}&servicio={{ servicio_id }}&estado={{ estado }}&page={{ page_obj.next_page_number }}"
          aria-label="Página siguiente">
         Siguiente →
       </a>

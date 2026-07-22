@@ -1,5 +1,6 @@
 from django import forms
 from ..models import Articulo, PatrimonioUnidad
+from ..services.patrimonios import generar_ficha_desde_articulo
 
 
 class PatrimonioStandaloneForm(forms.ModelForm):
@@ -45,4 +46,29 @@ class PatrimonioStandaloneForm(forms.ModelForm):
         obj.asignado_por = self.user
         if commit:
             obj.save()
+            if obj.articulo and obj.articulo.genera_ficha:
+                generar_ficha_desde_articulo(obj, obj.articulo)
         return obj
+
+
+class DonacionForm(PatrimonioStandaloneForm):
+    """
+    Registra una unidad patrimonial que llegó como donación (no por un
+    pedido de compra), dejando constancia de quién la donó.
+    """
+    class Meta(PatrimonioStandaloneForm.Meta):
+        fields = PatrimonioStandaloneForm.Meta.fields + ["donante", "donante_contacto"]
+        widgets = {
+            **PatrimonioStandaloneForm.Meta.widgets,
+            "donante":          forms.TextInput(attrs={"placeholder": "Persona o institución que donó (opcional)"}),
+            "donante_contacto": forms.TextInput(attrs={"placeholder": "Teléfono / email del donante (opcional)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["donante"].required = False
+        self.fields["donante_contacto"].required = False
+
+    def save(self, commit=True):
+        self.instance.es_donacion = True
+        return super().save(commit=commit)

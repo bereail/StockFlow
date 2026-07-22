@@ -23,27 +23,27 @@
       {% csrf_token %}
       <div class="formgrid">
         <div class="field col-6">
-          <label class="label">Usuario *</label>
+          <label class="label" for="{{ form.username.id_for_label }}">Usuario *</label>
           {{ form.username }}
         </div>
         <div class="field col-6">
-          <label class="label">Email</label>
+          <label class="label" for="{{ form.email.id_for_label }}">Email</label>
           {{ form.email }}
         </div>
         <div class="field col-6">
-          <label class="label">Nombre</label>
+          <label class="label" for="{{ form.first_name.id_for_label }}">Nombre</label>
           {{ form.first_name }}
         </div>
         <div class="field col-6">
-          <label class="label">Apellido</label>
+          <label class="label" for="{{ form.last_name.id_for_label }}">Apellido</label>
           {{ form.last_name }}
         </div>
         <div class="field col-6">
-          <label class="label">{% if usuario %}Nueva contraseña (opcional){% else %}Contraseña *{% endif %}</label>
+          <label class="label" for="{{ form.password1.id_for_label }}">{% if usuario %}Nueva contraseña (opcional){% else %}Contraseña *{% endif %}</label>
           {{ form.password1 }}
         </div>
         <div class="field col-6">
-          <label class="label">Repetir contraseña</label>
+          <label class="label" for="{{ form.password2.id_for_label }}">Repetir contraseña</label>
           {{ form.password2 }}
         </div>
 

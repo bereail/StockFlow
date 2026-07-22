@@ -24,32 +24,32 @@
 
     <div class="formgrid">
       <div class="field col-6">
-        <label class="label">Servicio</label>
+        <label class="label" for="{{ form.servicio.id_for_label }}">Servicio</label>
         {{ form.servicio }}
         {% if form.servicio.errors %}<div class="form-error">{{ form.servicio.errors }}</div>{% endif %}
       </div>
       <div class="field col-6">
-        <label class="label">Entregado a</label>
+        <label class="label" for="{{ form.entregado_a.id_for_label }}">Entregado a</label>
         {{ form.entregado_a }}
         {% if form.entregado_a.errors %}<div class="form-error">{{ form.entregado_a.errors }}</div>{% endif %}
       </div>
       <div class="field col-6">
-        <label class="label">Teléfono de contacto</label>
+        <label class="label" for="{{ form.telefono_contacto.id_for_label }}">Teléfono de contacto</label>
         {{ form.telefono_contacto }}
         {% if form.telefono_contacto.errors %}<div class="form-error">{{ form.telefono_contacto.errors }}</div>{% endif %}
       </div>
       <div class="field col-6">
-        <label class="label">Fecha de retiro</label>
+        <label class="label" for="{{ form.fecha_retiro.id_for_label }}">Fecha de retiro</label>
         {{ form.fecha_retiro }}
         {% if form.fecha_retiro.errors %}<div class="form-error">{{ form.fecha_retiro.errors }}</div>{% endif %}
       </div>
       <div class="field col-6">
-        <label class="label">Devolución estimada</label>
+        <label class="label" for="{{ form.fecha_devolucion_estimada.id_for_label }}">Devolución estimada</label>
         {{ form.fecha_devolucion_estimada }}
         {% if form.fecha_devolucion_estimada.errors %}<div class="form-error">{{ form.fecha_devolucion_estimada.errors }}</div>{% endif %}
       </div>
       <div class="field col-12">
-        <label class="label">Observaciones</label>
+        <label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
         {{ form.observaciones }}
         {% if form.observaciones.errors %}<div class="form-error">{{ form.observaciones.errors }}</div>{% endif %}
       </div>

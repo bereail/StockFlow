@@ -61,12 +61,12 @@ urlpatterns = [
     path("movimientos/export/csv/", views.movimientos_export_csv, name="movimientos_export_csv"),
     path("movimientos/nuevo/", views.movimiento_create, name="movimiento_create"),
     path("movimientos/<int:pk>/editar/", views.movimiento_edit, name="movimiento_edit"),
+    path("movimientos/<int:pk>/anular/", views.movimiento_anular, name="movimiento_anular"),
 
     # PRESTAMOS
-    path("prestamos/", views.prestamos_list, name="prestamos_page"),  # <-- esta te arregla el error ya
+    path("prestamos/", views.prestamos_list, name="prestamos_list"),
     path("mas/prestamos/nuevo/", views.prestamo_create, name="prestamo_create"),
     path("prestamos/<int:pk>/", views.prestamo_detail, name="prestamo_detail"),
-    path("mas/prestamos/", views.prestamos_list, name="prestamos_list"),
     path("prestamos/<int:pk>/editar/", views.prestamo_edit, name="prestamo_edit"),
     path("prestamos/<int:pk>/devolver/", views.prestamo_devolver, name="prestamo_devolver"),
 
@@ -94,6 +94,8 @@ urlpatterns = [
     path("pedidos/<int:pk>/pendientes/nuevo/", views.pendiente_create_for_pedido, name="pendiente_create_for_pedido"),
     path("patrimonios/", views.patrimonios_list, name="patrimonios_list"),
     path("patrimonios/nuevo/", views.patrimonio_standalone_create, name="patrimonio_standalone_create"),
+    path("patrimonios/donaciones/", views.donaciones_list, name="donaciones_list"),
+    path("patrimonios/donaciones/nueva/", views.donacion_create, name="donacion_create"),
     path("patrimonios/<int:pk>/editar-directo/", views.patrimonio_standalone_edit, name="patrimonio_standalone_edit"),
     path("patrimonios/detalle/<int:detalle_id>/nuevo/", views.patrimonio_create, name="patrimonio_create"),
     path("patrimonios/detalle/<int:detalle_id>/vincular/<int:pk>/", views.patrimonio_attach, name="patrimonio_attach"),

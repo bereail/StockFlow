@@ -1,7 +1,7 @@
 from django.conf import settings
 
 MAS_URLS = {
-    "prestamos_list", "prestamos_page", "prestamo_create", "prestamo_detail",
+    "prestamos_list", "prestamo_create", "prestamo_detail",
     "prestamo_edit", "prestamo_devolver",
     "pendientes_page",
     "reparaciones_list", "reparacion_create", "reparacion_edit",

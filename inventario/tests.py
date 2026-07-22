@@ -123,13 +123,13 @@ class NotaModelTest(TestCase):
     def test_fecha_cierre_se_setea_al_cerrar(self):
         nota = Nota.objects.create(servicio_solicitante=self.servicio, estado="BORRADOR")
         self.assertIsNone(nota.fecha_cierre)
-        nota.estado = "CERRADA"
+        nota.estado = "FINALIZADA"
         nota.save()
         nota.refresh_from_db()
         self.assertIsNotNone(nota.fecha_cierre)
 
     def test_fecha_cierre_se_limpia_al_reabrir(self):
-        nota = Nota.objects.create(servicio_solicitante=self.servicio, estado="CERRADA")
+        nota = Nota.objects.create(servicio_solicitante=self.servicio, estado="FINALIZADA")
         nota.refresh_from_db()
         self.assertIsNotNone(nota.fecha_cierre)
         nota.estado = "BORRADOR"
@@ -196,16 +196,16 @@ class PendienteModelTest(TestCase):
         p = Pendiente.objects.create(texto="Revisar impresora")
         self.assertEqual(str(p), "Revisar impresora")
 
-    def test_completado_default_false(self):
+    def test_estado_default_pendiente(self):
         p = Pendiente.objects.create(texto="Tarea")
-        self.assertFalse(p.completado)
+        self.assertEqual(p.estado, "PENDIENTE")
 
     def test_completar(self):
         p = Pendiente.objects.create(texto="Tarea")
-        p.completado = True
-        p.save(update_fields=["completado"])
+        p.estado = "COMPLETADO"
+        p.save(update_fields=["estado"])
         p.refresh_from_db()
-        self.assertTrue(p.completado)
+        self.assertEqual(p.estado, "COMPLETADO")
 
 
 # ============================================================
@@ -343,11 +343,29 @@ class VistasCrudTest(TestCase):
         toner.refresh_from_db()
         self.assertFalse(toner.activo)
 
+    def test_movimiento_anular(self):
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=5)
+        self.assertEqual(stock_de_item(item.id), 5)
+
+        r = self.client.post(f"/movimientos/{mov.pk}/anular/")
+        self.assertEqual(r.status_code, 302)
+        mov.refresh_from_db()
+        self.assertTrue(mov.anulado)
+        self.assertEqual(stock_de_item(item.id), 0)
+
+    def test_movimiento_anular_requiere_post(self):
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        r = self.client.get(f"/movimientos/{mov.pk}/anular/")
+        self.assertEqual(r.status_code, 405)
+
     def test_pendiente_toggle(self):
         p = Pendiente.objects.create(texto="Revisar switch", servicio=self.servicio)
         self.client.post(f"/pendientes/{p.pk}/toggle/")
         p.refresh_from_db()
-        self.assertTrue(p.completado)
+        self.assertEqual(p.estado, "EN_PROGRESO")
 
     def test_pendiente_delete(self):
         p = Pendiente.objects.create(texto="Borrar esto", servicio=self.servicio)

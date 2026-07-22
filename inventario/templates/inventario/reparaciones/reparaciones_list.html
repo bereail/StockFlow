@@ -15,8 +15,8 @@
   <form method="get" class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap">
     <input type="hidden" name="page" value="1">
     <div style="flex:1;min-width:160px">
-      <label class="label">Estado</label>
-      <select name="estado">
+      <label class="label" for="id_estado">Estado</label>
+      <select name="estado" id="id_estado">
         <option value="">Todos</option>
         {% for key, lbl in estados %}
           <option value="{{ key }}" {% if estado == key %}selected{% endif %}>{{ lbl }}</option>
@@ -24,8 +24,8 @@
       </select>
     </div>
     <div style="flex:2;min-width:180px">
-      <label class="label">Buscar</label>
-      <input name="q" value="{{ q }}" placeholder="Proveedor / diagnóstico / servicio">
+      <label class="label" for="id_q">Buscar</label>
+      <input name="q" id="id_q" value="{{ q }}" placeholder="Proveedor / diagnóstico / servicio">
     </div>
     <div class="row" style="gap:8px">
       <button class="btn" type="submit">Filtrar</button>
@@ -55,7 +55,7 @@
       </thead>
       <tbody>
         {% for r in reparaciones %}
-          <tr style="cursor:pointer" onclick="location.href='{% url 'reparacion_detail' r.pk %}'">
+          <tr style="cursor:pointer" data-href="{% url 'reparacion_detail' r.pk %}">
             <td>
               {% if r.estado == "CERRADO" or r.estado == "RETIRADO" %}
                 <span class="chip ok">{{ r.get_estado_display }}</span>

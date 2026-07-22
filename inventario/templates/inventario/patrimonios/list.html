@@ -15,6 +15,7 @@
       </svg>
       Nuevo patrimonio
     </a>
+    <a class="btn2" href="{% url 'donaciones_list' %}">Donaciones</a>
     <a class="btn2" href="{% url 'movimientos_list' %}">Ver movimientos</a>
   </div>
 </div>
@@ -71,8 +72,8 @@
           {% else %}
             {% url 'patrimonio_standalone_edit' pat.pk as editar_url %}
           {% endif %}
-          <tr style="cursor:pointer" onclick="location.href='{{ editar_url }}?next={% url 'patrimonios_list' %}'">
-            <td><strong class="mono">{{ pat.numero_patrimonio }}</strong></td>
+          <tr style="cursor:pointer" data-href="{{ editar_url }}?next={% url 'patrimonios_list' %}">
+            <td><strong class="mono">{{ pat.numero_patrimonio }}</strong>{% if pat.es_donacion %} <span class="chip" title="Donación{% if pat.donante %} de {{ pat.donante }}{% endif %}">Donación</span>{% endif %}</td>
             <td>
               {% if pat.articulo %}{{ pat.articulo.nombre }}
               {% else %}

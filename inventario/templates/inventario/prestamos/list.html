@@ -40,7 +40,7 @@
         </thead>
         <tbody>
           {% for p in prestamos %}
-          <tr style="cursor:pointer" onclick="location.href='{% url 'prestamo_detail' p.id %}'">
+          <tr style="cursor:pointer" data-href="{% url 'prestamo_detail' p.id %}">
             <td>{{ p.servicio|default:"—" }}</td>
             <td>{{ p.entregado_a|default:"—" }}</td>
             <td class="muted" style="font-size:12px">

@@ -14,27 +14,27 @@
   <form method="post" class="form">
     {% csrf_token %}
 
-    <div class="form-grid">
+    <div class="formgrid">
       <div class="field">
-        <label>Nombre</label>
+        <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
         {{ form.nombre }}
         {{ form.nombre.errors }}
       </div>
 
       <div class="field">
-        <label>Marca</label>
+        <label class="label" for="{{ form.marca.id_for_label }}">Marca</label>
         {{ form.marca }}
         {{ form.marca.errors }}
       </div>
 
       <div class="field">
-        <label>Modelo impresora</label>
+        <label class="label" for="{{ form.modelo_impresora.id_for_label }}">Modelo impresora</label>
         {{ form.modelo_impresora }}
         {{ form.modelo_impresora.errors }}
       </div>
 
       <div class="field checkbox">
-        <label class="inline">
+        <label class="inline" for="{{ form.activo.id_for_label }}">
           {{ form.activo }} Activo
         </label>
         {{ form.activo.errors }}
@@ -43,7 +43,7 @@
 
     <div class="row" style="gap:10px; margin-top:12px">
       <button type="submit" class="btn">Guardar</button>
-      <a class="btn ghost" href="{% url 'toner_list' %}">Cancelar</a>
+      <a class="btn btn-ghost" href="{% url 'toner_list' %}">Cancelar</a>
     </div>
   </form>
 </div>

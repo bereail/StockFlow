@@ -7,7 +7,7 @@ from ..services.items import item_de_articulo
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ["nombre", "activo", "marca", "descripcion", "caracteristicas", "observaciones", "es_patrimonial"]
+        fields = ["nombre", "activo", "marca", "descripcion", "caracteristicas", "observaciones", "es_patrimonial", "genera_ficha"]
         widgets = {
             "nombre": forms.TextInput(attrs={"placeholder": "Cable USB / Mouse / Resma A4"}),
             "marca": forms.TextInput(attrs={"placeholder": "Genérica / HP / Logitech (opcional)"}),
@@ -23,6 +23,7 @@ class ArticuloForm(forms.ModelForm):
         self.fields["caracteristicas"].required = False
         self.fields["observaciones"].required = False
         self.fields["es_patrimonial"].required = False
+        self.fields["genera_ficha"].required = False
 
     def save(self, commit=True):
         articulo = super().save(commit=commit)

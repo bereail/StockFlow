@@ -28,19 +28,19 @@
 
     <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin-top:12px">
       <div>
-        <label class="label">Tipo</label>
+        <label class="label" for="{{ form.tipo.id_for_label }}">Tipo</label>
         {{ form.tipo }}
         {% if form.tipo.errors %}<div class="field-error">{{ form.tipo.errors }}</div>{% endif %}
       </div>
 
       <div>
-        <label class="label">Servicio (solo EGRESO)</label>
+        <label class="label" for="{{ form.servicio.id_for_label }}">Servicio (solo EGRESO)</label>
         {{ form.servicio }}
         {% if form.servicio.errors %}<div class="field-error">{{ form.servicio.errors }}</div>{% endif %}
       </div>
 
       <div>
-        <label class="label">Fecha</label>
+        <label class="label" for="{{ form.fecha.id_for_label }}">Fecha</label>
         {{ form.fecha }}
         {% if form.fecha.errors %}<div class="field-error">{{ form.fecha.errors }}</div>{% endif %}
       </div>
@@ -48,13 +48,13 @@
 
     <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:12px">
       <div>
-        <label class="label">Documento (opcional)</label>
+        <label class="label" for="{{ form.documento.id_for_label }}">Documento (opcional)</label>
         {{ form.documento }}
         {% if form.documento.errors %}<div class="field-error">{{ form.documento.errors }}</div>{% endif %}
       </div>
 
       <div>
-        <label class="label">Observaciones</label>
+        <label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
         {{ form.observaciones }}
         {% if form.observaciones.errors %}<div class="field-error">{{ form.observaciones.errors }}</div>{% endif %}
       </div>

@@ -142,7 +142,7 @@
 
           <!-- BORRAR -->
           <form method="post" action="{% url 'pendiente_delete' p.id %}" style="margin:0"
-                onsubmit="return confirm('¿Eliminar esta tarea?');">
+                data-confirm="¿Eliminar esta tarea?">
             {% csrf_token %}
             <button class="btn2 btn-ghost" type="submit" title="Eliminar"
                     style="padding:6px 10px;color:var(--muted)">✕</button>

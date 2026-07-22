@@ -26,6 +26,9 @@ from .pedidos import PedidoForm, PedidoDetalleFormSet  # ajustá a tus nombres r
 # Préstamos
 from .prestamos import PrestamoForm
 
+# Intercambios
+from .intercambios import IntercambioForm, IntercambioResolverForm
+
 # Movimientos
 from .movimientos import (
     DocumentoForm,

@@ -51,48 +51,56 @@
     <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(79,140,255,.08);border:1px solid rgba(79,140,255,.25)">
       ℹ Esta es una impresora del catálogo: el N° de patrimonio, la IP y el servicio asignado que cargues acá se actualizan directamente sobre esa impresora.
     </div>
+  {% elif form.genera_ficha == "IMPRESORA" %}
+    <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(79,140,255,.08);border:1px solid rgba(79,140,255,.25)">
+      ℹ Al guardar, se crea automáticamente la ficha de esta impresora (en "Impresoras") con el N° de patrimonio, IP y servicio que cargues acá.
+    </div>
+  {% elif form.genera_ficha == "ACTIVO_PC" %}
+    <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(79,140,255,.08);border:1px solid rgba(79,140,255,.25)">
+      ℹ Al guardar, se crea automáticamente la ficha de este equipo (en "Activos PC") con el N° de patrimonio, IP y servicio que cargues acá.
+    </div>
   {% endif %}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 
     <div>
-      <label class="label">Número de patrimonio</label>
+      <label class="label" for="{{ form.numero_patrimonio.id_for_label }}">Número de patrimonio</label>
       {{ form.numero_patrimonio }}
       {% if form.numero_patrimonio.errors %}<div style="color:var(--danger);font-size:.8rem;margin-top:4px">{{ form.numero_patrimonio.errors.0 }}</div>{% endif %}
     </div>
     <div>
-      <label class="label">Serial (opcional)</label>
+      <label class="label" for="{{ form.serial.id_for_label }}">Serial (opcional)</label>
       {{ form.serial }}
     </div>
 
     <div style="grid-column:1/-1">
-      <label class="label">Detalle del artículo (opcional)</label>
+      <label class="label" for="{{ form.detalle_item.id_for_label }}">Detalle del artículo (opcional)</label>
       {{ form.detalle_item }}
     </div>
 
     <div>
-      <label class="label">{% if form.es_impresora %}Nombre / identificador (opcional){% else %}Nombre del equipo (opcional){% endif %}</label>
+      <label class="label" for="{{ form.nombre_pc.id_for_label }}">{% if form.es_impresora %}Nombre / identificador (opcional){% else %}Nombre del equipo (opcional){% endif %}</label>
       {{ form.nombre_pc }}
     </div>
     <div>
-      <label class="label">Dirección IP (opcional)</label>
+      <label class="label" for="{{ form.ip.id_for_label }}">Dirección IP (opcional)</label>
       {{ form.ip }}
     </div>
 
     {% if not form.es_impresora %}
     <div style="grid-column:1/-1">
-      <label class="label">Usuario asignado (opcional)</label>
+      <label class="label" for="{{ form.usuario_asignado.id_for_label }}">Usuario asignado (opcional)</label>
       {{ form.usuario_asignado }}
     </div>
     {% endif %}
 
     <div style="grid-column:1/-1">
-      <label class="label">Servicio asignado (opcional)</label>
+      <label class="label" for="{{ form.servicio_asignado.id_for_label }}">Servicio asignado (opcional)</label>
       {{ form.servicio_asignado }}
     </div>
 
     <div style="grid-column:1/-1">
-      <label class="label">Observaciones</label>
+      <label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
       {{ form.observaciones }}
     </div>
 

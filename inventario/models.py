@@ -55,16 +55,41 @@ class Articulo(models.Model):
         help_text="Cada unidad cargada en un pedido va a pedir su propio N° de patrimonio.",
     )
 
+    GENERA_FICHA_CHOICES = [
+        ("", "Ninguna (solo patrimonio genérico)"),
+        ("IMPRESORA", "Impresora"),
+        ("ACTIVO_PC", "Activo PC / equipo de red"),
+    ]
+    genera_ficha = models.CharField(
+        max_length=20,
+        choices=GENERA_FICHA_CHOICES,
+        blank=True,
+        default="",
+        verbose_name="Genera ficha de",
+        help_text="Al cargar el N° de patrimonio de una unidad, crear automáticamente su ficha completa (impresora / equipo).",
+    )
+
     class Meta:
         ordering = ["nombre"]
 
     def __str__(self):
-        return self.nombre
+        # Evita confundir "Switch" (genérico) con "Switch (Aruba)" en los listados
+        return f"{self.nombre}" + (f" ({self.marca})" if self.marca else "")
 
 class ActivoPC(models.Model):
     """
     Activos de informática (PCs, etc).
     """
+    articulo = models.ForeignKey(
+        "Articulo",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="activos_pc",
+        verbose_name="Artículo de catálogo",
+        help_text="Artículo patrimonial del que sale esta unidad (ej: 'Router TP-Link Archer C6').",
+    )
+
     nombre_pc = models.CharField(max_length=100)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
     patrimonio = models.CharField(max_length=100, blank=True)
@@ -552,16 +577,20 @@ class Pedido(models.Model):
 
     numero = models.CharField(max_length=40, unique=True)
 
-    servicio_solicitante = models.ForeignKey(
+    servicios = models.ManyToManyField(
         "Servicio",
+        related_name="pedidos",
+    )
+
+    nota = models.ForeignKey(
+        "Nota",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="pedidos",
-        db_index=True,
+        verbose_name="Nota vinculada",
+        help_text="Nota previamente cargada a la que corresponde este pedido (opcional).",
     )
-
-    numero_nota = models.CharField(max_length=50, blank=True)
     observaciones = models.TextField(blank=True)
     para_que = models.CharField(max_length=255, blank=True)
 
@@ -637,6 +666,10 @@ class PatrimonioUnidad(models.Model):
     numero_patrimonio = models.CharField(max_length=50, unique=True)
     detalle_item = models.CharField(max_length=255, blank=True)
 
+    es_donacion = models.BooleanField(default=False, verbose_name="Es donación")
+    donante = models.CharField(max_length=150, blank=True, verbose_name="Donado por")
+    donante_contacto = models.CharField(max_length=150, blank=True, verbose_name="Contacto del donante")
+
     nombre_pc       = models.CharField(max_length=120, blank=True, verbose_name="Nombre del equipo")
     ip              = models.CharField(max_length=45,  blank=True, verbose_name="Dirección IP")
     usuario_asignado = models.CharField(max_length=120, blank=True, verbose_name="Usuario asignado")
@@ -678,8 +711,9 @@ class Nota(models.Model):
     ESTADOS = [
         ("BORRADOR", "Borrador"),
         ("ENVIADA", "Enviada"),
-        ("APROBADA", "Aprobada"),
-        ("CERRADA", "Cerrada"),
+        ("RECIBIDA", "Recibida"),
+        ("ENTREGADA_MESA_ENTRADA", "Entregada a Mesa de Entrada"),
+        ("FINALIZADA", "Finalizada"),
         ("CANCELADA", "Cancelada"),
     ]
 
@@ -697,14 +731,14 @@ class Nota(models.Model):
     fecha = models.DateField(default=timezone.now)
     detalle = models.TextField(blank=True, default="")
     estado = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=ESTADOS,
         default="BORRADOR",
         db_index=True
     )
 
-    # ✅ NUEVO CAMPO
-    fecha_cierre = models.DateTimeField(null=True, blank=True)
+    fecha_cierre = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de finalización")
+    fecha_entrega_mesa_entrada = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de entrega a Mesa de Entrada")
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
@@ -719,15 +753,26 @@ class Nota(models.Model):
     def save(self, *args, **kwargs):
         """
         Lógica automática:
-        - Si pasa a CERRADA → setea fecha_cierre
-        - Si deja de estar cerrada → limpia fecha_cierre
+        - Si pasa a FINALIZADA → setea fecha_cierre
+        - Si deja de estar finalizada → limpia fecha_cierre
+        - Si pasa a ENTREGADA_MESA_ENTRADA → setea fecha_entrega_mesa_entrada
+        - Si deja de estar en ese estado → limpia fecha_entrega_mesa_entrada
         """
 
-        if self.estado == "CERRADA" and self.fecha_cierre is None:
+        if self.estado == "FINALIZADA" and self.fecha_cierre is None:
             self.fecha_cierre = timezone.now()
 
-        if self.estado != "CERRADA" and self.fecha_cierre is not None:
+        if self.estado != "FINALIZADA" and self.fecha_cierre is not None:
             self.fecha_cierre = None
+
+        if self.estado == "ENTREGADA_MESA_ENTRADA" and self.fecha_entrega_mesa_entrada is None:
+            self.fecha_entrega_mesa_entrada = timezone.now()
+
+        # Es un paso intermedio: al avanzar a FINALIZADA (o cancelar) queremos
+        # conservar cuándo se entregó, no borrarlo. Solo se limpia si se
+        # retrocede a un estado anterior a ese paso.
+        if self.estado in ("BORRADOR", "ENVIADA", "RECIBIDA") and self.fecha_entrega_mesa_entrada is not None:
+            self.fecha_entrega_mesa_entrada = None
 
         super().save(*args, **kwargs)
 
@@ -751,3 +796,81 @@ class NotaDetalle(models.Model):
     def __str__(self):
         extra = f" ({self.detalle})" if self.detalle else ""
         return f"{self.item} x {self.cantidad}{extra}"
+
+
+# =========================
+# INTERCAMBIOS
+# =========================
+class Intercambio(models.Model):
+    """
+    Cruce de destino entre dos servicios: un equipo que iba para un servicio
+    se le da temporalmente a otro por urgencia, y más adelante se compensa
+    con el equipo que le correspondía a ese segundo servicio. No es un
+    préstamo (no vuelve el mismo equipo).
+    """
+    ESTADOS = [
+        ("PENDIENTE", "Pendiente"),
+        ("RESUELTO", "Resuelto"),
+        ("CANCELADO", "Cancelado"),
+    ]
+
+    servicio_afectado = models.ForeignKey(
+        Servicio, on_delete=models.PROTECT,
+        related_name="intercambios_a_favor",
+        verbose_name="Servicio que espera compensación",
+    )
+    servicio_beneficiario = models.ForeignKey(
+        Servicio, on_delete=models.PROTECT,
+        related_name="intercambios_recibidos",
+        verbose_name="Servicio que se queda con el equipo",
+    )
+
+    patrimonio_saliente = models.ForeignKey(
+        PatrimonioUnidad, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="intercambios_como_saliente",
+    )
+    detalle_saliente = models.CharField(
+        max_length=255, blank=True,
+        help_text="Si el ítem no tiene N° de patrimonio, describilo acá.",
+    )
+
+    motivo = models.TextField(blank=True, default="")
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="PENDIENTE", db_index=True)
+    fecha_intercambio = models.DateTimeField(default=timezone.now)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="intercambios_creados",
+    )
+
+    # Se completan al resolver
+    patrimonio_entrante = models.ForeignKey(
+        PatrimonioUnidad, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="intercambios_como_entrante",
+    )
+    detalle_entrante = models.CharField(max_length=255, blank=True)
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    resuelto_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="intercambios_resueltos",
+    )
+
+    class Meta:
+        ordering = ["-fecha_intercambio"]
+
+    def __str__(self):
+        return f"{self.servicio_afectado} ↔ {self.servicio_beneficiario}"
+
+    @property
+    def saliente_label(self):
+        if self.patrimonio_saliente_id:
+            return f"{self.patrimonio_saliente.numero_patrimonio} — {self.patrimonio_saliente.nombre_pc or self.patrimonio_saliente.detalle_item}".strip(" —")
+        return self.detalle_saliente or "—"
+
+    @property
+    def entrante_label(self):
+        if self.patrimonio_entrante_id:
+            return f"{self.patrimonio_entrante.numero_patrimonio} — {self.patrimonio_entrante.nombre_pc or self.patrimonio_entrante.detalle_item}".strip(" —")
+        return self.detalle_entrante or "—"
