@@ -10,7 +10,8 @@ from .models import (
     Proveedor,
     Prestamo,
     PrestamoDetalle,
-    ItemComponente
+    ItemComponente,
+    Intercambio,
 )
 
 # =========================
@@ -98,6 +99,20 @@ class MovimientoAdmin(admin.ModelAdmin):
     search_fields = ("servicio__nombre", "observaciones")
     inlines = [MovimientoDetalleInline]
     ordering = ("-fecha",)
+
+
+# =========================
+# INTERCAMBIOS
+# =========================
+@admin.register(Intercambio)
+class IntercambioAdmin(admin.ModelAdmin):
+    list_display = (
+        "id", "servicio_afectado", "servicio_beneficiario",
+        "estado", "fecha_intercambio", "fecha_resolucion",
+    )
+    list_filter = ("estado", "servicio_afectado", "servicio_beneficiario")
+    search_fields = ("detalle_saliente", "detalle_entrante", "motivo")
+    ordering = ("-fecha_intercambio",)
 
 
 # =========================

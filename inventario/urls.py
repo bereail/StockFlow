@@ -70,6 +70,13 @@ urlpatterns = [
     path("prestamos/<int:pk>/editar/", views.prestamo_edit, name="prestamo_edit"),
     path("prestamos/<int:pk>/devolver/", views.prestamo_devolver, name="prestamo_devolver"),
 
+    # INTERCAMBIOS
+    path("intercambios/", views.intercambios_list, name="intercambios_list"),
+    path("intercambios/nuevo/", views.intercambio_create, name="intercambio_create"),
+    path("intercambios/<int:pk>/", views.intercambio_detail, name="intercambio_detail"),
+    path("intercambios/<int:pk>/resolver/", views.intercambio_resolver, name="intercambio_resolver"),
+    path("intercambios/<int:pk>/cancelar/", views.intercambio_cancelar, name="intercambio_cancelar"),
+
     # PENDIeNTES #
     path("pendientes/", views.pendientes_page, name="pendientes_page"),
     path("pendientes/<int:pk>/toggle/", views.pendiente_toggle, name="pendiente_toggle"),

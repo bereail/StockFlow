@@ -1,0 +1,64 @@
+{% extends "inventario/base.html" %}
+{% block title %}Nuevo intercambio{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Nuevo intercambio</div>
+    <div class="page-subtitle muted">Registrá el equipo que se desvió a otro servicio</div>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">← Volver</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="form-error" style="margin-bottom:14px">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="panel panel--narrow">
+    <div class="panel-section-title" style="margin-bottom:16px">Datos del intercambio</div>
+
+    <div class="formgrid">
+      <div class="field col-6">
+        <label class="label" for="{{ form.servicio_afectado.id_for_label }}">Servicio que espera compensación</label>
+        {{ form.servicio_afectado }}
+        {% if form.servicio_afectado.errors %}<div class="form-error">{{ form.servicio_afectado.errors }}</div>{% endif %}
+      </div>
+      <div class="field col-6">
+        <label class="label" for="{{ form.servicio_beneficiario.id_for_label }}">Servicio que se queda con el equipo</label>
+        {{ form.servicio_beneficiario }}
+        {% if form.servicio_beneficiario.errors %}<div class="form-error">{{ form.servicio_beneficiario.errors }}</div>{% endif %}
+      </div>
+      <div class="field col-6">
+        <label class="label" for="{{ form.patrimonio_saliente.id_for_label }}">Patrimonio entregado (si tiene N°)</label>
+        {{ form.patrimonio_saliente }}
+        {% if form.patrimonio_saliente.errors %}<div class="form-error">{{ form.patrimonio_saliente.errors }}</div>{% endif %}
+      </div>
+      <div class="field col-6">
+        <label class="label" for="{{ form.detalle_saliente.id_for_label }}">Detalle (si no tiene patrimonio)</label>
+        {{ form.detalle_saliente }}
+        {% if form.detalle_saliente.errors %}<div class="form-error">{{ form.detalle_saliente.errors }}</div>{% endif %}
+      </div>
+      <div class="field col-6">
+        <label class="label" for="{{ form.fecha_intercambio.id_for_label }}">Fecha</label>
+        {{ form.fecha_intercambio }}
+        {% if form.fecha_intercambio.errors %}<div class="form-error">{{ form.fecha_intercambio.errors }}</div>{% endif %}
+      </div>
+      <div class="field col-12">
+        <label class="label" for="{{ form.motivo.id_for_label }}">Motivo</label>
+        {{ form.motivo }}
+        {% if form.motivo.errors %}<div class="form-error">{{ form.motivo.errors }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Guardar</button>
+    <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">Cancelar</a>
+  </div>
+</form>
+
+{% endblock %}

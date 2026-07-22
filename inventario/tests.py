@@ -6,7 +6,7 @@ from inventario.models import (
     Toner, Articulo, ActivoPC, Impresora, Servicio,
     Item, Movimiento, MovimientoDetalle,
     AsignacionImpresora, Nota, Pendiente, Reparacion,
-    Prestamo, Pedido,
+    Prestamo, Pedido, PatrimonioUnidad, Intercambio,
 )
 from inventario.services.stock import stock_de_item, hay_stock_suficiente
 from inventario.services.items import (
@@ -371,6 +371,73 @@ class VistasCrudTest(TestCase):
         p = Pendiente.objects.create(texto="Borrar esto", servicio=self.servicio)
         self.client.post(f"/pendientes/{p.pk}/delete/")
         self.assertFalse(Pendiente.objects.filter(pk=p.pk).exists())
+
+
+# ============================================================
+# INTERCAMBIOS
+# ============================================================
+
+class IntercambioTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin3", "admin3@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.enfermeria = Servicio.objects.create(nombre="Enfermería")
+        self.guardia = Servicio.objects.create(nombre="Guardia")
+        self.pat_saliente = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-001", servicio_asignado=self.enfermeria, asignado_por=self.user,
+        )
+        self.pat_entrante = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-002", servicio_asignado=self.guardia, asignado_por=self.user,
+        )
+
+    def test_crear_intercambio_actualiza_servicio_saliente(self):
+        r = self.client.post("/intercambios/nuevo/", {
+            "servicio_afectado": self.enfermeria.pk,
+            "servicio_beneficiario": self.guardia.pk,
+            "patrimonio_saliente": self.pat_saliente.pk,
+            "fecha_intercambio": "2026-01-01T10:00",
+        })
+        self.assertEqual(r.status_code, 302)
+        intercambio = Intercambio.objects.get()
+        self.assertEqual(intercambio.estado, "PENDIENTE")
+        self.pat_saliente.refresh_from_db()
+        self.assertEqual(self.pat_saliente.servicio_asignado, self.guardia)
+
+    def test_crear_intercambio_sin_patrimonio_ni_detalle_falla(self):
+        r = self.client.post("/intercambios/nuevo/", {
+            "servicio_afectado": self.enfermeria.pk,
+            "servicio_beneficiario": self.guardia.pk,
+            "fecha_intercambio": "2026-01-01T10:00",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Intercambio.objects.exists())
+
+    def test_resolver_intercambio_actualiza_servicio_entrante(self):
+        intercambio = Intercambio.objects.create(
+            servicio_afectado=self.enfermeria, servicio_beneficiario=self.guardia,
+            patrimonio_saliente=self.pat_saliente, creado_por=self.user,
+        )
+        r = self.client.post(f"/intercambios/{intercambio.pk}/resolver/", {
+            "patrimonio_entrante": self.pat_entrante.pk,
+        })
+        self.assertEqual(r.status_code, 302)
+        intercambio.refresh_from_db()
+        self.assertEqual(intercambio.estado, "RESUELTO")
+        self.assertIsNotNone(intercambio.fecha_resolucion)
+        self.pat_entrante.refresh_from_db()
+        self.assertEqual(self.pat_entrante.servicio_asignado, self.enfermeria)
+
+    def test_cancelar_intercambio_pendiente(self):
+        intercambio = Intercambio.objects.create(
+            servicio_afectado=self.enfermeria, servicio_beneficiario=self.guardia,
+            detalle_saliente="Notebook sin patrimonio", creado_por=self.user,
+        )
+        r = self.client.post(f"/intercambios/{intercambio.pk}/cancelar/")
+        self.assertEqual(r.status_code, 302)
+        intercambio.refresh_from_db()
+        self.assertEqual(intercambio.estado, "CANCELADO")
 
 
 # ============================================================

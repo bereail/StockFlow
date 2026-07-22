@@ -12,7 +12,8 @@ from ..models import (
     MovimientoDetalle,
     Pendiente,
     Reparacion,
-    Prestamo
+    Prestamo,
+    Intercambio,
 )
 
 
@@ -48,6 +49,7 @@ def dashboard(request):
         "prestamos_activos": Prestamo.objects.filter(fecha_devolucion_real__isnull=True).count(),
         "pendientes_abiertos": Pendiente.objects.filter(estado__in=["PENDIENTE", "EN_PROGRESO"]).count(),
         "reparaciones_activas": Reparacion.objects.exclude(estado__in=["CERRADO", "RETIRADO"]).count(),
+        "intercambios_pendientes": Intercambio.objects.filter(estado="PENDIENTE").count(),
         "entregas_mes": (
             MovimientoDetalle.objects
             .filter(

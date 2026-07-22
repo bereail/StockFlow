@@ -7,6 +7,7 @@ from .servicios import *
 from .impresoras import *
 from .movimientos import *
 from .prestamos import *
+from .intercambios import *
 from .pendientes import *
 from .reparaciones import *
 from .pedidos import *
