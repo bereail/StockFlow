@@ -79,14 +79,7 @@
     <table>
       <thead>
         <tr>
-          <th>
-            Item
-            <div style="margin-top:4px">
-              <input type="text" id="buscar-item" placeholder="Buscar artículo o impresora…"
-                     oninput="filtrarSelects(this.value)"
-                     style="font-size:.78rem;padding:3px 7px;width:100%;max-width:220px">
-            </div>
-          </th>
+          <th>Item</th>
           <th>Cantidad</th>
           <th>Detalle</th>
           <th>Eliminar</th>
@@ -136,17 +129,5 @@
   </div>
 
 </form>
-
-<script>
-  function filtrarSelects(q) {
-    var texto = q.toLowerCase().trim();
-    document.querySelectorAll('select[name$="-item"]').forEach(function(sel) {
-      Array.from(sel.options).forEach(function(opt) {
-        if (opt.value === '') { opt.style.display = ''; return; }
-        opt.style.display = (!texto || opt.text.toLowerCase().includes(texto)) ? '' : 'none';
-      });
-    });
-  }
-</script>
 
 {% endblock %}

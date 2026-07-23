@@ -117,10 +117,10 @@
     </template>
 
     <div id="nota-detalle-empty-form"
-         data-item='{{ formset.empty_form.item|escapejs }}'
-         data-cantidad='{{ formset.empty_form.cantidad|escapejs }}'
-         data-detalle='{{ formset.empty_form.detalle|escapejs }}'
-         data-delete='{{ formset.empty_form.DELETE|escapejs }}'>
+         data-item="{{ formset.empty_form.item|force_escape }}"
+         data-cantidad="{{ formset.empty_form.cantidad|force_escape }}"
+         data-detalle="{{ formset.empty_form.detalle|force_escape }}"
+         data-delete="{{ formset.empty_form.DELETE|force_escape }}">
     </div>
   </div>
 
@@ -157,6 +157,7 @@
 
     tbody.insertAdjacentHTML("beforeend", rowHtml);
     totalForms.value = index + 1;
+    window.HeepSearchableSelect?.enhanceAll(tbody.lastElementChild);
   });
 </script>
 

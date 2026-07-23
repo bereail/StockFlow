@@ -1,13 +1,18 @@
 /*
- * Mejora cualquier <select> cuyo "name" contenga "servicio" (servicio,
- * servicio_solicitante, servicio_asignado, servicios, filtros de listado,
- * etc.) para poder escribir y filtrar las opciones en vez de scrollear
- * un desplegable largo. Funciona tanto con <select> simple como
- * <select multiple> (en ese caso, con chips removibles).
+ * Mejora cualquier <select> cuyo "name" contenga "servicio", "patrimonio" o
+ * "item" (servicio, servicio_solicitante, patrimonio_saliente,
+ * detalles-0-item, etc.) para poder escribir y filtrar las opciones en vez
+ * de scrollear un desplegable largo. Funciona tanto con <select> simple
+ * como <select multiple> (en ese caso, con chips removibles).
  *
  * El <select> original nunca se saca del DOM: solo se oculta. Sigue
  * siendo la fuente de verdad y se sigue enviando normalmente al hacer
  * submit del formulario, así que ninguna vista necesita cambios.
+ *
+ * Para contenido agregado dinámicamente (filas de formset agregadas por
+ * JS después de la carga de la página), llamar a
+ * window.HeepSearchableSelect.enhanceAll(elementoRaiz) una vez insertado
+ * en el DOM.
  */
 (function () {
   function enhance(select) {
@@ -47,13 +52,35 @@
     panel.className = "ssel-panel";
     panel.setAttribute("role", "listbox");
     panel.hidden = true;
-    wrap.appendChild(panel);
+    /* Se cuelga directo del <body> (no de wrap) para que un position:fixed
+       escape de cualquier ancestro con backdrop-filter/transform (ej. .card),
+       que si no atrapa al panel y hace que otros campos de la página le
+       tapen el click a las opciones. */
+    document.body.appendChild(panel);
+
+    function positionPanel() {
+      var rect = box.getBoundingClientRect();
+      panel.style.position = "fixed";
+      panel.style.left = rect.left + "px";
+      panel.style.top = (rect.bottom + 4) + "px";
+      panel.style.width = rect.width + "px";
+    }
 
     var currentOptions = [];
     var activeIndex = -1;
 
     function realOptions() {
       return Array.prototype.slice.call(select.options);
+    }
+
+    function findExactMatch(text) {
+      var t = (text || "").trim().toLowerCase();
+      if (!t) return null;
+      var opts = realOptions();
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].text.trim().toLowerCase() === t) return opts[i];
+      }
+      return null;
     }
 
     function renderChips() {
@@ -152,6 +179,7 @@
     function openPanel() {
       renderPanel("");
       if (!isMulti) input.select();
+      positionPanel();
       panel.hidden = false;
       wrap.classList.add("is-open");
       input.setAttribute("aria-expanded", "true");
@@ -161,21 +189,36 @@
       panel.hidden = true;
       wrap.classList.remove("is-open");
       input.setAttribute("aria-expanded", "false");
-      if (!isMulti) syncInputSingle();
+      if (!isMulti) {
+        var exacto = findExactMatch(input.value);
+        if (exacto && exacto.value !== select.value) {
+          select.value = exacto.value;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        syncInputSingle();
+      }
     }
 
     input.addEventListener("focus", openPanel);
+    input.addEventListener("blur", closePanel);
     input.addEventListener("input", function () {
       renderPanel(input.value);
+      positionPanel();
       panel.hidden = false;
       wrap.classList.add("is-open");
     });
     input.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowDown") { e.preventDefault(); openPanel(); move(1); }
-      else if (e.key === "ArrowUp") { e.preventDefault(); openPanel(); move(-1); }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (panel.hidden) openPanel(); else move(1);
+      }
+      else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (panel.hidden) openPanel(); else move(-1);
+      }
       else if (e.key === "Enter") {
         e.preventDefault();
-        var opt = currentOptions[activeIndex] || currentOptions[0];
+        var opt = findExactMatch(input.value) || currentOptions[activeIndex] || currentOptions[0];
         if (opt) choose(opt);
       } else if (e.key === "Escape") {
         closePanel();
@@ -184,22 +227,31 @@
     });
 
     document.addEventListener("click", function (e) {
-      if (!wrap.contains(e.target)) closePanel();
+      if (!wrap.contains(e.target) && !panel.contains(e.target)) closePanel();
     });
+
+    window.addEventListener("resize", function () {
+      if (!panel.hidden) positionPanel();
+    });
+    window.addEventListener("scroll", function () {
+      if (!panel.hidden) positionPanel();
+    }, true);
 
     renderChips();
     syncInputSingle();
   }
 
-  function init() {
-    document.querySelectorAll("select").forEach(function (sel) {
-      if (/servicio/i.test(sel.name || "")) enhance(sel);
+  function enhanceAll(root) {
+    (root || document).querySelectorAll("select").forEach(function (sel) {
+      if (/servicio|patrimonio|item/i.test(sel.name || "")) enhance(sel);
     });
   }
 
+  window.HeepSearchableSelect = { enhanceAll: enhanceAll };
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", function () { enhanceAll(document); });
   } else {
-    init();
+    enhanceAll(document);
   }
 })();

@@ -286,14 +286,7 @@
         <table id="tabla-detalles">
           <thead>
             <tr>
-              <th>
-                Ítem
-                <div style="margin-top:4px">
-                  <input type="text" id="buscar-item" placeholder="Buscar artículo o impresora…"
-                         oninput="filtrarSelects(this.value)"
-                         style="font-size:.78rem;padding:3px 7px;width:100%;max-width:220px">
-                </div>
-              </th>
+              <th>Ítem</th>
               <th style="width:90px">Cantidad</th>
               <th>Detalle</th>
               <th style="width:40px"></th>
@@ -337,16 +330,6 @@
     if (!editing) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function filtrarSelects(q) {
-    var texto = q.toLowerCase().trim();
-    document.querySelectorAll('#tabla-detalles select[name$="-item"]').forEach(function(sel) {
-      Array.from(sel.options).forEach(function(opt) {
-        if (opt.value === '') { opt.style.display = ''; return; }
-        opt.style.display = (!texto || opt.text.toLowerCase().includes(texto)) ? '' : 'none';
-      });
-    });
-  }
-
   function addDetalle() {
     var tbody = document.querySelector('#tabla-detalles tbody');
     var total = document.getElementById('id_detalles-TOTAL_FORMS');
@@ -354,6 +337,19 @@
     var primera = tbody.querySelector('tr.fila-detalle');
     if (!primera) return;
     var nueva = primera.cloneNode(true);
+
+    /* El <select> de ítem de la primera fila ya está mejorado con buscador
+       (ssel-wrap): el clon trae ese wrapper pero sin sus listeners (cloneNode
+       no los copia). Se desarma a un <select> limpio para volver a mejorarlo
+       ya en la fila nueva. */
+    var wrapClon = nueva.querySelector('.ssel-wrap');
+    if (wrapClon) {
+      var selClon = wrapClon.querySelector('select');
+      selClon.classList.remove('ssel-native');
+      delete selClon.dataset.sselDone;
+      wrapClon.parentNode.replaceChild(selClon, wrapClon);
+    }
+
     nueva.querySelectorAll('input, select, textarea').forEach(function(el) {
       el.name  = el.name.replace(/-\d+-/, '-' + idx + '-');
       el.id    = el.id.replace(/-\d+-/, '-' + idx + '-');
@@ -363,8 +359,7 @@
     if (chk) chk.checked = false;
     tbody.appendChild(nueva);
     total.value = idx + 1;
-    var q = document.getElementById('buscar-item');
-    if (q && q.value) filtrarSelects(q.value);
+    window.HeepSearchableSelect && window.HeepSearchableSelect.enhanceAll(nueva);
   }
 
   function removeDetalle(btn) {

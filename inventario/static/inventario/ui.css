@@ -1603,11 +1603,11 @@ select.ssel-native { display: none; }
 .ssel-chip-x:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 
 .ssel-panel {
-  position: absolute;
-  z-index: 60;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
+  /* position/left/top/width los calcula searchable_select.js (position: fixed,
+     anclado al <body>) para escapar de ancestros con backdrop-filter/transform
+     que si no atrapan el panel y tapan el click de las opciones. */
+  position: fixed;
+  z-index: 9980;
   max-height: 220px;
   overflow-y: auto;
   background: var(--surface-2);
