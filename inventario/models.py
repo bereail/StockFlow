@@ -493,6 +493,15 @@ class Pendiente(models.Model):
         verbose_name="Pedido vinculado",
     )
 
+    nota = models.ForeignKey(
+        "Nota",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pendientes",
+        verbose_name="Nota vinculada",
+    )
+
     creado = models.DateTimeField(auto_now_add=True)
     observacion = models.TextField(blank=True, default="")
 

@@ -31,7 +31,7 @@
     </div>
     <form method="post" style="padding:0 16px 16px">
       {% csrf_token %}
-      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:start">
+      <div style="display:grid;grid-template-columns:1fr auto auto auto auto;gap:10px;align-items:start">
         <div>
           {{ form.texto }}
           {% if form.texto.errors %}<div class="form-error">{{ form.texto.errors }}</div>{% endif %}
@@ -47,6 +47,10 @@
         <div>
           {{ form.pedido }}
           {% if form.pedido.errors %}<div class="form-error">{{ form.pedido.errors }}</div>{% endif %}
+        </div>
+        <div>
+          {{ form.nota }}
+          {% if form.nota.errors %}<div class="form-error">{{ form.nota.errors }}</div>{% endif %}
         </div>
       </div>
       <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
@@ -119,6 +123,9 @@
               {% endif %}
               {% if p.pedido %}
                 <a href="{% url 'pedido_detail' p.pedido_id %}" style="color:var(--primary);text-decoration:none">🔗 Pedido {{ p.pedido.numero }}</a>
+              {% endif %}
+              {% if p.nota %}
+                <a href="{% url 'nota_detail' p.nota_id %}" style="color:var(--primary);text-decoration:none">🔗 Nota {{ p.nota.numero|default:"s/n" }}</a>
               {% endif %}
             </div>
 

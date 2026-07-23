@@ -372,6 +372,22 @@ class VistasCrudTest(TestCase):
         self.client.post(f"/pendientes/{p.pk}/delete/")
         self.assertFalse(Pendiente.objects.filter(pk=p.pk).exists())
 
+    def test_pendiente_create_for_nota(self):
+        nota = Nota.objects.create(numero="N-500", servicio_solicitante=self.servicio)
+        r = self.client.post(f"/notas/{nota.pk}/pendientes/nuevo/", {
+            "texto": "Revisar entrega",
+            "servicio": self.servicio.pk,
+        })
+        self.assertEqual(r.status_code, 302)
+        p = Pendiente.objects.get(texto="Revisar entrega")
+        self.assertEqual(p.nota, nota)
+
+    def test_pendiente_toggle_redirige_a_nota(self):
+        nota = Nota.objects.create(numero="N-501", servicio_solicitante=self.servicio)
+        p = Pendiente.objects.create(texto="Tarea de nota", nota=nota)
+        r = self.client.post(f"/pendientes/{p.pk}/toggle/")
+        self.assertRedirects(r, f"/notas/{nota.pk}/")
+
 
 # ============================================================
 # INTERCAMBIOS

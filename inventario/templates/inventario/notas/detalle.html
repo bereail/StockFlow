@@ -117,6 +117,67 @@
   </div>
 </div>
 
+<!-- PENDIENTES VINCULADOS -->
+<div class="card" style="margin-top:14px">
+  <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Pendientes vinculados</div>
+
+  {% for p in pendientes %}
+    {% if p.estado == 'COMPLETADO' %}
+      <div class="pendiente-card" style="border-left:3px solid var(--ok);background:rgba(var(--ok-rgb),.08)">
+    {% elif p.estado == 'CANCELADO' %}
+      <div class="pendiente-card" style="border-left:3px solid var(--muted);background:rgba(148,163,184,.06)">
+    {% else %}
+      <div class="pendiente-card" style="border-left:3px solid var(--warn);background:rgba(var(--warn-rgb),.08)">
+    {% endif %}
+      <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
+                style="min-width:110px;font-size:.75rem
+                {% if p.estado == 'COMPLETADO' %};border-color:var(--ok);color:var(--ok)
+                {% elif p.estado == 'CANCELADO' %};border-color:var(--muted);color:var(--muted)
+                {% else %};border-color:var(--warn);color:var(--warn){% endif %}">
+          {{ p.get_estado_display }}
+        </button>
+      </form>
+      <div style="flex:1;min-width:0">
+        <div class="pendiente-text {% if p.estado == 'COMPLETADO' or p.estado == 'CANCELADO' %}is-done{% endif %}">{{ p.texto }}</div>
+        <div class="muted" style="font-size:.8rem;margin-top:4px;display:flex;gap:12px;flex-wrap:wrap">
+          <span>Creado: {{ p.creado|date:"d/m/Y" }}</span>
+          {% if p.fecha_limite %}
+            {% if p.fecha_limite < today and p.estado != "COMPLETADO" and p.estado != "CANCELADO" %}
+              <span style="color:var(--danger);font-weight:600">⚠ Límite: {{ p.fecha_limite|date:"d/m/Y" }}</span>
+            {% else %}
+              <span>Límite: {{ p.fecha_limite|date:"d/m/Y" }}</span>
+            {% endif %}
+          {% endif %}
+          {% if p.servicio %}<span>📍 {{ p.servicio }}</span>{% endif %}
+        </div>
+      </div>
+      <form method="post" action="{% url 'pendiente_delete' p.id %}" style="margin:0"
+            data-confirm="¿Eliminar esta tarea?">
+        {% csrf_token %}
+        <button class="btn2 btn-ghost" type="submit" title="Eliminar" style="padding:6px 10px;color:var(--muted)">✕</button>
+      </form>
+    </div>
+  {% empty %}
+    <div class="muted" style="padding:12px 0;text-align:center;font-size:.85rem">Sin tareas vinculadas a esta nota.</div>
+  {% endfor %}
+
+  <details style="margin-top:8px">
+    <summary style="font-size:.82rem;color:var(--muted);cursor:pointer">+ Vincular nueva tarea a esta nota</summary>
+    <form method="post" action="{% url 'pendiente_create_for_nota' nota.pk %}" style="margin-top:10px;display:flex;gap:10px;align-items:start">
+      {% csrf_token %}
+      <div style="flex:1">
+        {{ pendiente_form.texto }}
+        {% if pendiente_form.texto.errors %}<div class="form-error">{{ pendiente_form.texto.errors }}</div>{% endif %}
+      </div>
+      <div>{{ pendiente_form.fecha_limite }}</div>
+      <div>{{ pendiente_form.servicio }}</div>
+      <button class="btn2 primary" type="submit" style="font-size:.82rem">+ Agregar</button>
+    </form>
+  </details>
+</div>
+
 <!-- PEDIDOS VINCULADOS -->
 <div class="card" style="margin-top:14px">
   <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Pedidos asociados a esta nota</div>

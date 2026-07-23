@@ -116,6 +116,7 @@ urlpatterns = [
     path("notas/<int:pk>/editar/", views.nota_edit, name="nota_edit"),
     path("notas/<int:pk>/eliminar/", views.nota_delete, name="nota_delete"),
     path("notas/<int:pk>/avanzar/", views.nota_avanzar, name="nota_avanzar"),
+    path("notas/<int:pk>/pendientes/nuevo/", views.pendiente_create_for_nota, name="pendiente_create_for_nota"),
 
     # BÚSQUEDA GLOBAL
     path("buscar/", views.busqueda_global, name="busqueda_global"),

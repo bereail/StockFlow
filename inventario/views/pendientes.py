@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from ..models import Pendiente, Pedido
+from ..models import Pendiente, Pedido, Nota
 from ..forms.pendientes import PendienteForm
 
 
@@ -24,11 +24,16 @@ def pendientes_page(request):
             return redirect("pendientes_page")
     else:
         pedido_id = request.GET.get("pedido")
-        initial = {"pedido": pedido_id} if pedido_id else None
-        form = PendienteForm(initial=initial)
+        nota_id = request.GET.get("nota")
+        initial = {}
+        if pedido_id:
+            initial["pedido"] = pedido_id
+        if nota_id:
+            initial["nota"] = nota_id
+        form = PendienteForm(initial=initial or None)
 
     estado_filtro = (request.GET.get("estado") or "").strip()
-    pendientes = Pendiente.objects.select_related("servicio", "pedido").all()
+    pendientes = Pendiente.objects.select_related("servicio", "pedido", "nota").all()
     if estado_filtro:
         pendientes = pendientes.filter(estado=estado_filtro)
 
@@ -46,6 +51,8 @@ def _redirect_pendiente(request, pendiente):
         return redirect(next_url)
     if pendiente.pedido_id:
         return redirect("pedido_detail", pk=pendiente.pedido_id)
+    if pendiente.nota_id:
+        return redirect("nota_detail", pk=pendiente.nota_id)
     return redirect("pendientes_page")
 
 
@@ -89,3 +96,18 @@ def pendiente_create_for_pedido(request, pk):
     else:
         messages.error(request, "No se pudo crear la tarea: revisá los datos.")
     return redirect("pedido_detail", pk=pedido.pk)
+
+
+@login_required
+@require_POST
+def pendiente_create_for_nota(request, pk):
+    nota = get_object_or_404(Nota, pk=pk)
+    form = PendienteForm(request.POST)
+    if form.is_valid():
+        pendiente = form.save(commit=False)
+        pendiente.nota = nota
+        pendiente.save()
+        messages.success(request, "Tarea vinculada a la nota.")
+    else:
+        messages.error(request, "No se pudo crear la tarea: revisá los datos.")
+    return redirect("nota_detail", pk=nota.pk)

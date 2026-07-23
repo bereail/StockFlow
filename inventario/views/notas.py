@@ -4,9 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..models import Nota
 from ..forms.nota import NotaForm, NotaDetalleFormSet
+from ..forms.pendientes import PendienteForm
 
 
 @login_required
@@ -107,6 +109,8 @@ def nota_detail(request, pk):
     labels   = dict(Nota.ESTADOS)
     paso_actual = _PASOS_TIMELINE_NOTA.index(nota.estado) if nota.estado in _PASOS_TIMELINE_NOTA else -1
     siguiente   = _SIGUIENTE_ESTADO_NOTA.get(nota.estado)
+    pendientes = nota.pendientes.select_related("servicio").all()
+    pendiente_form = PendienteForm()
     return render(request, "inventario/notas/detalle.html", {
         "nota":            nota,
         "detalles":        detalles,
@@ -114,6 +118,9 @@ def nota_detail(request, pk):
         "paso_actual":     paso_actual,
         "siguiente":       siguiente,
         "siguiente_label": labels.get(siguiente, "") if siguiente else "",
+        "pendientes":      pendientes,
+        "pendiente_form":  pendiente_form,
+        "today":           timezone.localdate(),
     })
 
 
