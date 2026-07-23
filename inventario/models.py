@@ -834,6 +834,12 @@ class Intercambio(models.Model):
         max_length=255, blank=True,
         help_text="Si el ítem no tiene N° de patrimonio, describilo acá.",
     )
+    pedido_saliente = models.ForeignKey(
+        "Pedido", null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="intercambios_saliente",
+        verbose_name="Pedido de donde llegó el ítem entregado",
+    )
 
     motivo = models.TextField(blank=True, default="")
     estado = models.CharField(max_length=20, choices=ESTADOS, default="PENDIENTE", db_index=True)
@@ -850,6 +856,12 @@ class Intercambio(models.Model):
         related_name="intercambios_como_entrante",
     )
     detalle_entrante = models.CharField(max_length=255, blank=True)
+    pedido_entrante = models.ForeignKey(
+        "Pedido", null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="intercambios_entrante",
+        verbose_name="Pedido esperado para resolver el intercambio",
+    )
     fecha_resolucion = models.DateTimeField(null=True, blank=True)
     resuelto_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True,

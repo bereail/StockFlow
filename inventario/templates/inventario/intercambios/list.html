@@ -39,6 +39,7 @@
             <th>Ítem entregado</th>
             <th style="width:130px">Fecha</th>
             <th style="width:110px">Estado</th>
+            <th style="width:110px"></th>
           </tr>
         </thead>
         <tbody>
@@ -57,10 +58,13 @@
                 <span class="chip">Cancelado</span>
               {% endif %}
             </td>
+            <td style="white-space:nowrap">
+              <a class="btn2" href="{% url 'intercambio_edit' i.id %}" onclick="event.stopPropagation()">Editar</a>
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5" class="muted" style="padding:20px;text-align:center">
+            <td colspan="6" class="muted" style="padding:20px;text-align:center">
               No hay intercambios registrados.
             </td>
           </tr>

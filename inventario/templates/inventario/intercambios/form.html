@@ -1,14 +1,18 @@
 {% extends "inventario/base.html" %}
-{% block title %}Nuevo intercambio{% endblock %}
+{% block title %}{% if intercambio %}Editar intercambio{% else %}Nuevo intercambio{% endif %}{% endblock %}
 
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">Nuevo intercambio</div>
+    <div class="page-title">{% if intercambio %}Editar intercambio #{{ intercambio.id }}{% else %}Nuevo intercambio{% endif %}</div>
     <div class="page-subtitle muted">Registrá el equipo que se desvió a otro servicio</div>
   </div>
-  <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">← Volver</a>
+  {% if intercambio %}
+    <a class="btn btn-ghost" href="{% url 'intercambio_detail' intercambio.id %}">← Volver</a>
+  {% else %}
+    <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">← Volver</a>
+  {% endif %}
 </div>
 
 <form method="post">
@@ -43,6 +47,11 @@
         {% if form.detalle_saliente.errors %}<div class="form-error">{{ form.detalle_saliente.errors }}</div>{% endif %}
       </div>
       <div class="field col-6">
+        <label class="label" for="{{ form.pedido_saliente.id_for_label }}">Pedido de donde llegó (opcional)</label>
+        {{ form.pedido_saliente }}
+        {% if form.pedido_saliente.errors %}<div class="form-error">{{ form.pedido_saliente.errors }}</div>{% endif %}
+      </div>
+      <div class="field col-6">
         <label class="label" for="{{ form.fecha_intercambio.id_for_label }}">Fecha</label>
         {{ form.fecha_intercambio }}
         {% if form.fecha_intercambio.errors %}<div class="form-error">{{ form.fecha_intercambio.errors }}</div>{% endif %}
@@ -57,7 +66,11 @@
 
   <div class="form-actions">
     <button class="btn primary" type="submit">Guardar</button>
-    <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">Cancelar</a>
+    {% if intercambio %}
+      <a class="btn btn-ghost" href="{% url 'intercambio_detail' intercambio.id %}">Cancelar</a>
+    {% else %}
+      <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">Cancelar</a>
+    {% endif %}
   </div>
 </form>
 

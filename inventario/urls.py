@@ -74,6 +74,7 @@ urlpatterns = [
     path("intercambios/", views.intercambios_list, name="intercambios_list"),
     path("intercambios/nuevo/", views.intercambio_create, name="intercambio_create"),
     path("intercambios/<int:pk>/", views.intercambio_detail, name="intercambio_detail"),
+    path("intercambios/<int:pk>/editar/", views.intercambio_edit, name="intercambio_edit"),
     path("intercambios/<int:pk>/resolver/", views.intercambio_resolver, name="intercambio_resolver"),
     path("intercambios/<int:pk>/cancelar/", views.intercambio_cancelar, name="intercambio_cancelar"),
 

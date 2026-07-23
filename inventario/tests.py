@@ -405,6 +405,49 @@ class IntercambioTest(TestCase):
         self.pat_saliente.refresh_from_db()
         self.assertEqual(self.pat_saliente.servicio_asignado, self.guardia)
 
+    def test_editar_intercambio(self):
+        intercambio = Intercambio.objects.create(
+            servicio_afectado=self.enfermeria, servicio_beneficiario=self.guardia,
+            detalle_saliente="Notebook sin patrimonio", creado_por=self.user,
+        )
+        r = self.client.post(f"/intercambios/{intercambio.pk}/editar/", {
+            "servicio_afectado": self.enfermeria.pk,
+            "servicio_beneficiario": self.guardia.pk,
+            "patrimonio_saliente": self.pat_saliente.pk,
+            "motivo": "Corrección: sí tenía patrimonio",
+            "fecha_intercambio": "2026-01-02T09:00",
+        })
+        self.assertEqual(r.status_code, 302)
+        intercambio.refresh_from_db()
+        self.assertEqual(intercambio.patrimonio_saliente, self.pat_saliente)
+        self.assertEqual(intercambio.motivo, "Corrección: sí tenía patrimonio")
+        self.pat_saliente.refresh_from_db()
+        self.assertEqual(self.pat_saliente.servicio_asignado, self.guardia)
+
+    def test_crear_intercambio_con_pedidos_vinculados(self):
+        pedido_origen = Pedido.objects.create(numero="P-100")
+        pedido_esperado = Pedido.objects.create(numero="P-200")
+
+        r = self.client.post("/intercambios/nuevo/", {
+            "servicio_afectado": self.enfermeria.pk,
+            "servicio_beneficiario": self.guardia.pk,
+            "patrimonio_saliente": self.pat_saliente.pk,
+            "pedido_saliente": pedido_origen.pk,
+            "fecha_intercambio": "2026-01-01T10:00",
+        })
+        self.assertEqual(r.status_code, 302)
+        intercambio = Intercambio.objects.get()
+        self.assertEqual(intercambio.pedido_saliente, pedido_origen)
+        self.assertIsNone(intercambio.pedido_entrante)
+
+        r = self.client.post(f"/intercambios/{intercambio.pk}/resolver/", {
+            "patrimonio_entrante": self.pat_entrante.pk,
+            "pedido_entrante": pedido_esperado.pk,
+        })
+        self.assertEqual(r.status_code, 302)
+        intercambio.refresh_from_db()
+        self.assertEqual(intercambio.pedido_entrante, pedido_esperado)
+
     def test_crear_intercambio_sin_patrimonio_ni_detalle_falla(self):
         r = self.client.post("/intercambios/nuevo/", {
             "servicio_afectado": self.enfermeria.pk,

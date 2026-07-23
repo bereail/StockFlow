@@ -16,7 +16,11 @@ def intercambios_list(request):
 
     intercambios = (
         Intercambio.objects
-        .select_related("servicio_afectado", "servicio_beneficiario", "patrimonio_saliente", "patrimonio_entrante")
+        .select_related(
+            "servicio_afectado", "servicio_beneficiario",
+            "patrimonio_saliente", "patrimonio_entrante",
+            "pedido_saliente", "pedido_entrante",
+        )
         .order_by("estado", "-fecha_intercambio")
     )
 
@@ -62,11 +66,33 @@ def intercambio_create(request):
 
 
 @login_required
+def intercambio_edit(request, pk):
+    intercambio = get_object_or_404(Intercambio, pk=pk)
+    if request.method == "POST":
+        form = IntercambioForm(request.POST, instance=intercambio)
+        if form.is_valid():
+            intercambio = form.save()
+            if intercambio.patrimonio_saliente_id:
+                unidad = intercambio.patrimonio_saliente
+                unidad.servicio_asignado = intercambio.servicio_beneficiario
+                unidad.save(update_fields=["servicio_asignado"])
+            messages.success(request, "Intercambio actualizado.")
+            return redirect("intercambio_detail", pk=intercambio.pk)
+    else:
+        form = IntercambioForm(instance=intercambio)
+
+    return render(request, "inventario/intercambios/form.html", {
+        "form": form, "intercambio": intercambio,
+    })
+
+
+@login_required
 def intercambio_detail(request, pk):
     intercambio = get_object_or_404(
         Intercambio.objects.select_related(
             "servicio_afectado", "servicio_beneficiario",
             "patrimonio_saliente", "patrimonio_entrante", "creado_por", "resuelto_por",
+            "pedido_saliente", "pedido_entrante",
         ),
         pk=pk,
     )

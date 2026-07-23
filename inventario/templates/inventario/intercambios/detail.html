@@ -17,7 +17,10 @@
       {{ intercambio.fecha_intercambio|date:"d/m/Y H:i" }}
     </div>
   </div>
-  <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">← Volver</a>
+  <div style="display:flex;gap:8px">
+    <a class="btn" href="{% url 'intercambio_edit' intercambio.id %}">✎ Editar</a>
+    <a class="btn btn-ghost" href="{% url 'intercambios_list' %}">← Volver</a>
+  </div>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
@@ -36,6 +39,12 @@
         <div class="label">Servicio que espera la compensación</div>
         <div>{{ intercambio.servicio_afectado }}</div>
       </div>
+      {% if intercambio.pedido_saliente %}
+      <div>
+        <div class="label">Pedido de donde llegó</div>
+        <div><a href="{% url 'pedido_detail' intercambio.pedido_saliente.pk %}">{{ intercambio.pedido_saliente }}</a></div>
+      </div>
+      {% endif %}
       {% if intercambio.motivo %}
       <div>
         <div class="label">Motivo</div>
@@ -60,6 +69,12 @@
           <div class="label">Ítem recibido</div>
           <div>{{ intercambio.entrante_label }}</div>
         </div>
+        {% if intercambio.pedido_entrante %}
+        <div>
+          <div class="label">Pedido esperado</div>
+          <div><a href="{% url 'pedido_detail' intercambio.pedido_entrante.pk %}">{{ intercambio.pedido_entrante }}</a></div>
+        </div>
+        {% endif %}
         <div>
           <div class="label">Fecha de resolución</div>
           <div>{{ intercambio.fecha_resolucion|date:"d/m/Y H:i" }}</div>
@@ -82,6 +97,10 @@
           <div>
             <label class="label" for="{{ resolver_form.detalle_entrante.id_for_label }}">Detalle (si no tiene patrimonio)</label>
             {{ resolver_form.detalle_entrante }}
+          </div>
+          <div>
+            <label class="label" for="{{ resolver_form.pedido_entrante.id_for_label }}">Pedido esperado (opcional)</label>
+            {{ resolver_form.pedido_entrante }}
           </div>
           <button class="btn primary" type="submit" style="align-self:flex-start">Marcar como resuelto</button>
         </div>
