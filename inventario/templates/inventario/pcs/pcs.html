@@ -125,9 +125,11 @@
             <td>{{ pat.usuario_asignado|default:"—" }}</td>
             <td>{{ pat.servicio_asignado|default:"—" }}</td>
             <td class="muted" style="font-size:.78rem">
+              {% if pat.pedido_detalle.pedido_id %}
               <a href="{% url 'pedido_detail' pat.pedido_detalle.pedido.pk %}" onclick="event.stopPropagation()" style="color:var(--muted)">
                 {{ pat.pedido_detalle.pedido.numero }}
               </a>
+              {% else %}—{% endif %}
             </td>
             <td>
               <a class="btn2" href="{% url 'patrimonio_edit' pat.pk %}?next={% url 'pcs_page' %}" onclick="event.stopPropagation()">Editar</a>
