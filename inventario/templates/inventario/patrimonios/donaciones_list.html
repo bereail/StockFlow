@@ -38,7 +38,7 @@
     <span class="chip">{{ page_obj.paginator.count }}</span>
   </div>
   <div>
-    <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+    <div class="table-wrapper table-wrapper--flush">
       <table>
         <thead>
           <tr>
@@ -74,21 +74,7 @@
         </tbody>
       </table>
     </div>
-    {% if page_obj.paginator.num_pages > 1 %}
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
-      {% if page_obj.has_previous %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">← Anterior</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
-      {% endif %}
-      <span class="muted" style="font-size:.82rem">Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
-      {% if page_obj.has_next %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.next_page_number }}">Siguiente →</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
-      {% endif %}
-    </div>
-    {% endif %}
+    {% include "inventario/_pagination.html" %}
   </div>
 </div>
 

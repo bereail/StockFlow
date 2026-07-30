@@ -8,7 +8,7 @@
     <div class="page-subtitle muted">Catálogo y acciones</div>
   </div>
   <form method="get" class="page-actions">
-    <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / descripción)">
+    <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / descripción)" aria-label="Buscar artículos">
     <button class="btn2 primary" type="submit">Buscar</button>
   </form>
 </div>
@@ -26,7 +26,7 @@
     </div>
   </div>
   <div>
-    <div class="table-wrapper" style="margin:8px -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+    <div class="table-wrapper table-wrapper--flush">
       <table>
         <thead>
           <tr>
@@ -82,21 +82,7 @@
         </tbody>
       </table>
     </div>
-      {% if page_obj.paginator.num_pages > 1 %}
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
-      {% if page_obj.has_previous %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">&#8592; Anterior</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">&#8592; Anterior</span>
-      {% endif %}
-      <span class="muted" style="font-size:.82rem">P&#225;gina <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
-      {% if page_obj.has_next %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.next_page_number }}">Siguiente &#8594;</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente &#8594;</span>
-      {% endif %}
-    </div>
-    {% endif %}
+    {% include "inventario/_pagination.html" %}
   </div>
 </div>
 

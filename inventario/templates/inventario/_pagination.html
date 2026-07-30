@@ -1,0 +1,36 @@
+{% comment %}
+Paginación reutilizable. Requiere `page_obj` en el contexto y, opcionalmente,
+`page_param` (nombre del parámetro GET a usar; por defecto "page") para
+soportar más de un paginador en la misma página. Preserva el resto de los
+parámetros GET actuales (filtros, búsqueda).
+{% endcomment %}
+{% load paginacion %}
+{% firstof page_param "page" as pp %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pagination" aria-label="Paginación de resultados">
+
+  {% if page_obj.has_previous %}
+    <a href="?{% for k, v in request.GET.items %}{% if k != pp %}{{ k }}={{ v }}&amp;{% endif %}{% endfor %}{{ pp }}={{ page_obj.previous_page_number }}" aria-label="Página anterior">←</a>
+  {% else %}
+    <span class="disabled" aria-hidden="true">←</span>
+  {% endif %}
+
+  {% elided_page_range page_obj as elided_range %}
+  {% for num in elided_range %}
+    {% if num == page_obj.paginator.ELLIPSIS %}
+      <span class="disabled">…</span>
+    {% elif num == page_obj.number %}
+      <span class="current" aria-current="page">{{ num }}</span>
+    {% else %}
+      <a href="?{% for k, v in request.GET.items %}{% if k != pp %}{{ k }}={{ v }}&amp;{% endif %}{% endfor %}{{ pp }}={{ num }}">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}
+    <a href="?{% for k, v in request.GET.items %}{% if k != pp %}{{ k }}={{ v }}&amp;{% endif %}{% endfor %}{{ pp }}={{ page_obj.next_page_number }}" aria-label="Página siguiente">→</a>
+  {% else %}
+    <span class="disabled" aria-hidden="true">→</span>
+  {% endif %}
+
+</nav>
+{% endif %}

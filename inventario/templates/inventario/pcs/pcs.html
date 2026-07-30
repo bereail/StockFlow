@@ -9,7 +9,7 @@
   </div>
   <div class="page-actions">
     <form method="get" style="display:contents">
-      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre / IP / servicio / Nº PAT">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre / IP / servicio / Nº PAT" aria-label="Buscar PCs">
       <button class="btn2" type="submit">Buscar</button>
     </form>
   </div>
@@ -66,21 +66,7 @@
         </tbody>
       </table>
     </div>
-    {% if page_obj.paginator.num_pages > 1 %}
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
-      {% if page_obj.has_previous %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.previous_page_number }}&page_pat={{ page_obj_pats.number }}">← Anterior</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
-      {% endif %}
-      <span class="muted" style="font-size:.82rem">Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong></span>
-      {% if page_obj.has_next %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.next_page_number }}&page_pat={{ page_obj_pats.number }}">Siguiente →</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
-      {% endif %}
-    </div>
-    {% endif %}
+    {% include "inventario/_pagination.html" with page_param="page" %}
   </div>
 </div>
 
@@ -145,21 +131,7 @@
         </tbody>
       </table>
     </div>
-    {% if page_obj_pats.paginator.num_pages > 1 %}
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-top:1px solid var(--border)">
-      {% if page_obj_pats.has_previous %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.number }}&page_pat={{ page_obj_pats.previous_page_number }}">← Anterior</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">← Anterior</span>
-      {% endif %}
-      <span class="muted" style="font-size:.82rem">Página <strong>{{ page_obj_pats.number }}</strong> de <strong>{{ page_obj_pats.paginator.num_pages }}</strong></span>
-      {% if page_obj_pats.has_next %}
-        <a class="btn2 btn-ghost" href="?q={{ q }}&page={{ page_obj.number }}&page_pat={{ page_obj_pats.next_page_number }}">Siguiente →</a>
-      {% else %}
-        <span class="btn2 btn-ghost" style="opacity:.3;cursor:default">Siguiente →</span>
-      {% endif %}
-    </div>
-    {% endif %}
+    {% include "inventario/_pagination.html" with page_obj=page_obj_pats page_param="page_pat" %}
   </div>
 </div>
 
