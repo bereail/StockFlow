@@ -318,6 +318,7 @@ def reporte_pcs_html(request):
         .select_related(
             "pedido_detalle__item__activo_pc",
             "pedido_detalle__item__articulo",
+            "pedido_detalle__item__toner",
             "pedido_detalle__pedido",
             "servicio_asignado",
         )

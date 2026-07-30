@@ -1,3 +1,5 @@
+import logging
+
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,6 +13,8 @@ from ..forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
 from ..forms.asignaciones import AsignacionImpresoraForm
 from ..services.items import item_de_impresora
 from ..services.impresoras import asignar_impresora_a_servicio
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -157,8 +161,9 @@ def impresora_entrega(request):
                 messages.success(request, "Movimiento de impresora registrado correctamente.")
                 return redirect("impresoras_page")
 
-            except Exception as e:
-                messages.error(request, f"Error al registrar movimiento: {e}")
+            except Exception:
+                logger.exception("Error al registrar movimiento de entrega de impresora")
+                messages.error(request, "No se pudo registrar el movimiento. Intentá de nuevo.")
         else:
             messages.error(request, "Revisá los datos del formulario.")
     else:
