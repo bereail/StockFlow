@@ -12,6 +12,7 @@
 
   --text:  #eef1f7;
   --muted: #8b94a8;
+  --muted-rgb: 139,148,168;
 
   --primary: #5b8def;
   --primary-rgb: 91,141,239;
@@ -21,6 +22,12 @@
   --ok-rgb: 52,211,153;
   --warn:    #f2b84c;
   --warn-rgb: 242,184,76;
+
+  /* Tintes legibles sobre fondo oscuro (texto/íconos con acento) */
+  --primary-light: #8fb4ff;
+  --ok-light:      #86f0c4;
+  --warn-light:    #ffe29e;
+  --danger-light:  #ffd3da;
 
   --border-color: rgba(148,163,184,.14);
   --border-color-strong: rgba(148,163,184,.26);
@@ -306,6 +313,8 @@ a:focus-visible, button:focus-visible {
   position: fixed;
   z-index: 70;
   min-width: 210px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
   background: var(--surface-2);
   border: 1px solid var(--border-color-strong);
   border-radius: var(--radius-lg);
@@ -326,6 +335,19 @@ a:focus-visible, button:focus-visible {
   pointer-events: auto;
 }
 .sidebar-group-panel .sidebar-link { cursor: pointer; }
+
+.sidebar-group-label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(139,148,168,.45);
+  padding: 7px 9px 4px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sidebar-group-label:first-child { padding-top: 3px; }
 
 .sidebar-group-divider {
   height: 1px;
@@ -536,6 +558,11 @@ main.container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* Tabla pegada a los bordes de una .card que la contiene */
+.table-wrapper--flush {
+  margin: 8px -16px -16px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
 
 /* =========================================================
    9) INPUTS
@@ -653,63 +680,7 @@ tr.anulado td { opacity: .40; text-decoration: line-through; }
 .empty-state-sub { font-size: 13px; margin: 0 0 18px; }
 
 /* =========================================================
-   13) DASHBOARD
-========================================================= */
-.dashboard .cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: var(--gap);
-  margin-top: 16px;
-}
-
-.dashboard .cards-grid .card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  padding-top: 0;
-  overflow: hidden;
-  cursor: pointer;
-  transition: border-color var(--t), box-shadow var(--t), transform var(--t);
-}
-
-.dashboard .cards-grid .card::before {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 2px;
-  background: var(--border-color-strong);
-  margin-bottom: 4px;
-  flex-shrink: 0;
-}
-
-.dashboard .icon {
-  width: var(--dash-icon);
-  height: var(--dash-icon);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(139,148,168,.55);
-}
-.dashboard .icon svg { width: 100%; height: 100%; display: block; }
-.dashboard .icon svg * { fill: currentColor !important; }
-
-.dashboard .card .btn2 {
-  margin-top: auto;
-  align-self: stretch;
-  justify-content: center;
-  font-size: 13px;
-}
-
-.dashboard .cards-grid .card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(var(--primary-rgb),.30);
-  box-shadow: var(--shadow-lg);
-}
-
-/* =========================================================
-   13B) FILTER BAR
+   13) FILTER BAR
 ========================================================= */
 .filter-bar-inner {
   display: flex;
@@ -788,7 +759,7 @@ tr.anulado td { opacity: .40; text-decoration: line-through; }
 /* =========================================================
    15) CHECKS / TOGGLE GRID
 ========================================================= */
-.toggle-grid, .checks ul {
+.toggle-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
@@ -796,7 +767,7 @@ tr.anulado td { opacity: .40; text-decoration: line-through; }
   padding: 0;
   margin: 0;
 }
-.toggle-item, .checks label {
+.toggle-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -811,17 +782,16 @@ tr.anulado td { opacity: .40; text-decoration: line-through; }
   z-index: 5;
   pointer-events: auto !important;
 }
-.toggle-item:hover, .checks label:hover {
+.toggle-item:hover {
   background: rgba(255,255,255,.045);
   border-color: rgba(var(--primary-rgb),.30);
 }
-.toggle-item input[type="checkbox"],
-.checks input[type="checkbox"] {
+.toggle-item input[type="checkbox"] {
   width: 18px; height: 18px; margin: 0;
   cursor: pointer; accent-color: var(--primary);
   pointer-events: auto !important; min-height: auto; flex-shrink: 0;
 }
-.panel, .formgrid, .field, .checks {
+.panel, .formgrid, .field {
   pointer-events: auto !important; position: relative; z-index: 3;
 }
 
@@ -837,19 +807,19 @@ tr.anulado td { opacity: .40; text-decoration: line-through; }
   margin-bottom: 6px;
   border: var(--border);
   background: rgba(255,255,255,.015);
+  border-left: 3px solid var(--ac, var(--border-color-strong));
   transition: border-color var(--t);
 }
-.pendiente-ok {
-  background: rgba(var(--ok-rgb),.06);
-  border-left: 3px solid rgba(var(--ok-rgb),.50);
-}
-.pendiente-pendiente {
-  background: rgba(var(--danger-rgb),.045);
-  border-left: 3px solid rgba(var(--danger-rgb),.38);
-}
-.pendiente-has-obs { box-shadow: 0 0 0 1px rgba(var(--warn-rgb),.18) inset; }
 .pendiente-text { font-weight: 600; }
 .pendiente-text.is-done { opacity: .7; text-decoration: line-through; }
+
+.estado-toggle {
+  min-width: 112px;
+  font-size: 11.5px;
+  color: var(--ac, var(--muted));
+  border-color: rgba(var(--ac-rgb, 139,148,168),.35) !important;
+}
+.estado-toggle:hover { background: rgba(var(--ac-rgb, 139,148,168),.12); }
 
 details.obs {
   margin-top: 8px;
@@ -1414,18 +1384,19 @@ thead th, .pagination a, .pagination span,
   gap: 5px;
   padding: 5px 10px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(var(--warn-rgb),.25);
-  background: rgba(var(--warn-rgb),.08);
-  color: #ffe29e;
+  border: 1px solid var(--border-color-strong);
+  background: transparent;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  transition: background var(--t), border-color var(--t);
+  transition: background var(--t), border-color var(--t), color var(--t);
   white-space: nowrap;
 }
 .user-admin-link:hover {
-  background: rgba(var(--warn-rgb),.14);
-  border-color: rgba(var(--warn-rgb),.38);
+  background: var(--surface-hover);
+  border-color: rgba(var(--primary-rgb),.40);
+  color: var(--text);
 }
 .user-admin-link svg { width: 12px; height: 12px; }
 

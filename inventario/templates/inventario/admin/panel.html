@@ -11,7 +11,7 @@
 
   <div class="admin-stats-grid">
     <div class="admin-stat-card">
-      <div class="admin-stat-icon" style="background:rgba(79,140,255,.12);color:#7eb8ff;">
+      <div class="admin-stat-icon" style="background:rgba(var(--primary-rgb),.12);color:var(--primary-light);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -23,24 +23,24 @@
       </div>
     </div>
     <div class="admin-stat-card">
-      <div class="admin-stat-icon" style="background:rgba(53,208,127,.10);color:#7ff4c0;">
+      <div class="admin-stat-icon" style="background:rgba(var(--ok-rgb),.10);color:var(--ok-light);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
       </div>
       <div class="admin-stat-info">
-        <div class="admin-stat-value" style="color:#7ff4c0;">{{ total_activos }}</div>
+        <div class="admin-stat-value" style="color:var(--ok-light);">{{ total_activos }}</div>
         <div class="admin-stat-label">Usuarios activos</div>
       </div>
     </div>
     <div class="admin-stat-card">
-      <div class="admin-stat-icon" style="background:rgba(255,204,102,.10);color:#ffe082;">
+      <div class="admin-stat-icon" style="background:rgba(var(--warn-rgb),.10);color:var(--warn-light);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
         </svg>
       </div>
       <div class="admin-stat-info">
-        <div class="admin-stat-value" style="color:#ffe082;">{{ total_roles }}</div>
+        <div class="admin-stat-value" style="color:var(--warn-light);">{{ total_roles }}</div>
         <div class="admin-stat-label">Roles definidos</div>
       </div>
     </div>

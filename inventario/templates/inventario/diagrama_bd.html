@@ -19,13 +19,13 @@
            style="position:absolute;top:0;left:0;pointer-events:none;z-index:0">
         <defs>
           <marker id="arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(79,140,255,.75)"/>
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(91,141,239,.75)"/>
           </marker>
           <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(53,208,127,.75)"/>
           </marker>
           <marker id="arr-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(255,204,102,.75)"/>
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(242,184,76,.75)"/>
           </marker>
           <marker id="arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M 0 1 L 9 5 L 0 9 z" fill="rgba(255,91,110,.75)"/>
@@ -46,11 +46,11 @@
   <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">
     <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase">Leyenda</div>
     <div style="display:flex;align-items:center;gap:7px">
-      <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="rgba(79,140,255,.65)" stroke-width="2" marker-end="url(#arr-b-leg)"/></svg>
+      <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="rgba(91,141,239,.65)" stroke-width="2" marker-end="url(#arr-b-leg)"/></svg>
       <span style="font-size:11px;color:var(--muted)">FK obligatoria</span>
     </div>
     <div style="display:flex;align-items:center;gap:7px">
-      <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="rgba(79,140,255,.5)" stroke-width="2" stroke-dasharray="4,2"/></svg>
+      <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="rgba(91,141,239,.5)" stroke-width="2" stroke-dasharray="4,2"/></svg>
       <span style="font-size:11px;color:var(--muted)">FK opcional (null=True)</span>
     </div>
     <div style="width:1px;height:16px;background:var(--border)"></div>
@@ -59,7 +59,7 @@
       <span style="font-size:11px;color:var(--muted)">Hub central (Servicio)</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
-      <div style="width:10px;height:10px;border-radius:3px;background:rgba(255,204,102,.25);border:1.5px solid rgba(255,204,102,.6)"></div>
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(242,184,76,.25);border:1.5px solid rgba(242,184,76,.6)"></div>
       <span style="font-size:11px;color:var(--muted)">Polimórfico / Item</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
@@ -67,7 +67,7 @@
       <span style="font-size:11px;color:var(--muted)">Proveedor / Reparación</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
-      <div style="width:10px;height:10px;border-radius:3px;background:rgba(79,140,255,.15);border:1.5px solid rgba(79,140,255,.45)"></div>
+      <div style="width:10px;height:10px;border-radius:3px;background:rgba(91,141,239,.15);border:1.5px solid rgba(91,141,239,.45)"></div>
       <span style="font-size:11px;color:var(--muted)">Catálogos generales</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
@@ -82,11 +82,11 @@
    ZONAS DE FONDO  (dibujadas en SVG, detrás de nodos)
 ══════════════════════════════════════════════════════ */
 var ZONES = [
-  { x:5,   y:20,  w:1460, h:270, label:'CATÁLOGOS / MAESTROS',   bg:'rgba(79,140,255,.04)',  brdr:'rgba(79,140,255,.14)',  lclr:'rgba(79,140,255,.35)'  },
-  { x:555, y:305, w:290,  h:155, label:'ITEM — NEXO POLIMÓRFICO', bg:'rgba(255,204,102,.07)', brdr:'rgba(255,204,102,.22)', lclr:'rgba(255,204,102,.5)'  },
-  { x:5,   y:460, w:240,  h:400, label:'PEDIDOS / PATRIMONIO',    bg:'rgba(255,204,102,.04)', brdr:'rgba(255,204,102,.13)', lclr:'rgba(255,204,102,.38)' },
+  { x:5,   y:20,  w:1460, h:270, label:'CATÁLOGOS / MAESTROS',   bg:'rgba(91,141,239,.04)',  brdr:'rgba(91,141,239,.14)',  lclr:'rgba(91,141,239,.35)'  },
+  { x:555, y:305, w:290,  h:155, label:'ITEM — NEXO POLIMÓRFICO', bg:'rgba(242,184,76,.07)', brdr:'rgba(242,184,76,.22)', lclr:'rgba(242,184,76,.5)'  },
+  { x:5,   y:460, w:240,  h:400, label:'PEDIDOS / PATRIMONIO',    bg:'rgba(242,184,76,.04)', brdr:'rgba(242,184,76,.13)', lclr:'rgba(242,184,76,.38)' },
   { x:360, y:460, w:260,  h:265, label:'MOVIMIENTOS',              bg:'rgba(53,208,127,.04)',  brdr:'rgba(53,208,127,.13)',  lclr:'rgba(53,208,127,.38)'  },
-  { x:635, y:460, w:255,  h:265, label:'PRÉSTAMOS',                bg:'rgba(79,140,255,.04)',  brdr:'rgba(79,140,255,.11)',  lclr:'rgba(79,140,255,.35)'  },
+  { x:635, y:460, w:255,  h:265, label:'PRÉSTAMOS',                bg:'rgba(91,141,239,.04)',  brdr:'rgba(91,141,239,.11)',  lclr:'rgba(91,141,239,.35)'  },
   { x:900, y:295, w:540,  h:450, label:'GESTIÓN / SERVICIOS',      bg:'rgba(143,176,216,.03)', brdr:'rgba(143,176,216,.11)', lclr:'rgba(143,176,216,.38)' },
 ];
 
@@ -98,17 +98,17 @@ var ZONES = [
 var NODES = {
   /* ── Catálogos ── */
   toner:        { x:20,   y:45,  w:170, h:92,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.20)', brdr:'rgba(79,140,255,.55)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.20)', brdr:'rgba(91,141,239,.55)',
     label:'Toner',
     fields:['nombre, marca','modelo_impresora','activo (bool)'] },
 
   impresora:    { x:205,  y:45,  w:192, h:108,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.17)', brdr:'rgba(79,140,255,.52)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.17)', brdr:'rgba(91,141,239,.52)',
     label:'Impresora',
     fields:['marca, modelo, tipo','conexion (IP|USB), ip','patrimonio, estado, activo','FK → Toner (opt.)'] },
 
   activo_pc:    { x:415,  y:45,  w:180, h:92,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.14)', brdr:'rgba(79,140,255,.46)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.14)', brdr:'rgba(91,141,239,.46)',
     label:'ActivoPC',
     fields:['nombre_pc, ip, serie','patrimonio, activo','FK → Servicio (opt.)'] },
 
@@ -118,7 +118,7 @@ var NODES = {
     fields:['nombre (unique)','descripcion','↳ hub — lo referencia casi todo'] },
 
   articulo:     { x:830,  y:45,  w:170, h:92,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.17)', brdr:'rgba(79,140,255,.52)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.17)', brdr:'rgba(91,141,239,.52)',
     label:'Articulo',
     fields:['nombre, marca','descripcion, caracteristicas','activo (bool)'] },
 
@@ -133,34 +133,34 @@ var NODES = {
     fields:['tipo (PEDIDO|NOTA|ORDEN)','numero, fecha','← referenciado por Movimiento'] },
 
   asig_imp:     { x:205,  y:178, w:215, h:92,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.12)', brdr:'rgba(79,140,255,.42)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.12)', brdr:'rgba(91,141,239,.42)',
     label:'AsignacionImpresora',
     fields:['fecha_desde, fecha_hasta','ubicacion, responsable','FK → Impresora (req.)','FK → Servicio (req.)'] },
 
   item_comp:    { x:415,  y:178, w:200, h:92,
-    clr:'#ffcc66', bg:'rgba(255,204,102,.13)', brdr:'rgba(255,204,102,.42)',
+    clr:'#f2b84c', bg:'rgba(242,184,76,.13)', brdr:'rgba(242,184,76,.42)',
     label:'ItemComponente',
     fields:['cantidad','FK → Item padre (CASCADE)','FK → Item hijo (PROTECT)','(tabla de combos)'] },
 
   /* ── Item (nexo) ── */
   item:         { x:570,  y:320, w:230, h:128,
-    clr:'#ffcc66', bg:'rgba(255,204,102,.25)', brdr:'rgba(255,204,102,.68)',
+    clr:'#f2b84c', bg:'rgba(242,184,76,.25)', brdr:'rgba(242,184,76,.68)',
     label:'Item  (polimórfico)',
     fields:['tipo: TONER|ARTICULO|PC|IMP','FK? → Toner','FK? → Articulo','FK? → ActivoPC','FK? → Impresora','(exactamente uno activo)'] },
 
   /* ── Pedidos ── */
   pedido:       { x:20,   y:475, w:195, h:115,
-    clr:'#ffcc66', bg:'rgba(255,204,102,.17)', brdr:'rgba(255,204,102,.48)',
+    clr:'#f2b84c', bg:'rgba(242,184,76,.17)', brdr:'rgba(242,184,76,.48)',
     label:'Pedido',
     fields:['numero (unique), estado','para_que','fecha: aprobado/recibido/entregado','FK → Servicio (opt.)','FK → Proveedor (opt.)','FK → Nota (opt.)'] },
 
   ped_detalle:  { x:20,   y:620, w:185, h:75,
-    clr:'#ffcc66', bg:'rgba(255,204,102,.11)', brdr:'rgba(255,204,102,.36)',
+    clr:'#f2b84c', bg:'rgba(242,184,76,.11)', brdr:'rgba(242,184,76,.36)',
     label:'PedidoDetalle',
     fields:['cantidad, detalle','FK → Pedido (CASCADE)','FK → Item (PROTECT)'] },
 
   patrimonio:   { x:20,   y:728, w:195, h:108,
-    clr:'#ffcc66', bg:'rgba(255,204,102,.08)', brdr:'rgba(255,204,102,.28)',
+    clr:'#f2b84c', bg:'rgba(242,184,76,.08)', brdr:'rgba(242,184,76,.28)',
     label:'PatrimonioUnidad',
     fields:['numero_patrimonio (unique)','nombre_pc, ip, serial','FK → PedidoDetalle (CASCADE)','FK → Servicio (opt.)','FK → User (req.)'] },
 
@@ -177,12 +177,12 @@ var NODES = {
 
   /* ── Préstamos ── */
   prestamo:     { x:650,  y:475, w:180, h:100,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.14)', brdr:'rgba(79,140,255,.42)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.14)', brdr:'rgba(91,141,239,.42)',
     label:'Prestamo',
     fields:['entregado_a, telefono_contacto','fecha_retiro, devol. estimada/real','FK → Servicio (opt.)'] },
 
   prest_detalle:{ x:650,  y:608, w:185, h:75,
-    clr:'#4f8cff', bg:'rgba(79,140,255,.09)', brdr:'rgba(79,140,255,.30)',
+    clr:'#5b8def', bg:'rgba(91,141,239,.09)', brdr:'rgba(91,141,239,.30)',
     label:'PrestamoDetalle',
     fields:['cantidad, detalle','FK → Prestamo (CASCADE)','FK → Item (PROTECT)'] },
 
@@ -252,7 +252,7 @@ var EDGES = [
 ];
 
 /* paleta de colores y markers */
-var EC      = { b:'rgba(79,140,255,.6)', g:'rgba(53,208,127,.65)', y:'rgba(255,204,102,.6)', r:'rgba(255,91,110,.6)', m:'rgba(143,176,216,.5)' };
+var EC      = { b:'rgba(91,141,239,.6)', g:'rgba(53,208,127,.65)', y:'rgba(242,184,76,.6)', r:'rgba(255,91,110,.6)', m:'rgba(143,176,216,.5)' };
 var MARKERS = { b:'arr-b', g:'arr-g', y:'arr-y', r:'arr-r', m:'arr-m' };
 
 /* ── Persistencia ── */
@@ -365,14 +365,14 @@ function renderNodes() {
         var row = document.createElement('div');
         row.style.cssText = [
           'font-size:10px',
-          'color:' + (isFK ? 'rgba(255,204,102,.85)' : isMeta ? 'rgba(100,120,160,.7)' : 'rgba(143,176,216,.88)'),
+          'color:' + (isFK ? 'rgba(242,184,76,.85)' : isMeta ? 'rgba(100,120,160,.7)' : 'rgba(143,176,216,.88)'),
           'white-space:nowrap',
           'overflow:hidden',
           'text-overflow:ellipsis',
           'padding-left:' + (isFK ? '6px' : '0'),
         ].join(';');
         if (isFK) {
-          row.style.borderLeft = '2px solid rgba(255,204,102,.35)';
+          row.style.borderLeft = '2px solid rgba(242,184,76,.35)';
         }
         row.textContent = f;
         body.appendChild(row);

@@ -21,29 +21,29 @@
           width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
           font-size:.78rem;font-weight:700;flex-shrink:0;
           {% if nota.estado == 'CANCELADA' and idx <= paso_actual %}
-            background:#3f1010;border:2px solid #ef4444;color:#ef4444;
+            background:rgba(var(--danger-rgb),.16);border:2px solid var(--danger);color:var(--danger);
           {% elif idx < paso_actual %}
-            background:#0f2e1a;border:2px solid #22c55e;color:#22c55e;
+            background:rgba(var(--ok-rgb),.16);border:2px solid var(--ok);color:var(--ok);
           {% elif idx == paso_actual %}
-            background:#1a3a6b;border:2px solid #3b82f6;color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15);
+            background:rgba(var(--primary-rgb),.16);border:2px solid var(--primary);color:var(--primary);box-shadow:0 0 0 4px rgba(var(--primary-rgb),.15);
           {% else %}
             background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);
           {% endif %}
         ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
         <div style="font-size:.72rem;margin-top:6px;text-align:center;white-space:nowrap;
-          {% if idx == paso_actual %}color:#3b82f6;font-weight:700;
-          {% elif idx < paso_actual %}color:#22c55e;
+          {% if idx == paso_actual %}color:var(--primary);font-weight:700;
+          {% elif idx < paso_actual %}color:var(--ok);
           {% else %}color:var(--muted);{% endif %}
         ">{{ label }}</div>
       </div>
       {% if not forloop.last %}
-        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:#22c55e;{% else %}background:var(--border);{% endif %}"></div>
+        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:var(--ok);{% else %}background:var(--border);{% endif %}"></div>
       {% endif %}
       {% endwith %}
     {% endfor %}
     {% if nota.estado == "CANCELADA" %}
-      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:#3f1010;border:1px solid #ef4444;white-space:nowrap">
-        <span style="color:#ef4444;font-size:.78rem;font-weight:700">✕ Cancelada</span>
+      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:rgba(var(--danger-rgb),.16);border:1px solid var(--danger);white-space:nowrap">
+        <span style="color:var(--danger);font-size:.78rem;font-weight:700">✕ Cancelada</span>
       </div>
     {% endif %}
   </div>

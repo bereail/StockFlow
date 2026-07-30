@@ -66,41 +66,49 @@
       {% for p in pendientes %}
 
         {% if p.estado == "PENDIENTE" %}
-          <div class="pendiente-card" style="border-left:3px solid #f0a500">
+          {% with ac="var(--danger)" acrgb="var(--danger-rgb)" %}
+          <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
-                      style="min-width:110px;font-size:.75rem;border-color:#f0a500;color:#f0a500">
+              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+                      style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
             </form>
+          {% endwith %}
         {% elif p.estado == "EN_PROGRESO" %}
-          <div class="pendiente-card" style="border-left:3px solid #3b82f6">
+          {% with ac="var(--primary)" acrgb="var(--primary-rgb)" %}
+          <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
-                      style="min-width:110px;font-size:.75rem;border-color:#3b82f6;color:#3b82f6">
+              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+                      style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
             </form>
+          {% endwith %}
         {% elif p.estado == "COMPLETADO" %}
-          <div class="pendiente-card" style="border-left:3px solid #22c55e">
+          {% with ac="var(--ok)" acrgb="var(--ok-rgb)" %}
+          <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
-                      style="min-width:110px;font-size:.75rem;border-color:#22c55e;color:#22c55e">
+              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+                      style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
             </form>
+          {% endwith %}
         {% else %}
-          <div class="pendiente-card" style="border-left:3px solid #6b7280">
+          {% with ac="var(--muted)" acrgb="var(--muted-rgb)" %}
+          <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
-                      style="min-width:110px;font-size:.75rem;border-color:#6b7280;color:#6b7280">
+              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+                      style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
             </form>
+          {% endwith %}
         {% endif %}
 
           <!-- CUERPO -->
@@ -109,23 +117,35 @@
               {{ p.texto }}
             </div>
 
-            <div class="muted" style="font-size:.8rem;margin-top:4px;display:flex;gap:12px;flex-wrap:wrap">
+            <div class="muted row" style="font-size:.8rem;margin-top:4px;gap:12px;flex-wrap:wrap">
               <span>Creado: {{ p.creado|date:"d/m/Y" }}</span>
               {% if p.fecha_limite %}
                 {% if p.fecha_limite < today and p.estado != "COMPLETADO" and p.estado != "CANCELADO" %}
-                  <span style="color:var(--danger);font-weight:600">⚠ Límite: {{ p.fecha_limite|date:"d/m/Y" }}</span>
+                  <span class="row" style="gap:4px;color:var(--danger);font-weight:600">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Límite: {{ p.fecha_limite|date:"d/m/Y" }}
+                  </span>
                 {% else %}
                   <span>Límite: {{ p.fecha_limite|date:"d/m/Y" }}</span>
                 {% endif %}
               {% endif %}
               {% if p.servicio %}
-                <span>📍 {{ p.servicio }}</span>
+                <span class="row" style="gap:4px">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {{ p.servicio }}
+                </span>
               {% endif %}
               {% if p.pedido %}
-                <a href="{% url 'pedido_detail' p.pedido_id %}" style="color:var(--primary);text-decoration:none">🔗 Pedido {{ p.pedido.numero }}</a>
+                <a href="{% url 'pedido_detail' p.pedido_id %}" class="row" style="gap:4px;color:var(--primary);text-decoration:none">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  Pedido {{ p.pedido.numero }}
+                </a>
               {% endif %}
               {% if p.nota %}
-                <a href="{% url 'nota_detail' p.nota_id %}" style="color:var(--primary);text-decoration:none">🔗 Nota {{ p.nota.numero|default:"s/n" }}</a>
+                <a href="{% url 'nota_detail' p.nota_id %}" class="row" style="gap:4px;color:var(--primary);text-decoration:none">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  Nota {{ p.nota.numero|default:"s/n" }}
+                </a>
               {% endif %}
             </div>
 
