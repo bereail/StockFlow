@@ -8,14 +8,32 @@ import sys
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Si corre como .exe (PyInstaller)
-if getattr(sys, "frozen", False):
+FROZEN = getattr(sys, "frozen", False)
+if FROZEN:
     BASE_DIR = Path(sys._MEIPASS)
 
 # =========================
 # SECURITY
 # =========================
-SECRET_KEY = "django-insecure-b%%!yf1(z(q#ypb0*1w$p9vw2fpw5)4id*6ng#aac77^zzvgg9"
-DEBUG = True
+APP_NAME = "StockToner"
+APPDATA_DIR = os.path.join(os.environ.get("APPDATA", str(BASE_DIR)), APP_NAME)
+os.makedirs(APPDATA_DIR, exist_ok=True)
+
+# La SECRET_KEY se genera una única vez por instalación y se persiste junto a
+# la base de datos en APPDATA. Evita tener una clave fija en el repo/binario.
+_secret_key_path = os.path.join(APPDATA_DIR, "secret.key")
+if os.path.exists(_secret_key_path):
+    with open(_secret_key_path, "r", encoding="utf-8") as f:
+        SECRET_KEY = f.read().strip()
+else:
+    from django.core.management.utils import get_random_secret_key
+    SECRET_KEY = get_random_secret_key()
+    with open(_secret_key_path, "w", encoding="utf-8") as f:
+        f.write(SECRET_KEY)
+
+# DEBUG solo en desarrollo (nunca en el .exe empaquetado). Se puede forzar
+# con la variable de entorno STOCKTONER_DEBUG=1 si hace falta depurar el build.
+DEBUG = (not FROZEN) or os.environ.get("STOCKTONER_DEBUG") == "1"
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # =========================
