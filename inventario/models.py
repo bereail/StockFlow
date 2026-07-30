@@ -451,7 +451,7 @@ class PrestamoDetalle(models.Model):
         related_name="prestamos_detalle",
     )
 
-    cantidad = models.PositiveIntegerField(default=1)
+    cantidad = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
     detalle = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:

@@ -29,6 +29,19 @@ class PrestamoForm(forms.ModelForm):
         if not self.instance.pk and not self.initial.get("fecha_retiro"):
             self.initial["fecha_retiro"] = timezone.now().strftime("%Y-%m-%dT%H:%M")
 
+    def clean(self):
+        cleaned = super().clean()
+        fecha_retiro = cleaned.get("fecha_retiro")
+        fecha_devolucion = cleaned.get("fecha_devolucion_estimada")
+        if fecha_retiro and fecha_devolucion:
+            retiro_date = timezone.localtime(fecha_retiro).date() if timezone.is_aware(fecha_retiro) else fecha_retiro.date()
+            if fecha_devolucion < retiro_date:
+                self.add_error(
+                    "fecha_devolucion_estimada",
+                    "La devolución estimada no puede ser anterior a la fecha de retiro.",
+                )
+        return cleaned
+
 
 class PrestamoDetalleForm(forms.ModelForm):
     class Meta:
