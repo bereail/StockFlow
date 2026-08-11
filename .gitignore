@@ -69,3 +69,5 @@ desktop.ini
 StockToner/
 backups/
 *.zip
+inventario_data.json
+*_data.json

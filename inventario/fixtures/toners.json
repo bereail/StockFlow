@@ -3,11 +3,20 @@
   "model": "inventario.toner",
   "pk": 1,
   "fields": {
+    "nombre": "Brother TN-660",
+    "activo": true,
     "marca": "Brother",
-    "modelo": "660",
-    "codigo": "",
-    "stock": 20,
-    "minimo": 0
+    "modelo_impresora": "HL-L2340DW"
+  }
+},
+{
+  "model": "inventario.toner",
+  "pk": 2,
+  "fields": {
+    "nombre": "HP 85A",
+    "activo": true,
+    "marca": "HP",
+    "modelo_impresora": "LaserJet P1102"
   }
 }
 ]
