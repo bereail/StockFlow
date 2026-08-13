@@ -1,10 +1,17 @@
-"""Captura screenshots en viewport mobile (390x844 ~ iPhone 14)."""
+"""Captura screenshots en viewport mobile (390x844 ~ iPhone 14).
+
+Requiere un superusuario ya creado (`manage.py createsuperuser`) y sus
+credenciales en las variables de entorno STOCKTONER_USER / STOCKTONER_PASSWORD.
+"""
 import os, time
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8765"
-OUT  = r"C:\Users\bsolohaga\Desktop\bere\GIT\stockTonerDesktop\screenshots"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screenshots")
 os.makedirs(OUT, exist_ok=True)
+
+USERNAME = os.environ["STOCKTONER_USER"]
+PASSWORD = os.environ["STOCKTONER_PASSWORD"]
 
 MOBILE = {"viewport": {"width": 390, "height": 844}}
 
@@ -30,8 +37,8 @@ with sync_playwright() as p:
     # 1. Login
     page.goto(f"{BASE}/accounts/login/")
     page.wait_for_load_state("domcontentloaded")
-    page.fill('input[name="username"]', "bere")
-    page.fill('input[name="password"]', "***REMOVED***")
+    page.fill('input[name="username"]', USERNAME)
+    page.fill('input[name="password"]', PASSWORD)
     page.click('button[type="submit"]')
     page.wait_for_load_state("domcontentloaded")
     time.sleep(0.4)

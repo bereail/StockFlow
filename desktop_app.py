@@ -249,11 +249,6 @@ def setup_django() -> None:
     if not getattr(sys, "frozen", False):
         call_command("collectstatic", "--noinput", verbosity=0)
 
-    try:
-        call_command("init_usuario", verbosity=0)
-    except Exception:
-        pass
-
 
 def run_server(port: int) -> None:
     try:
