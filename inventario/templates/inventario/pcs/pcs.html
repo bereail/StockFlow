@@ -31,6 +31,8 @@
           <tr>
             <th>Nombre</th>
             <th>IP</th>
+            <th>Usuario</th>
+            <th>Impresora</th>
             <th>Patrimonio</th>
             <th>Servicio</th>
             <th>Estado</th>
@@ -40,8 +42,15 @@
         <tbody>
           {% for pc in pcs %}
             <tr style="cursor:pointer" data-href="{% url 'pcs_edit' pc.id %}">
-              <td><strong>{{ pc.nombre_pc }}</strong></td>
+              <td>
+                <strong>{{ pc.nombre_pc }}</strong>
+                {% if pc.switch %}<div class="muted" style="font-size:.7rem">🔌 {{ pc.switch }}</div>{% endif %}
+              </td>
               <td class="muted mono" style="font-size:.82rem">{{ pc.ip|default:"—" }}</td>
+              <td class="muted">{{ pc.usuario|default:"—" }}</td>
+              <td class="muted">
+                {% if pc.impresora %}🖨️ {{ pc.impresora.marca }} {{ pc.impresora.modelo }}{% else %}—{% endif %}
+              </td>
               <td class="muted">{{ pc.patrimonio|default:"—" }}</td>
               <td class="muted">{% if pc.servicio %}{{ pc.servicio.nombre }}{% else %}—{% endif %}</td>
               <td>
@@ -54,7 +63,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="6">
+              <td colspan="8">
                 <div class="empty-state">
                   <div class="empty-state-title">No hay PCs registradas directamente</div>
                   <div class="empty-state-sub">Podés registrar una o verlas desde pedidos abajo.</div>

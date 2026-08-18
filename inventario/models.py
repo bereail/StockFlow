@@ -92,6 +92,28 @@ class ActivoPC(models.Model):
 
     nombre_pc = models.CharField(max_length=100)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
+    usuario = models.CharField(
+        max_length=120,
+        blank=True,
+        default="",
+        verbose_name="Usuario",
+        help_text="Persona que usa habitualmente esta PC (opcional).",
+    )
+    switch = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="Switch de red",
+        help_text="Switch / puerto de red al que está conectada (opcional).",
+    )
+    impresora = models.ForeignKey(
+        "Impresora",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="computadoras",
+        verbose_name="Impresora asociada",
+    )
     patrimonio = models.CharField(max_length=100, blank=True)
     serie = models.CharField(max_length=100, blank=True)
     caracteristicas = models.TextField(blank=True)
@@ -143,6 +165,19 @@ class Impresora(models.Model):
 
     conexion = models.CharField(max_length=10, choices=TIPO_CONEXION)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
+    submascara = models.GenericIPAddressField(
+        protocol="IPv4", blank=True, null=True,
+        verbose_name="Máscara de subred",
+    )
+    puerta_enlace = models.GenericIPAddressField(
+        protocol="IPv4", blank=True, null=True,
+        verbose_name="Puerta de enlace",
+    )
+    dns = models.CharField(
+        max_length=200, blank=True, default="",
+        verbose_name="DNS",
+        help_text="Uno o más servidores DNS, separados por coma (opcional).",
+    )
 
     toner = models.ForeignKey(
         "Toner",

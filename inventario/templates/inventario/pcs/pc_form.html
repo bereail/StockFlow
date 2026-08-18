@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% block title %}{% if mode == "edit" %}Editar PC{% else %}Nueva PC{% endif %}{% endblock %}
 {% block content %}
 
 <!-- ================= HEADER ================= -->
@@ -12,7 +13,7 @@
       {% if mode == "edit" %}
         {{ pc.nombre_pc }}
       {% else %}
-        Completar datos y guardar
+        Todos los datos son opcionales salvo el nombre
       {% endif %}
     </div>
   </div>
@@ -23,32 +24,84 @@
 </header>
 
 <!-- ================= FORM CARD ================= -->
-<div class="card form-card">
+<div class="card form-card panel--narrow">
   <form method="post" class="formgrid">
     {% csrf_token %}
 
-    {# Layout más controlado: render campo por campo #}
-    <label class="field col-6">
-      <span class="label">Nombre</span>
+    {% if form.non_field_errors %}
+      <div class="form-error col-12">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <!-- Identificación -->
+    <div class="form-subsection-title">🖥️ Identificación</div>
+
+    <label class="field col-8">
+      <span class="label">Nombre de la PC</span>
       {{ form.nombre_pc }}
+      {% for e in form.nombre_pc.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </label>
+
+    <label class="field col-4">
+      <span class="label">Activo</span>
+      <div style="display:flex;align-items:center;min-height:38px">
+        {{ form.activo }}
+      </div>
     </label>
 
     <label class="field col-6">
-      <span class="label">IP</span>
-      {{ form.ip }}
-    </label>
-
-    <label class="field col-6">
-      <span class="label">Servicio</span>
+      <span class="label">Servicio / sector</span>
       {{ form.servicio }}
     </label>
 
     <label class="field col-6">
-      <span class="label">Activo</span>
-      {{ form.activo }}
+      <span class="label">Usuario</span>
+      {{ form.usuario }}
     </label>
 
-    {# Si tu form tiene más campos, agregalos acá igual #}
+    <!-- Red -->
+    <div class="form-subsection-title">🌐 Red</div>
+
+    <label class="field col-4">
+      <span class="label">Dirección IP</span>
+      {{ form.ip }}
+      {% for e in form.ip.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </label>
+
+    <label class="field col-4">
+      <span class="label">Switch de red</span>
+      {{ form.switch }}
+    </label>
+
+    <label class="field col-4">
+      <span class="label">Impresora asociada</span>
+      {{ form.impresora }}
+    </label>
+
+    <!-- Patrimonio -->
+    <div class="form-subsection-title">🏷️ Patrimonio</div>
+
+    <label class="field col-6">
+      <span class="label">N° de patrimonio</span>
+      {{ form.patrimonio }}
+    </label>
+
+    <label class="field col-6">
+      <span class="label">N° de serie</span>
+      {{ form.serie }}
+    </label>
+
+    <!-- Detalle -->
+    <div class="form-subsection-title">📝 Detalle</div>
+
+    <label class="field col-12">
+      <span class="label">Características</span>
+      {{ form.caracteristicas }}
+    </label>
+
+    <label class="field col-12">
+      <span class="label">Observaciones</span>
+      {{ form.observaciones }}
+    </label>
 
     <!-- Acciones -->
     <div class="form-actions col-12">

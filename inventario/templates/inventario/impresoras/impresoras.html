@@ -51,7 +51,12 @@
               <td>{{ i.modelo }}</td>
               <td class="muted">{{ i.tipo|default:"-" }}</td>
               <td class="muted">{{ i.get_conexion_display }}</td>
-              <td class="muted">{{ i.ip|default:"-" }}</td>
+              <td class="muted">
+                {{ i.ip|default:"-" }}
+                {% if i.puerta_enlace or i.submascara %}
+                  <div class="muted" style="font-size:.68rem">GW {{ i.puerta_enlace|default:"—" }}</div>
+                {% endif %}
+              </td>
               <td class="muted">{{ i.patrimonio|default:"-" }}</td>
               <td class="muted">
                 {% if i.servicio_actual %}{{ i.servicio_actual.nombre }}{% else %}-{% endif %}

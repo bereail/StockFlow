@@ -17,6 +17,9 @@ class ImpresoraForm(forms.ModelForm):
             "estado",
             "conexion",
             "ip",
+            "submascara",
+            "puerta_enlace",
+            "dns",
             "toner",
             "observaciones",
         ]
@@ -27,6 +30,9 @@ class ImpresoraForm(forms.ModelForm):
             "patrimonio": forms.TextInput(attrs={"placeholder": "N° patrimonio (opcional)"}),
             "estado": forms.TextInput(attrs={"placeholder": "ACTIVA / BAJA / REPARACIÓN"}),
             "ip": forms.TextInput(attrs={"placeholder": "192.168.1.20"}),
+            "submascara": forms.TextInput(attrs={"placeholder": "255.255.255.0 (opcional)"}),
+            "puerta_enlace": forms.TextInput(attrs={"placeholder": "192.168.1.1 (opcional)"}),
+            "dns": forms.TextInput(attrs={"placeholder": "8.8.8.8, 8.8.4.4 (opcional)"}),
             "observaciones": forms.Textarea(attrs={"rows": 2, "placeholder": "Obs (opcional)"}),
         }
 
@@ -34,7 +40,7 @@ class ImpresoraForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # ✅ opcionales (sin KeyError)
-        for f in ["patrimonio", "estado", "ip", "toner", "observaciones", "articulo"]:
+        for f in ["patrimonio", "estado", "ip", "submascara", "puerta_enlace", "dns", "toner", "observaciones", "articulo"]:
             if f in self.fields:
                 self.fields[f].required = False
 

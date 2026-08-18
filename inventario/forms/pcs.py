@@ -1,5 +1,5 @@
 from django import forms
-from ..models import ActivoPC
+from ..models import ActivoPC, Impresora
 
 
 class ActivoPCForm(forms.ModelForm):
@@ -8,16 +8,21 @@ class ActivoPCForm(forms.ModelForm):
         fields = [
             "nombre_pc",
             "activo",
+            "servicio",
             "ip",
+            "switch",
+            "usuario",
+            "impresora",
             "patrimonio",
             "serie",
             "caracteristicas",
             "observaciones",
-            "servicio",
         ]
         widgets = {
             "nombre_pc": forms.TextInput(attrs={"placeholder": "Ej: PC Guardia 1 / PC Administración"}),
             "ip": forms.TextInput(attrs={"placeholder": "192.168.1.50 (opcional)"}),
+            "switch": forms.TextInput(attrs={"placeholder": "Ej: SW-PB-03 / Puerto 12 (opcional)"}),
+            "usuario": forms.TextInput(attrs={"placeholder": "Nombre de quien la usa (opcional)"}),
             "patrimonio": forms.TextInput(attrs={"placeholder": "N° Patrimonio (opcional)"}),
             "serie": forms.TextInput(attrs={"placeholder": "N° Serie (opcional)"}),
             "caracteristicas": forms.Textarea(attrs={"rows": 2, "placeholder": "Características (opcional)"}),
@@ -26,9 +31,8 @@ class ActivoPCForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["ip"].required = False
-        self.fields["patrimonio"].required = False
-        self.fields["serie"].required = False
-        self.fields["caracteristicas"].required = False
-        self.fields["observaciones"].required = False
-        self.fields["servicio"].required = False
+        for campo in ["ip", "switch", "usuario", "impresora", "patrimonio", "serie", "caracteristicas", "observaciones", "servicio"]:
+            self.fields[campo].required = False
+
+        self.fields["impresora"].queryset = Impresora.objects.filter(activo=True).order_by("marca", "modelo")
+        self.fields["impresora"].empty_label = "-- Sin impresora asociada --"
