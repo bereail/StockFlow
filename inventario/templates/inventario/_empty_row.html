@@ -1,0 +1,14 @@
+{% comment %}
+Fila de estado vacío reutilizable para tablas. Uso:
+  {% include "inventario/_empty_row.html" with colspan=6 title="Sin notas" sub="Creá la primera nota para empezar." cta_url="nota_create" cta_label="+ Nueva nota" %}
+`cta_url` es opcional y se resuelve con {% url %}; si se omite, no se muestra botón.
+{% endcomment %}
+<tr>
+  <td colspan="{{ colspan }}">
+    <div class="empty-state">
+      <div class="empty-state-title">{{ title }}</div>
+      {% if sub %}<div class="empty-state-sub">{{ sub }}</div>{% endif %}
+      {% if cta_url %}<a class="btn2 primary" href="{% url cta_url %}">{{ cta_label }}</a>{% endif %}
+    </div>
+  </td>
+</tr>

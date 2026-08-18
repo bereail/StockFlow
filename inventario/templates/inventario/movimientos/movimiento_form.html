@@ -2,84 +2,77 @@
 {% load static %}
 
 {% block content %}
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
     <div class="page-title">{{ title|default:"Nuevo Movimiento" }}</div>
-    <div class="page-subtitle">Cabecera + detalles (toners / artículos)</div>
+    <div class="page-subtitle muted">Cabecera + detalles (tóners / artículos)</div>
   </div>
-
-  <div class="page-actions">
-    <a class="btn" href="{% url 'dashboard' %}">Volver</a>
-  </div>
+  <a class="btn2" href="{% url 'dashboard' %}">← Volver</a>
 </div>
 
 <form method="post" novalidate>
   {% csrf_token %}
 
   <!-- ================= CABECERA ================= -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Cabecera</div>
+  <div class="panel panel--narrow" style="margin-bottom:16px">
+    <div class="panel-section-title" style="margin-bottom:16px">Cabecera</div>
 
     {% if form.non_field_errors %}
-      <div class="alert error" style="margin-top:10px">
+      <div class="form-error" style="margin-bottom:12px">
         {{ form.non_field_errors }}
       </div>
     {% endif %}
 
-    <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin-top:12px">
-      <div>
+    <div class="formgrid">
+      <div class="field col-4">
         <label class="label" for="{{ form.tipo.id_for_label }}">Tipo</label>
         {{ form.tipo }}
-        {% if form.tipo.errors %}<div class="field-error">{{ form.tipo.errors }}</div>{% endif %}
+        {% if form.tipo.errors %}<div class="form-error">{{ form.tipo.errors }}</div>{% endif %}
       </div>
 
-      <div>
+      <div class="field col-4">
         <label class="label" for="{{ form.servicio.id_for_label }}">Servicio (solo EGRESO)</label>
         {{ form.servicio }}
-        {% if form.servicio.errors %}<div class="field-error">{{ form.servicio.errors }}</div>{% endif %}
+        {% if form.servicio.errors %}<div class="form-error">{{ form.servicio.errors }}</div>{% endif %}
       </div>
 
-      <div>
+      <div class="field col-4">
         <label class="label" for="{{ form.fecha.id_for_label }}">Fecha</label>
         {{ form.fecha }}
-        {% if form.fecha.errors %}<div class="field-error">{{ form.fecha.errors }}</div>{% endif %}
+        {% if form.fecha.errors %}<div class="form-error">{{ form.fecha.errors }}</div>{% endif %}
       </div>
-    </div>
 
-    <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:12px">
-      <div>
+      <div class="field col-6">
         <label class="label" for="{{ form.documento.id_for_label }}">Documento (opcional)</label>
         {{ form.documento }}
-        {% if form.documento.errors %}<div class="field-error">{{ form.documento.errors }}</div>{% endif %}
+        {% if form.documento.errors %}<div class="form-error">{{ form.documento.errors }}</div>{% endif %}
       </div>
 
-      <div>
+      <div class="field col-6">
         <label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
         {{ form.observaciones }}
-        {% if form.observaciones.errors %}<div class="field-error">{{ form.observaciones.errors }}</div>{% endif %}
+        {% if form.observaciones.errors %}<div class="form-error">{{ form.observaciones.errors }}</div>{% endif %}
       </div>
     </div>
   </div>
 
   <!-- ================= TONERS ================= -->
-  <div class="card" style="margin-bottom:16px" id="toner-card">
-    <div class="row space-between">
-      <div class="card-title">Toners</div>
-      <div class="row" style="gap:8px">
-        <button type="button" class="btn" id="btn-add-toner">+ Agregar fila</button>
-      </div>
+  <div class="panel panel--narrow" style="margin-bottom:16px" id="toner-card">
+    <div class="row space-between" style="margin-bottom:4px">
+      <div class="panel-section-title">Tóners</div>
+      <button type="button" class="btn2" id="btn-add-toner">+ Agregar fila</button>
     </div>
 
     {{ toner_formset.management_form }}
 
     {% if toner_formset.non_form_errors %}
-      <div class="alert error" style="margin-top:10px">
+      <div class="form-error" style="margin-top:10px">
         {{ toner_formset.non_form_errors }}
       </div>
     {% endif %}
 
-    <div class="table-wrap" style="margin-top:10px">
-      <table class="table">
+    <div class="table-wrapper" style="margin-top:10px">
+      <table>
         <thead>
           <tr>
             <th style="width:55%">Toner</th>
@@ -93,11 +86,11 @@
             <tr class="toner-row">
               <td>
                 {{ f.toner }}
-                {% if f.toner.errors %}<div class="field-error">{{ f.toner.errors }}</div>{% endif %}
+                {% if f.toner.errors %}<div class="form-error">{{ f.toner.errors }}</div>{% endif %}
               </td>
               <td>
                 {{ f.cantidad }}
-                {% if f.cantidad.errors %}<div class="field-error">{{ f.cantidad.errors }}</div>{% endif %}
+                {% if f.cantidad.errors %}<div class="form-error">{{ f.cantidad.errors }}</div>{% endif %}
               </td>
               <td style="text-align:center">
                 {{ f.DELETE }}
@@ -126,24 +119,22 @@
   </div>
 
   <!-- ================= ARTICULOS ================= -->
-  <div class="card" style="margin-bottom:16px" id="art-card">
-    <div class="row space-between">
-      <div class="card-title">Artículos</div>
-      <div class="row" style="gap:8px">
-        <button type="button" class="btn" id="btn-add-art">+ Agregar fila</button>
-      </div>
+  <div class="panel panel--narrow" style="margin-bottom:16px" id="art-card">
+    <div class="row space-between" style="margin-bottom:4px">
+      <div class="panel-section-title">Artículos</div>
+      <button type="button" class="btn2" id="btn-add-art">+ Agregar fila</button>
     </div>
 
     {{ art_formset.management_form }}
 
     {% if art_formset.non_form_errors %}
-      <div class="alert error" style="margin-top:10px">
+      <div class="form-error" style="margin-top:10px">
         {{ art_formset.non_form_errors }}
       </div>
     {% endif %}
 
-    <div class="table-wrap" style="margin-top:10px">
-      <table class="table">
+    <div class="table-wrapper" style="margin-top:10px">
+      <table>
         <thead>
           <tr>
             <th style="width:55%">Artículo</th>
@@ -157,11 +148,11 @@
             <tr class="art-row">
               <td>
                 {{ f.articulo }}
-                {% if f.articulo.errors %}<div class="field-error">{{ f.articulo.errors }}</div>{% endif %}
+                {% if f.articulo.errors %}<div class="form-error">{{ f.articulo.errors }}</div>{% endif %}
               </td>
               <td>
                 {{ f.cantidad }}
-                {% if f.cantidad.errors %}<div class="field-error">{{ f.cantidad.errors }}</div>{% endif %}
+                {% if f.cantidad.errors %}<div class="form-error">{{ f.cantidad.errors }}</div>{% endif %}
               </td>
               <td style="text-align:center">
                 {{ f.DELETE }}
@@ -188,9 +179,9 @@
   </div>
 
   <!-- ================= ACTIONS ================= -->
-  <div class="row" style="gap:10px">
-    <button type="submit" class="btn primary">Guardar Movimiento</button>
-    <a class="btn" href="{% url 'dashboard' %}">Cancelar</a>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">Guardar movimiento</button>
+    <a class="btn btn-ghost" href="{% url 'dashboard' %}">Cancelar</a>
   </div>
 </form>
 
@@ -201,9 +192,16 @@
     const servicio = document.getElementById("id_servicio");
     if (!tipo || !servicio) return;
 
+    const hint = document.createElement("div");
+    hint.className = "field-hint";
+    hint.textContent = "Un ingreso no tiene servicio de destino.";
+    hint.style.display = "none";
+    servicio.closest(".field").appendChild(hint);
+
     function refresh() {
       const isIngreso = (tipo.value === "INGRESO");
       servicio.disabled = isIngreso;
+      hint.style.display = isIngreso ? "" : "none";
       if (isIngreso) servicio.value = "";
     }
     tipo.addEventListener("change", refresh);

@@ -62,7 +62,7 @@
                 <a class="btn2" href="{% url 'articulo_edit' a.id %}">Editar</a>
                 <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline">
                   {% csrf_token %}
-                  <button class="btn2 {% if a.activo %}danger{% endif %}" type="submit">
+                  <button class="btn2 btn-ghost" type="submit">
                     {% if a.activo %}Desactivar{% else %}Activar{% endif %}
                   </button>
                 </form>

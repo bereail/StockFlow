@@ -101,7 +101,7 @@
                 <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
                 <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
                   {% csrf_token %}
-                  <button class="btn2 {% if t.activo %}danger{% endif %}">
+                  <button class="btn2 btn-ghost" type="submit">
                     {% if t.activo %}Desactivar{% else %}Activar{% endif %}
                   </button>
                 </form>

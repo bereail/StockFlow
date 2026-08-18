@@ -1,133 +1,167 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
-    <div class="page-title">{% if is_edit %}Editar Pedido{% else %}Nuevo Pedido{% endif %}</div>
-    <div class="page-subtitle">Cabecera + ítems</div>
+    <div class="page-title">{% if is_edit %}Editar pedido{% else %}Nuevo pedido{% endif %}</div>
+    <div class="page-subtitle muted">Cabecera + ítems</div>
   </div>
 
   {% if is_edit %}
-    <a class="btn btn-ghost" href="{% url 'pedido_detail' pedido.pk %}">Volver</a>
+    <a class="btn2" href="{% url 'pedido_detail' pedido.pk %}">← Volver</a>
   {% else %}
-    <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Volver</a>
+    <a class="btn2" href="{% url 'pedidos_list' %}">← Volver</a>
   {% endif %}
 </div>
 
 <form method="post">
   {% csrf_token %}
 
-  {# errores generales #}
   {% if form.non_field_errors %}
-    <div class="form-error">{{ form.non_field_errors }}</div>
+    <div class="form-error" style="margin-bottom:12px">{{ form.non_field_errors }}</div>
   {% endif %}
 
-  <div class="card" style="margin-bottom:12px">
-    <h3 style="margin-top:0">Datos del pedido</h3>
-    <div class="grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+  <div class="panel panel--narrow" style="margin-bottom:14px">
+    <div class="panel-section-title" style="margin-bottom:16px">Datos del pedido</div>
 
-      <div>
-        <label>Número</label>
+    <div class="formgrid">
+      <div class="field col-6">
+        <label class="label" for="{{ form.numero.id_for_label }}">Número</label>
         {{ form.numero }}
-        {{ form.numero.errors }}
+        {% if form.numero.errors %}<div class="form-error">{{ form.numero.errors }}</div>{% endif %}
       </div>
 
-      <div>
-        <label>Servicios</label>
+      <div class="field col-6">
+        <label class="label" for="{{ form.servicios.id_for_label }}">Servicios</label>
         {{ form.servicios }}
-        {{ form.servicios.errors }}
+        {% if form.servicios.errors %}<div class="form-error">{{ form.servicios.errors }}</div>{% endif %}
       </div>
 
-      <div>
-        <label>Nota asociada (opcional)</label>
+      <div class="field col-6">
+        <label class="label" for="{{ form.nota.id_for_label }}">Nota asociada (opcional)</label>
         {{ form.nota }}
-        {{ form.nota.errors }}
+        {% if form.nota.errors %}<div class="form-error">{{ form.nota.errors }}</div>{% endif %}
       </div>
 
-      <div>
-        <label>Estado</label>
+      <div class="field col-6">
+        <label class="label" for="{{ form.estado.id_for_label }}">Estado</label>
         {{ form.estado }}
-        {{ form.estado.errors }}
+        {% if form.estado.errors %}<div class="form-error">{{ form.estado.errors }}</div>{% endif %}
       </div>
 
-      <div style="grid-column: 1 / -1;">
-        <label>Para qué</label>
+      <div class="field col-12">
+        <label class="label" for="{{ form.para_que.id_for_label }}">Para qué</label>
         {{ form.para_que }}
-        {{ form.para_que.errors }}
+        {% if form.para_que.errors %}<div class="form-error">{{ form.para_que.errors }}</div>{% endif %}
       </div>
 
-      <div style="grid-column: 1 / -1;">
-        <label>Observaciones</label>
+      <div class="field col-12">
+        <label class="label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
         {{ form.observaciones }}
-        {{ form.observaciones.errors }}
+        {% if form.observaciones.errors %}<div class="form-error">{{ form.observaciones.errors }}</div>{% endif %}
       </div>
-
     </div>
   </div>
 
-  <div class="card">
-    <h3 style="margin-top:0">Items</h3>
+  <div class="panel panel--narrow">
+    <div class="card-header" style="margin-bottom:16px">
+      <span class="panel-section-title">Ítems</span>
+      <button type="button" class="btn2 btn-ghost" onclick="addDetallePedido()">+ Fila</button>
+    </div>
 
-    {# ✅ CLAVE: management form #}
     {{ formset.management_form }}
 
-    {# ✅ para ver errores del formset #}
     {% if formset.non_form_errors %}
-      <div class="form-error">{{ formset.non_form_errors }}</div>
+      <div class="form-error" style="margin-bottom:12px">{{ formset.non_form_errors }}</div>
     {% endif %}
 
-    <table>
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Cantidad</th>
-          <th>Detalle</th>
-          <th>Eliminar</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for f in formset %}
-          {# ✅ CLAVE: id oculto del form (si editás o si hay errores) #}
-          {{ f.id }}
-
+    <div class="table-wrapper">
+      <table id="tabla-detalles-pedido">
+        <thead>
           <tr>
-            <td>
-              {{ f.item }}
-              {{ f.item.errors }}
-            </td>
-
-            <td style="width:110px">
-              {{ f.cantidad }}
-              {{ f.cantidad.errors }}
-            </td>
-
-            <td>
-              {{ f.detalle }}
-              {{ f.detalle.errors }}
-            </td>
-
-            <td style="width:90px; text-align:center">
-              {# si querés permitir borrar solo en edit #}
-              {% if f.instance.pk %}
-                {{ f.DELETE }}
-              {% endif %}
-            </td>
+            <th>Ítem</th>
+            <th>Cantidad</th>
+            <th>Detalle</th>
+            <th style="width:40px"></th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
 
-    <div style="margin-top:12px">
+        <tbody>
+          {% for f in formset %}
+            <tr class="fila-detalle">
+              <td>
+                {{ f.id }}
+                {{ f.item }}
+                {% if f.item.errors %}<div class="form-error">{{ f.item.errors }}</div>{% endif %}
+              </td>
+
+              <td style="width:110px">
+                {{ f.cantidad }}
+                {% if f.cantidad.errors %}<div class="form-error">{{ f.cantidad.errors }}</div>{% endif %}
+              </td>
+
+              <td>
+                {{ f.detalle }}
+                {% if f.detalle.errors %}<div class="form-error">{{ f.detalle.errors }}</div>{% endif %}
+              </td>
+
+              <td style="width:40px;text-align:center">
+                {% if f.instance.pk %}
+                  {{ f.DELETE }}
+                {% else %}
+                  <button type="button" class="btn2 btn-ghost" title="Quitar fila"
+                          style="padding:4px 8px;color:var(--muted)"
+                          onclick="this.closest('tr').remove()">✕</button>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-actions">
       <button class="btn primary" type="submit">Guardar</button>
       {% if is_edit %}
-        <a class="btn" href="{% url 'pedido_detail' pedido.pk %}">Cancelar</a>
+        <a class="btn btn-ghost" href="{% url 'pedido_detail' pedido.pk %}">Cancelar</a>
       {% else %}
-        <a class="btn" href="{% url 'pedidos_list' %}">Cancelar</a>
+        <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Cancelar</a>
       {% endif %}
     </div>
   </div>
 
 </form>
+
+<script>
+  function addDetallePedido() {
+    var tbody = document.querySelector('#tabla-detalles-pedido tbody');
+    var total = document.getElementById('id_detalles-TOTAL_FORMS');
+    var idx   = parseInt(total.value);
+    var primera = tbody.querySelector('tr.fila-detalle');
+    if (!primera) return;
+    var nueva = primera.cloneNode(true);
+
+    /* Si el <select> de ítem ya está mejorado con buscador (ssel-wrap), el
+       clon trae el wrapper sin sus listeners (cloneNode no los copia): se
+       desarma a un <select> limpio para volver a mejorarlo en la fila nueva. */
+    var wrapClon = nueva.querySelector('.ssel-wrap');
+    if (wrapClon) {
+      var selClon = wrapClon.querySelector('select');
+      selClon.classList.remove('ssel-native');
+      delete selClon.dataset.sselDone;
+      wrapClon.parentNode.replaceChild(selClon, wrapClon);
+    }
+
+    nueva.querySelectorAll('input, select, textarea').forEach(function (el) {
+      if (el.type === 'hidden' && el.name.endsWith('-id')) { el.value = ''; return; }
+      el.name  = el.name.replace(/-\d+-/, '-' + idx + '-');
+      el.id    = el.id.replace(/-\d+-/, '-' + idx + '-');
+      el.value = '';
+    });
+    tbody.appendChild(nueva);
+    total.value = idx + 1;
+    window.HeepSearchableSelect && window.HeepSearchableSelect.enhanceAll(nueva);
+  }
+</script>
 
 {% endblock %}

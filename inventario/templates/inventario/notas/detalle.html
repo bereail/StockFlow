@@ -12,41 +12,12 @@
 </div>
 
 <!-- TIMELINE -->
-<div class="card" style="margin-bottom:14px;padding:20px 24px">
-  <div style="display:flex;align-items:flex-start">
-    {% for valor, label in pasos %}
-      {% with idx=forloop.counter0 %}
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
-        <div style="
-          width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-          font-size:.78rem;font-weight:700;flex-shrink:0;
-          {% if nota.estado == 'CANCELADA' and idx <= paso_actual %}
-            background:rgba(var(--danger-rgb),.16);border:2px solid var(--danger);color:var(--danger);
-          {% elif idx < paso_actual %}
-            background:rgba(var(--ok-rgb),.16);border:2px solid var(--ok);color:var(--ok);
-          {% elif idx == paso_actual %}
-            background:rgba(var(--primary-rgb),.16);border:2px solid var(--primary);color:var(--primary);box-shadow:0 0 0 4px rgba(var(--primary-rgb),.15);
-          {% else %}
-            background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);
-          {% endif %}
-        ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
-        <div style="font-size:.72rem;margin-top:6px;text-align:center;white-space:nowrap;
-          {% if idx == paso_actual %}color:var(--primary);font-weight:700;
-          {% elif idx < paso_actual %}color:var(--ok);
-          {% else %}color:var(--muted);{% endif %}
-        ">{{ label }}</div>
-      </div>
-      {% if not forloop.last %}
-        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:var(--ok);{% else %}background:var(--border);{% endif %}"></div>
-      {% endif %}
-      {% endwith %}
-    {% endfor %}
-    {% if nota.estado == "CANCELADA" %}
-      <div style="margin-left:16px;margin-top:8px;padding:4px 12px;border-radius:20px;background:rgba(var(--danger-rgb),.16);border:1px solid var(--danger);white-space:nowrap">
-        <span style="color:var(--danger);font-size:.78rem;font-weight:700">✕ Cancelada</span>
-      </div>
-    {% endif %}
-  </div>
+<div class="card" style="margin-bottom:14px;padding:20px 24px;overflow-x:auto">
+  {% if nota.estado == "CANCELADA" %}
+    {% include "inventario/_timeline_steps.html" with pasos=pasos paso_actual=paso_actual cancelado=True cancelado_label="Cancelada" %}
+  {% else %}
+    {% include "inventario/_timeline_steps.html" with pasos=pasos paso_actual=paso_actual %}
+  {% endif %}
 </div>
 
 <!-- INFO + ACCIONES -->

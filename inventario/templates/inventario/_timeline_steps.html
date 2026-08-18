@@ -1,0 +1,34 @@
+{% comment %}
+Timeline de pasos reutilizable (notas, reparaciones, y cualquier flujo con
+estados secuenciales). Requiere en el contexto:
+  - pasos: lista de tuplas (valor, label)
+  - paso_actual: índice (0-based) del paso actual
+Opcional:
+  - cancelado: True para mostrar el badge de cancelación al final
+  - cancelado_label: texto del badge (por defecto "Cancelada")
+{% endcomment %}
+<div class="timeline-steps">
+  {% for valor, label in pasos %}
+    {% with idx=forloop.counter0 %}
+    <div class="timeline-step">
+      <div class="timeline-step-dot
+        {% if cancelado and idx <= paso_actual %}is-cancelled
+        {% elif idx < paso_actual %}is-done
+        {% elif idx == paso_actual %}is-current{% endif %}">
+        {% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}
+      </div>
+      <div class="timeline-step-label
+        {% if idx == paso_actual %}is-current
+        {% elif idx < paso_actual %}is-done{% endif %}">{{ label }}</div>
+    </div>
+    {% if not forloop.last %}
+      <div class="timeline-step-connector {% if idx < paso_actual %}is-done{% endif %}"></div>
+    {% endif %}
+    {% endwith %}
+  {% endfor %}
+  {% if cancelado %}
+    <div class="timeline-cancelled-badge">
+      <span>✕ {{ cancelado_label|default:"Cancelada" }}</span>
+    </div>
+  {% endif %}
+</div>

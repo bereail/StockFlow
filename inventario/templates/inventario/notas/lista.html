@@ -73,9 +73,11 @@
           <td><a class="btn2" href="{% url 'nota_detail' n.pk %}" onclick="event.stopPropagation()">Ver</a></td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="5" class="muted" style="padding:20px;text-align:center">No hay notas con esos filtros.</td>
-        </tr>
+        {% if q or estado %}
+          {% include "inventario/_empty_row.html" with colspan=5 title="Sin resultados" sub="No hay notas con esos filtros." %}
+        {% else %}
+          {% include "inventario/_empty_row.html" with colspan=5 title="No hay notas cargadas" sub="Creá la primera nota para empezar." cta_url="nota_create" cta_label="+ Nueva nota" %}
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>

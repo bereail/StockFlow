@@ -1,65 +1,68 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:14px">
+<div class="page-header">
   <div>
     <div class="page-title">{{ title }}</div>
-    <div class="page-subtitle muted">Registro simple de diagnóstico y seguimiento</div>
+    <div class="page-subtitle muted">Registro de diagnóstico y seguimiento</div>
   </div>
-
-  <a class="btn" href="{% url 'reparaciones_list' %}">Volver</a>
+  <a class="btn2" href="{% url 'reparaciones_list' %}">← Volver</a>
 </div>
 
-<div class="card">
-  <form method="post" style="display:grid; gap:12px">
-    {% csrf_token %}
+<form method="post">
+  {% csrf_token %}
 
-    <div>
-      <label class="label" for="{{ form.item.id_for_label }}">Item</label>
-      {{ form.item }}
-    </div>
+  <div class="panel panel--narrow" style="margin-bottom:14px">
+    <div class="panel-section-title" style="margin-bottom:16px">Datos de la reparación</div>
 
-    <div>
-      <label class="label" for="{{ form.proveedor.id_for_label }}">Proveedor (opcional)</label>
-      {{ form.proveedor }}
-    </div>
-<div>
-  <label class="label" for="{{ form.servicio.id_for_label }}">Servicio al que pertenece</label>
-  {{ form.servicio }}
-</div>
+    <div class="formgrid">
+      <div class="field col-8">
+        <label class="label" for="{{ form.item.id_for_label }}">Ítem</label>
+        {{ form.item }}
+        {% for e in form.item.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+      </div>
 
-
-    <div class="row" style="gap:12px; flex-wrap:wrap">
-      <div style="min-width:220px">
+      <div class="field col-4">
         <label class="label" for="{{ form.estado.id_for_label }}">Estado</label>
         {{ form.estado }}
       </div>
 
-      <div style="min-width:220px">
-        <label class="label" for="{{ form.fecha_envio.id_for_label }}">Fecha envío</label>
+      <div class="field col-6">
+        <label class="label" for="{{ form.proveedor.id_for_label }}">Proveedor (opcional)</label>
+        {{ form.proveedor }}
+      </div>
+
+      <div class="field col-6">
+        <label class="label" for="{{ form.servicio.id_for_label }}">Servicio al que pertenece</label>
+        {{ form.servicio }}
+      </div>
+
+      <div class="field col-6">
+        <label class="label" for="{{ form.fecha_envio.id_for_label }}">Fecha de envío</label>
         {{ form.fecha_envio }}
       </div>
 
-      <div style="min-width:220px">
-        <label class="label" for="{{ form.fecha_retorno.id_for_label }}">Fecha retorno</label>
+      <div class="field col-6">
+        <label class="label" for="{{ form.fecha_retorno.id_for_label }}">Fecha de retorno</label>
         {{ form.fecha_retorno }}
       </div>
-    </div>
 
-    <div>
-      <label class="label" for="{{ form.diagnostico.id_for_label }}">Diagnóstico</label>
-      {{ form.diagnostico }}
-    </div>
+      <div class="field col-12">
+        <label class="label" for="{{ form.diagnostico.id_for_label }}">Diagnóstico</label>
+        {{ form.diagnostico }}
+      </div>
 
-    <div>
-      <label class="label" for="{{ form.seguimiento.id_for_label }}">Seguimiento</label>
-      {{ form.seguimiento }}
+      <div class="field col-12">
+        <label class="label" for="{{ form.seguimiento.id_for_label }}">Seguimiento</label>
+        {{ form.seguimiento }}
+      </div>
     </div>
+  </div>
 
-    <div class="row" style="justify-content:flex-end; margin-top:6px">
-      <button class="btn primary" type="submit">Guardar</button>
-    </div>
-  </form>
-</div>
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Guardar</button>
+    <a class="btn btn-ghost" href="{% url 'reparaciones_list' %}">Cancelar</a>
+  </div>
+</form>
 
 {% endblock %}

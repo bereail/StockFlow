@@ -1,49 +1,47 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
+<div class="page-header">
   <div>
-    <div class="page-title">Nuevo toner</div>
-    <div class="page-subtitle">Alta de toner</div>
+    <div class="page-title">{% if mode == "edit" %}Editar tóner{% else %}Nuevo tóner{% endif %}</div>
+    <div class="page-subtitle muted">{% if mode == "edit" %}{{ toner.nombre }}{% else %}Alta en el catálogo de tóner{% endif %}</div>
   </div>
-
-  <a class="btn" href="{% url 'toner_list' %}">Volver</a>
+  <a class="btn2" href="{% url 'toner_page' %}">← Volver</a>
 </div>
 
-<div class="card" style="max-width:720px">
-  <form method="post" class="form">
+<div class="card panel--narrow">
+  <form method="post" class="formgrid">
     {% csrf_token %}
 
-    <div class="formgrid">
-      <div class="field">
-        <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
-        {{ form.nombre }}
-        {{ form.nombre.errors }}
-      </div>
-
-      <div class="field">
-        <label class="label" for="{{ form.marca.id_for_label }}">Marca</label>
-        {{ form.marca }}
-        {{ form.marca.errors }}
-      </div>
-
-      <div class="field">
-        <label class="label" for="{{ form.modelo_impresora.id_for_label }}">Modelo impresora</label>
-        {{ form.modelo_impresora }}
-        {{ form.modelo_impresora.errors }}
-      </div>
-
-      <div class="field checkbox">
-        <label class="inline" for="{{ form.activo.id_for_label }}">
-          {{ form.activo }} Activo
-        </label>
-        {{ form.activo.errors }}
-      </div>
+    <div class="field col-6">
+      <label class="label" for="{{ form.nombre.id_for_label }}">Nombre</label>
+      {{ form.nombre }}
+      {% for e in form.nombre.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
     </div>
 
-    <div class="row" style="gap:10px; margin-top:12px">
-      <button type="submit" class="btn">Guardar</button>
-      <a class="btn btn-ghost" href="{% url 'toner_list' %}">Cancelar</a>
+    <div class="field col-6">
+      <label class="label" for="{{ form.marca.id_for_label }}">Marca</label>
+      {{ form.marca }}
+      {% for e in form.marca.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+
+    <div class="field col-8">
+      <label class="label" for="{{ form.modelo_impresora.id_for_label }}">Modelo impresora</label>
+      {{ form.modelo_impresora }}
+      {% for e in form.modelo_impresora.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+
+    <div class="field col-4">
+      <label class="label" for="{{ form.activo.id_for_label }}">Activo</label>
+      <div style="display:flex;align-items:center;min-height:34px">
+        {{ form.activo }}
+      </div>
+      {% for e in form.activo.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+
+    <div class="form-actions col-12">
+      <button type="submit" class="btn2 primary">Guardar</button>
+      <a class="btn2" href="{% url 'toner_page' %}">Cancelar</a>
     </div>
   </form>
 </div>

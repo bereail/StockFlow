@@ -63,11 +63,11 @@
             </td>
           </tr>
           {% empty %}
-          <tr>
-            <td colspan="6" class="muted" style="padding:20px;text-align:center">
-              No hay intercambios registrados.
-            </td>
-          </tr>
+          {% if q or estado %}
+            {% include "inventario/_empty_row.html" with colspan=6 title="Sin resultados" sub="No hay intercambios con esos filtros." %}
+          {% else %}
+            {% include "inventario/_empty_row.html" with colspan=6 title="No hay intercambios cargados" sub="Registrá el primero cuando haya que cruzar un equipo entre servicios." cta_url="intercambio_create" cta_label="+ Nuevo intercambio" %}
+          {% endif %}
           {% endfor %}
         </tbody>
       </table>

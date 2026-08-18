@@ -118,7 +118,7 @@ def toner_create(request):
         if form.is_valid():
             form.save()
             messages.success(request, "✅ Toner creado correctamente.")
-            return redirect("toner_list")
+            return redirect("toner_page")
         else:
             messages.error(request, "❌ Revisá el formulario, hay errores.")
     else:

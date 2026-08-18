@@ -80,11 +80,11 @@
             </td>
           </tr>
           {% empty %}
-          <tr>
-            <td colspan="8" class="muted" style="padding:20px;text-align:center">
-              No hay préstamos registrados.
-            </td>
-          </tr>
+          {% if q %}
+            {% include "inventario/_empty_row.html" with colspan=8 title="Sin resultados" sub="No hay préstamos con esa búsqueda." %}
+          {% else %}
+            {% include "inventario/_empty_row.html" with colspan=8 title="No hay préstamos cargados" sub="Registrá el primero cuando le prestes un equipo a un servicio." cta_url="prestamo_create" cta_label="+ Nuevo préstamo" %}
+          {% endif %}
           {% endfor %}
         </tbody>
       </table>

@@ -13,30 +13,7 @@
 
 <!-- TIMELINE -->
 <div class="card" style="margin-bottom:14px;padding:20px 24px;overflow-x:auto">
-  <div style="display:flex;align-items:flex-start;min-width:520px">
-    {% for valor, label in pasos %}
-      {% with idx=forloop.counter0 %}
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
-        <div style="
-          width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-          font-size:.74rem;font-weight:700;flex-shrink:0;
-          {% if idx < paso_actual %}background:#0f2e1a;border:2px solid #22c55e;color:#22c55e;
-          {% elif idx == paso_actual %}background:#1a3a6b;border:2px solid #3b82f6;color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15);
-          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);
-          {% endif %}
-        ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
-        <div style="font-size:.68rem;margin-top:6px;text-align:center;
-          {% if idx == paso_actual %}color:#3b82f6;font-weight:700;
-          {% elif idx < paso_actual %}color:#22c55e;
-          {% else %}color:var(--muted);{% endif %}
-        ">{{ label }}</div>
-      </div>
-      {% if not forloop.last %}
-        <div style="flex:1;height:2px;margin-top:16px;{% if idx < paso_actual %}background:#22c55e;{% else %}background:var(--border);{% endif %}"></div>
-      {% endif %}
-      {% endwith %}
-    {% endfor %}
-  </div>
+  {% include "inventario/_timeline_steps.html" with pasos=pasos paso_actual=paso_actual %}
 </div>
 
 <!-- INFO + ACCIONES -->

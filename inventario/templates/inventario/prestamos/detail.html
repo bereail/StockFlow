@@ -111,7 +111,8 @@
   <a class="btn" href="{% url 'prestamo_edit' prestamo.id %}">Editar</a>
 
   {% if not prestamo.devuelto %}
-  <form method="post" action="{% url 'prestamo_devolver' prestamo.id %}" style="margin:0">
+  <form method="post" action="{% url 'prestamo_devolver' prestamo.id %}" style="margin:0"
+        data-confirm="¿Marcar este préstamo como devuelto?">
     {% csrf_token %}
     <button class="btn primary" type="submit">Marcar como devuelto</button>
   </form>
