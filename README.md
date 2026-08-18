@@ -62,6 +62,13 @@ StockToner.spec        # configuración de PyInstaller para el build del .exe
 - Los datos (base SQLite, backups) se guardan en la carpeta de datos de la aplicación del
   sistema operativo, separada del código — nunca en el repo.
 
+## Proceso de diseño
+
+Antes de escribir el primer modelo se armó un [documento de diseño](docs/modelo-de-datos.pdf) con
+las entidades, reglas de negocio y decisiones de estructura, y un
+[mockup temprano de la UI](docs/mockup-ui.png) para validar la estética de escritorio antes de
+implementarla.
+
 ## Stack
 
 - **Backend:** Django 5.2
