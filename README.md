@@ -96,6 +96,19 @@ python manage.py runserver
 
 Para correr como app de escritorio: `python desktop_app.py`.
 
+### Explorar con datos de ejemplo
+
+Para ver la app con todos los módulos ya cargados (stock con historial, préstamos activos y
+vencidos, pedidos en distintos estados, reparaciones, intercambios, etc.), sin necesidad de
+cargar nada a mano:
+
+```bash
+python manage.py seed_demo
+```
+
+Genera datos 100% ficticios (no pisa nada si ya hay pedidos cargados) y, si no existe ningún
+superusuario, crea uno de prueba (`demo` / `demo1234`) solo para uso local.
+
 ## Testing
 
 **70 tests automatizados**, cubriendo modelos y flujos principales:
