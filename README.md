@@ -109,3 +109,7 @@ python manage.py test inventario
 El repositorio tuvo, en versiones anteriores, el entorno virtual de Python y los artefactos
 de build de PyInstaller versionados por error (miles de archivos). Se limpió por completo del
 historial de git antes de publicar este repo.
+
+## Licencia
+
+[MIT](LICENSE)
