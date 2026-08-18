@@ -1,5 +1,6 @@
 import csv
 import io
+from collections import OrderedDict
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -229,6 +230,31 @@ def _parse_mes(mes_str: str):
     return None, None
 
 
+def _periodo_now(mes_str: str):
+    periodo = mes_str or "Todos los períodos"
+    now = timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")
+    return periodo, now
+
+
+def _html_report_response(body: str, prefix: str, mes_str: str) -> HttpResponse:
+    fname = f"{prefix}_{mes_str or 'total'}_{timezone.now():%Y%m%d}.html"
+    response = HttpResponse(body.encode("utf-8"), content_type="text/html; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{fname}"'
+    return response
+
+
+def _nombre_item_patrimonio(item) -> str:
+    if not item:
+        return ""
+    if item.activo_pc:
+        return item.activo_pc.nombre_pc
+    if item.articulo:
+        return item.articulo.nombre
+    if item.toner:
+        return f"{item.toner.marca} {item.toner.nombre}"
+    return ""
+
+
 @login_required
 def reporte_toner_html(request):
     mes_str = (request.GET.get("mes") or "").strip()
@@ -244,7 +270,6 @@ def reporte_toner_html(request):
         qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
 
     # Agrupar por servicio
-    from collections import OrderedDict
     grupos: dict = OrderedDict()
     total_ud = 0
     for d in qs:
@@ -252,8 +277,7 @@ def reporte_toner_html(request):
         grupos.setdefault(svc, []).append(d)
         total_ud += d.cantidad
 
-    periodo = mes_str or "Todos los períodos"
-    now     = timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")
+    periodo, now = _periodo_now(mes_str)
 
     body = _rpt_open("Entregas de tóner por servicio", periodo, now)
     body += _rpt_filters(f"Período: {periodo}" if mes_str else "")
@@ -301,11 +325,7 @@ def reporte_toner_html(request):
         body += '<p style="color:#7a9ab8;padding:24px 0;text-align:center">Sin datos para el período seleccionado.</p>'
 
     body += _rpt_close(now)
-
-    fname = f"toner_{mes_str or 'total'}_{timezone.now():%Y%m%d}.html"
-    response = HttpResponse(body.encode("utf-8"), content_type="text/html; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="{fname}"'
-    return response
+    return _html_report_response(body, "toner", mes_str)
 
 
 @login_required
@@ -327,15 +347,13 @@ def reporte_pcs_html(request):
     if year and month:
         qs = qs.filter(fecha__year=year, fecha__month=month)
 
-    from collections import OrderedDict
     grupos: dict = OrderedDict()
     for p in qs:
         svc = p.servicio_asignado.nombre if p.servicio_asignado else "Sin servicio asignado"
         grupos.setdefault(svc, []).append(p)
 
-    periodo = mes_str or "Todos los períodos"
-    now     = timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")
-    total   = sum(len(v) for v in grupos.values())
+    periodo, now = _periodo_now(mes_str)
+    total = sum(len(v) for v in grupos.values())
 
     body = _rpt_open("Equipos y patrimonios", periodo, now)
     body += _rpt_filters(f"Período de alta: {periodo}" if mes_str else "")
@@ -346,11 +364,7 @@ def reporte_pcs_html(request):
             rows_html = ""
             for p in pats:
                 item = p.pedido_detalle.item if p.pedido_detalle else None
-                nombre_item = "—"
-                if item:
-                    if item.activo_pc:  nombre_item = item.activo_pc.nombre_pc
-                    elif item.articulo: nombre_item = item.articulo.nombre
-                    elif item.toner:    nombre_item = f"{item.toner.marca} {item.toner.nombre}"
+                nombre_item = _nombre_item_patrimonio(item) or "—"
                 rows_html += (
                     "<tr>"
                     f"<td><b>{p.numero_patrimonio}</b></td>"
@@ -376,11 +390,7 @@ def reporte_pcs_html(request):
         body += '<p style="color:#7a9ab8;padding:24px 0;text-align:center">Sin patrimonios registrados.</p>'
 
     body += _rpt_close(now)
-
-    fname = f"pcs_{mes_str or 'total'}_{timezone.now():%Y%m%d}.html"
-    response = HttpResponse(body.encode("utf-8"), content_type="text/html; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="{fname}"'
-    return response
+    return _html_report_response(body, "pcs", mes_str)
 
 
 @login_required
@@ -421,8 +431,7 @@ def reporte_pedidos_html(request):
     if estado:      partes.append(f"Estado: {estado}")
     filters_text = " · ".join(partes) if partes else ""
 
-    periodo = mes_str or "Todos los períodos"
-    now     = timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")
+    periodo, now = _periodo_now(mes_str)
 
     body = _rpt_open("Reporte de pedidos", periodo, now)
     body += _rpt_filters(filters_text)
@@ -434,11 +443,7 @@ def reporte_pedidos_html(request):
         foot_row = [f"Total: {len(rows)} pedidos", "", "", "", "", "", "", "", ""],
     )
     body += _rpt_close(now)
-
-    fname = f"pedidos_{mes_str or 'total'}_{timezone.now():%Y%m%d}.html"
-    response = HttpResponse(body.encode("utf-8"), content_type="text/html; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="{fname}"'
-    return response
+    return _html_report_response(body, "pedidos", mes_str)
 
 
 @login_required
@@ -474,9 +479,8 @@ def reporte_movimientos_html(request):
             (m.observaciones or "—").replace("\n", " ").strip(),
         ])
 
-    periodo = mes_str or "Todos los períodos"
-    now     = timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")
-    partes  = ([f"Período: {mes_str}"] if mes_str else [])
+    periodo, now = _periodo_now(mes_str)
+    partes = ([f"Período: {mes_str}"] if mes_str else [])
 
     body = _rpt_open("Movimientos de stock", periodo, now)
     body += _rpt_filters(" · ".join(partes))
@@ -487,11 +491,7 @@ def reporte_movimientos_html(request):
         foot_row = [f"Total: {len(rows)} movimientos", "", "", "", "", ""],
     )
     body += _rpt_close(now)
-
-    fname = f"movimientos_{mes_str or 'total'}_{timezone.now():%Y%m%d}.html"
-    response = HttpResponse(body.encode("utf-8"), content_type="text/html; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="{fname}"'
-    return response
+    return _html_report_response(body, "movimientos", mes_str)
 
 
 @login_required
@@ -515,14 +515,7 @@ def pcs_reporte_csv(request):
                      "Servicio asignado", "Serial", "Nº Pedido"])
     for p in pats:
         item = p.pedido_detalle.item if p.pedido_detalle else None
-        nombre_item = ""
-        if item:
-            if item.activo_pc:
-                nombre_item = item.activo_pc.nombre_pc
-            elif item.articulo:
-                nombre_item = item.articulo.nombre
-            elif item.toner:
-                nombre_item = f"{item.toner.marca} {item.toner.nombre}"
+        nombre_item = _nombre_item_patrimonio(item)
         writer.writerow([
             p.numero_patrimonio,
             nombre_item,
