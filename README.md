@@ -1,4 +1,4 @@
-# StockToner — Sistema de Inventario de Insumos IT
+# StockFlow — Sistema de Inventario de Insumos IT
 
 Aplicación de **escritorio** para gestionar el inventario de insumos informáticos de una
 organización: tóners, artículos, PCs, impresoras, préstamos, reparaciones, pedidos y
@@ -7,13 +7,15 @@ de escritorio (sin depender de un navegador externo) y también utilizable como 
 en desarrollo.
 
 > Nota: las capturas y datos de ejemplo de este README son ficticios — la app se usa en
-> producción para gestión real de inventario, y esos datos no se publican.
+> producción para gestión real de inventario, y esos datos no se publican. Internamente (nombre
+> de ventana, ejecutable y carpeta de datos) la app se sigue llamando **StockToner**; el repo se
+> presenta como StockFlow.
 
 ## El problema que resuelve
 
 Llevar el inventario de insumos de IT (tóners, PCs, impresoras) en planillas sueltas hace
 difícil saber qué stock queda, a quién se le prestó un equipo, qué reparación está en curso o
-qué se pidió y no llegó. StockToner centraliza todo eso en un solo sistema con historial y
+qué se pidió y no llegó. StockFlow centraliza todo eso en un solo sistema con historial y
 trazabilidad.
 
 ## Funcionalidades
@@ -42,7 +44,8 @@ Es un proyecto **Django** que se puede correr de dos formas:
 1. **Como app web normal** (`python manage.py runserver`) — útil para desarrollo.
 2. **Como app de escritorio** (`desktop_app.py`), usando `pywebview` para mostrar la interfaz
    en una ventana nativa, con el servidor Django (`waitress`) corriendo embebido en el mismo
-   proceso. Se empaqueta como ejecutable standalone con PyInstaller (`StockToner.spec`).
+   proceso. Se empaqueta como ejecutable standalone con PyInstaller (`StockToner.spec`, nombre
+   interno de la app instalada).
 
 ```
 config/            # settings, urls (proyecto Django)
@@ -80,8 +83,8 @@ implementarla.
 ## Instalación y ejecución local
 
 ```bash
-git clone https://github.com/bereail/stockTonerDesktop.git
-cd stockTonerDesktop
+git clone https://github.com/bereail/StockFlow.git
+cd StockFlow
 
 python -m venv venv
 venv\Scripts\activate        # Windows
