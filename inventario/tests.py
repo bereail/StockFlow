@@ -296,6 +296,27 @@ class ViewsSmokeTest(TestCase):
     def test_nota_create_get(self):
         self._get_ok("/notas/nueva/")
 
+    def test_reportes_page(self):
+        self._get_ok("/reportes/")
+
+    def test_reporte_toner_html(self):
+        self._get_ok("/reportes/toner.html")
+
+    def test_reporte_pcs_html(self):
+        self._get_ok("/reportes/pcs.html")
+
+    def test_reporte_pedidos_html(self):
+        self._get_ok("/reportes/pedidos.html")
+
+    def test_reporte_movimientos_html(self):
+        self._get_ok("/reportes/movimientos.html")
+
+    def test_pcs_reporte_csv(self):
+        self._get_ok("/reportes/pcs.csv")
+
+    def test_pedidos_reporte_csv(self):
+        self._get_ok("/reportes/pedidos.csv")
+
 
 # ============================================================
 # VISTAS — operaciones de escritura
