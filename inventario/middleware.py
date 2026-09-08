@@ -1,24 +1,14 @@
-class LocalhostCSRFMiddleware:
-    """
-    Desactiva la verificación CSRF para peticiones desde 127.0.0.1.
-    Seguro para apps de escritorio que solo corren en localhost.
-    """
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        if request.META.get("REMOTE_ADDR") in ("127.0.0.1", "::1"):
-            request._dont_enforce_csrf_checks = True
-        return self.get_response(request)
-
-
 class AutoLoginMiddleware:
     """
-    Login deshabilitado momentáneamente (a pedido): si nadie inició sesión,
-    loguea automáticamente con el primer superusuario que exista.
+    Login desactivado a pedido (de nuevo): si nadie inició sesión, loguea
+    automáticamente con el primer superusuario que exista.
 
-    Para volver a pedir login: sacar "inventario.middleware.AutoLoginMiddleware"
-    de MIDDLEWARE en config/settings.py.
+    ADVERTENCIA DE SEGURIDAD: esto anula la autenticación real para
+    cualquiera que abra la app. Es una decisión consciente y temporal
+    ("por ahora") tomada el 2026-09-07 tras haber sacado este mismo
+    bypass por el mismo motivo. Para volver a pedir login: sacar
+    "inventario.middleware.AutoLoginMiddleware" de MIDDLEWARE en
+    config/settings.py.
     """
     def __init__(self, get_response):
         self.get_response = get_response
@@ -30,4 +20,3 @@ class AutoLoginMiddleware:
             if user:
                 login(request, user)
         return self.get_response(request)
-

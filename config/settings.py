@@ -55,12 +55,11 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "inventario.middleware.LocalhostCSRFMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "inventario.middleware.AutoLoginMiddleware",  # TEMPORAL a pedido: saca el login. Borrar esta línea para reactivarlo.
+    "inventario.middleware.AutoLoginMiddleware",  # TEMPORAL de nuevo, a pedido — ver middleware.py
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -141,4 +140,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
+
+# =========================
+# SESSIONS / CSRF
+# =========================
+# La app corre por HTTP en loopback (127.0.0.1), nunca en HTTPS, así que las
+# cookies "Secure" no aplican acá. Se declaran explícitas para que la
+# intención quede clara en vez de depender del default de Django.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = "Lax"
