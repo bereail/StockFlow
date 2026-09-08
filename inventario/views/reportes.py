@@ -7,6 +7,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.html import escape as esc
 from ..models import Toner, Servicio, ActivoPC, MovimientoDetalle, Pedido, PatrimonioUnidad
 
 
@@ -171,15 +172,15 @@ def _rpt_open(title: str, periodo: str, now: str) -> str:
     return (
         f'<!DOCTYPE html><html lang="es"><head>'
         f'<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>{title} — InventarioHEEP</title>'
+        f'<title>{esc(title)} — StockFlow</title>'
         f'<style>{_RPT_CSS}</style></head><body>'
         f'<div class="rpt-hdr">'
         f'  <div class="rpt-brand">'
         f'    <div class="rpt-icon">{_RPT_ICON_SVG}</div>'
-        f'    <div class="rpt-names"><div class="org">InventarioHEEP</div>'
-        f'    <div class="title">{title}</div></div>'
+        f'    <div class="rpt-names"><div class="org">StockFlow</div>'
+        f'    <div class="title">{esc(title)}</div></div>'
         f'  </div>'
-        f'  <div class="rpt-meta"><span class="period">{periodo}</span>Generado: {now}</div>'
+        f'  <div class="rpt-meta"><span class="period">{esc(periodo)}</span>Generado: {esc(now)}</div>'
         f'</div>'
         f'<div class="rpt-actions">'
         f'<button class="btn-print" onclick="window.print()">{_PRINT_SVG} Imprimir / Guardar PDF</button>'
@@ -196,13 +197,13 @@ def _rpt_summary(*items) -> str:
 
 
 def _rpt_filters(text: str) -> str:
-    return f'<div class="rpt-filters"><b>Filtros:</b> {text}</div>' if text else ""
+    return f'<div class="rpt-filters"><b>Filtros:</b> {esc(text)}</div>' if text else ""
 
 
 def _rpt_close(now: str) -> str:
     return (
         f'<div class="rpt-footer">'
-        f'<span>InventarioHEEP — Sistema de inventario</span>'
+        f'<span>StockFlow — Sistema de inventario</span>'
         f'<span>Generado: {now}</span>'
         f'</div></body></html>'
     )
@@ -293,21 +294,21 @@ def reporte_toner_html(request):
                 rows_html += (
                     "<tr>"
                     f"<td>{timezone.localtime(m.fecha).strftime('%d/%m/%Y')}</td>"
-                    f"<td><b>{t.nombre if t else '—'}</b></td>"
-                    f"<td>{t.marca if t else '—'}</td>"
-                    f"<td>{t.modelo_impresora if t else '—'}</td>"
+                    f"<td><b>{esc(t.nombre) if t else '—'}</b></td>"
+                    f"<td>{esc(t.marca) if t else '—'}</td>"
+                    f"<td>{esc(t.modelo_impresora) if t else '—'}</td>"
                     f"<td style='text-align:right;font-weight:700;font-size:15px'>{d.cantidad}</td>"
-                    f"<td style='color:#7a9ab8;font-size:12px'>{(m.observaciones or '').replace(chr(10),' ').strip() or '—'}</td>"
+                    f"<td style='color:#7a9ab8;font-size:12px'>{esc((m.observaciones or '').replace(chr(10),' ').strip()) or '—'}</td>"
                     "</tr>"
                 )
             rows_html += (
                 f"<tr class='subtotal'>"
-                f"<td colspan='4'><b>Subtotal — {svc_nombre}</b></td>"
+                f"<td colspan='4'><b>Subtotal — {esc(svc_nombre)}</b></td>"
                 f"<td style='text-align:right'>{sub}</td><td></td></tr>"
             )
             body += (
                 f'<div class="rpt-group">'
-                f'<div class="rpt-group-hdr"><span>{svc_nombre}</span>'
+                f'<div class="rpt-group-hdr"><span>{esc(svc_nombre)}</span>'
                 f'<span class="grp-badge">{sub} ud.</span></div>'
                 f'<table><thead><tr>'
                 f'<th>Fecha</th><th>Tóner</th><th>Marca</th><th>Modelo impresora</th>'
@@ -367,19 +368,19 @@ def reporte_pcs_html(request):
                 nombre_item = _nombre_item_patrimonio(item) or "—"
                 rows_html += (
                     "<tr>"
-                    f"<td><b>{p.numero_patrimonio}</b></td>"
-                    f"<td>{nombre_item}</td>"
-                    f"<td>{p.nombre_pc or '—'}</td>"
-                    f"<td style='font-family:monospace'>{p.ip or '—'}</td>"
-                    f"<td>{p.usuario_asignado or '—'}</td>"
-                    f"<td>{p.serial or '—'}</td>"
-                    f"<td>{p.pedido_detalle.pedido.numero if p.pedido_detalle else '—'}</td>"
+                    f"<td><b>{esc(p.numero_patrimonio or '—')}</b></td>"
+                    f"<td>{esc(nombre_item or '—')}</td>"
+                    f"<td>{esc(p.nombre_pc or '—')}</td>"
+                    f"<td style='font-family:monospace'>{esc(p.ip or '—')}</td>"
+                    f"<td>{esc(p.usuario_asignado or '—')}</td>"
+                    f"<td>{esc(p.serial or '—')}</td>"
+                    f"<td>{esc(p.pedido_detalle.pedido.numero) if p.pedido_detalle else '—'}</td>"
                     f"<td>{timezone.localtime(p.fecha).strftime('%d/%m/%Y') if p.fecha else '—'}</td>"
                     "</tr>"
                 )
             body += (
                 f'<div class="rpt-group">'
-                f'<div class="rpt-group-hdr"><span>{svc_nombre}</span>'
+                f'<div class="rpt-group-hdr"><span>{esc(svc_nombre)}</span>'
                 f'<span class="grp-badge">{len(pats)} equipo{"s" if len(pats)!=1 else ""}</span></div>'
                 f'<table><thead><tr>'
                 f'<th>Nº Patrimonio</th><th>Artículo</th><th>Nombre equipo</th>'
@@ -413,13 +414,13 @@ def reporte_pedidos_html(request):
 
     rows = []
     for p in qs:
-        est_badge = f'<span class="badge-estado est-{p.estado}">{p.get_estado_display()}</span>'
+        est_badge = f'<span class="badge-estado est-{esc(p.estado)}">{esc(p.get_estado_display())}</span>'
         rows.append([
-            f"<b>{p.numero}</b>",
+            f"<b>{esc(p.numero)}</b>",
             est_badge,
-            ", ".join(s.nombre for s in p.servicios.all()) or "—",
-            p.proveedor.nombre if p.proveedor else "—",
-            (p.para_que or "—").replace("\n", " "),
+            esc(", ".join(s.nombre for s in p.servicios.all())) or "—",
+            esc(p.proveedor.nombre) if p.proveedor else "—",
+            esc((p.para_que or "—").replace("\n", " ")),
             timezone.localtime(p.creado).strftime("%d/%m/%Y") if p.creado else "—",
             p.fecha_aprobado.strftime("%d/%m/%Y") if p.fecha_aprobado else "—",
             p.fecha_recibido.strftime("%d/%m/%Y") if p.fecha_recibido else "—",
@@ -469,14 +470,14 @@ def reporte_movimientos_html(request):
     rows = []
     for d in qs:
         m = d.movimiento
-        tipo_badge = f'<span class="badge-estado tipo-{m.tipo}">{m.tipo}</span>'
+        tipo_badge = f'<span class="badge-estado tipo-{esc(m.tipo)}">{esc(m.tipo)}</span>'
         rows.append([
             timezone.localtime(m.fecha).strftime("%d/%m/%Y %H:%M"),
             tipo_badge,
-            m.servicio.nombre if m.servicio else "—",
-            str(d.item),
+            esc(m.servicio.nombre) if m.servicio else "—",
+            esc(str(d.item)),
             f"<b>{d.cantidad}</b>",
-            (m.observaciones or "—").replace("\n", " ").strip(),
+            esc((m.observaciones or "—").replace("\n", " ").strip()),
         ])
 
     periodo, now = _periodo_now(mes_str)
