@@ -15,6 +15,15 @@
  * en el DOM.
  */
 (function () {
+  // Normaliza para comparar sin importar mayúsculas/minúsculas ni acentos
+  // (ej: "clinica" debe encontrar "Clínica").
+  function normalizar(s) {
+    return (s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
   function enhance(select) {
     if (select.dataset.sselDone) return;
     select.dataset.sselDone = "1";
@@ -52,6 +61,16 @@
     panel.className = "ssel-panel";
     panel.setAttribute("role", "listbox");
     panel.hidden = true;
+
+    // Nombre accesible del listbox: el <label> del select original si existe,
+    // si no el placeholder ("Buscar…"/"Agregar…"). También se conecta el
+    // combobox con su listbox vía aria-controls (requerido por el role).
+    var panelId = "ssel-panel-" + Math.random().toString(36).slice(2, 9);
+    panel.id = panelId;
+    input.setAttribute("aria-controls", panelId);
+    var labelEl = select.id && document.querySelector('label[for="' + select.id + '"]');
+    panel.setAttribute("aria-label", (labelEl ? labelEl.textContent.trim() : input.placeholder));
+
     /* Se cuelga directo del <body> (no de wrap) para que un position:fixed
        escape de cualquier ancestro con backdrop-filter/transform (ej. .card),
        que si no atrapa al panel y hace que otros campos de la página le
@@ -74,11 +93,11 @@
     }
 
     function findExactMatch(text) {
-      var t = (text || "").trim().toLowerCase();
+      var t = normalizar(text).trim();
       if (!t) return null;
       var opts = realOptions();
       for (var i = 0; i < opts.length; i++) {
-        if (opts[i].text.trim().toLowerCase() === t) return opts[i];
+        if (normalizar(opts[i].text).trim() === t) return opts[i];
       }
       return null;
     }
@@ -115,14 +134,14 @@
     }
 
     function renderPanel(filterText) {
-      var texto = (filterText || "").toLowerCase().trim();
+      var texto = normalizar(filterText).trim();
       panel.innerHTML = "";
       currentOptions = [];
       activeIndex = -1;
 
       realOptions().forEach(function (opt) {
         if (isMulti && opt.selected) return;
-        if (texto && opt.text.toLowerCase().indexOf(texto) === -1) return;
+        if (texto && normalizar(opt.text).indexOf(texto) === -1) return;
 
         currentOptions.push(opt);
         var item = document.createElement("div");
