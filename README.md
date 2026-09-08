@@ -1,4 +1,4 @@
-# StockToner — Sistema de Inventario de Insumos IT
+# StockFlow — Sistema de Inventario de Insumos IT
 
 Aplicación de **escritorio** para gestionar el inventario de insumos informáticos de una
 organización: tóners, artículos, PCs, impresoras, préstamos, reparaciones, pedidos y
@@ -13,7 +13,7 @@ en desarrollo.
 
 Llevar el inventario de insumos de IT (tóners, PCs, impresoras) en planillas sueltas hace
 difícil saber qué stock queda, a quién se le prestó un equipo, qué reparación está en curso o
-qué se pidió y no llegó. StockToner centraliza todo eso en un solo sistema con historial y
+qué se pidió y no llegó. StockFlow centraliza todo eso en un solo sistema con historial y
 trazabilidad.
 
 ## Funcionalidades
@@ -80,8 +80,8 @@ implementarla.
 ## Instalación y ejecución local
 
 ```bash
-git clone https://github.com/bereail/stockTonerDesktop.git
-cd stockTonerDesktop
+git clone https://github.com/bereail/StockFlow.git
+cd StockFlow
 
 python -m venv venv
 venv\Scripts\activate        # Windows
