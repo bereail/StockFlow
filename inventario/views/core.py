@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum
@@ -9,12 +10,14 @@ from ..models import (
     Servicio,
     ActivoPC,
     Impresora,
+    Movimiento,
     MovimientoDetalle,
     Pendiente,
     Reparacion,
     Prestamo,
     Intercambio,
 )
+from ..services.stock import toners_con_stock_critico
 
 
 def custom_login(request):
@@ -29,7 +32,10 @@ def custom_login(request):
         if user is not None:
             auth_login(request, user)
             if remember:
-                request.session.set_expiry(60 * 60 * 24 * 14)  # 14 días
+                # En el ejecutable de escritorio es una sola persona en su propio
+                # equipo: conviene no pedirle login en cada apertura.
+                dias = 90 if getattr(settings, "FROZEN", False) else 14
+                request.session.set_expiry(60 * 60 * 24 * dias)
             else:
                 request.session.set_expiry(0)  # se cierra con el navegador
             next_url = request.POST.get("next") or request.GET.get("next") or "dashboard"
@@ -61,7 +67,25 @@ def dashboard(request):
             .aggregate(total=Sum("cantidad"))["total"] or 0
         ),
     }
-    return render(request, "inventario/dashboard.html", {"stats": stats})
+
+    movimientos_recientes = (
+        Movimiento.objects
+        .filter(anulado=False)
+        .select_related("servicio")
+        .prefetch_related(
+            "detalles__item__toner",
+            "detalles__item__articulo",
+            "detalles__item__activo_pc",
+            "detalles__item__impresora",
+        )
+        .order_by("-fecha")[:6]
+    )
+
+    return render(request, "inventario/dashboard.html", {
+        "stats": stats,
+        "stock_critico": toners_con_stock_critico(),
+        "movimientos_recientes": movimientos_recientes,
+    })
 
 
 @login_required

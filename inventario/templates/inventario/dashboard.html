@@ -11,8 +11,8 @@
       <div class="muted" style="font-size:12px;margin-top:2px">{% now "l d \d\e F \d\e Y" %}</div>
     </div>
     <div style="display:flex;gap:8px">
-      <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Entrega tóner</a>
-      <a class="btn2" href="{% url 'reportes' %}">Reportes</a>
+      <a class="btn primary" href="{% url 'toner_entrega' %}">+ Entrega tóner</a>
+      <a class="btn" href="{% url 'reportes' %}">Reportes</a>
     </div>
   </div>
 
@@ -74,6 +74,95 @@
 
   </div>
 
+  {% if stock_critico %}
+  <!-- ── Alertas de stock crítico ── -->
+  <div class="db-section-label">
+    <span>Stock crítico</span>
+    <hr>
+  </div>
+  <div class="card" style="border-color:rgba(var(--danger-rgb),.30);background:rgba(var(--danger-rgb),.03);margin-bottom:16px">
+    <div class="table-wrapper" style="margin:0">
+      <table>
+        <thead>
+          <tr>
+            <th>Tóner</th>
+            <th style="width:90px">Mínimo</th>
+            <th style="width:90px">Stock actual</th>
+            <th style="width:100px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in stock_critico %}
+            <tr>
+              <td>{{ c.toner }}</td>
+              <td class="mono muted">{{ c.toner.stock_minimo }}</td>
+              <td class="mono"><span class="chip danger">{{ c.stock }}</span></td>
+              <td><a class="btn" href="{% url 'toner_entrega' %}">Reponer</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Actividad reciente ── -->
+  <div class="db-section-label">
+    <span>Actividad reciente</span>
+    <hr>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    {% if movimientos_recientes %}
+      <div class="table-wrapper" style="margin:0">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px">Fecha</th>
+              <th style="width:90px">Tipo</th>
+              <th>Servicio</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in movimientos_recientes %}
+              <tr style="cursor:pointer" data-href="{% url 'movimiento_edit' m.pk %}">
+                <td class="muted mono">{{ m.fecha|date:"d/m/Y H:i" }}</td>
+                <td>
+                  {% if m.tipo == "INGRESO" %}
+                    <span class="chip ok">Ingreso</span>
+                  {% elif m.tipo == "EGRESO" %}
+                    <span class="chip danger">Egreso</span>
+                  {% else %}
+                    <span class="chip warn">Ajuste</span>
+                  {% endif %}
+                </td>
+                <td>{{ m.servicio.nombre|default:"—" }}</td>
+                <td class="muted" style="font-size:12px">
+                  {% for d in m.detalles.all %}
+                    {% if d.item.toner %}{{ d.item.toner.marca|default:"" }} {{ d.item.toner.nombre }}
+                    {% elif d.item.articulo %}{{ d.item.articulo.nombre }}
+                    {% elif d.item.activo_pc %}PC: {{ d.item.activo_pc.nombre_pc }}
+                    {% elif d.item.impresora %}{{ d.item.impresora.marca }} {{ d.item.impresora.modelo }}
+                    {% endif %}
+                    <span class="muted">×{{ d.cantidad }}</span>{% if not forloop.last %} · {% endif %}
+                  {% empty %}—{% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;text-align:right">
+        <a class="btn" href="{% url 'movimientos_list' %}">Ver todos los movimientos →</a>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-title">Todavía no hay movimientos</div>
+        <div class="empty-state-sub">Los ingresos, egresos y ajustes de stock van a aparecer acá.</div>
+      </div>
+    {% endif %}
+  </div>
+
   <!-- ── Sección Inventario ── -->
   <div class="db-section-label">
     <span>Inventario</span>
@@ -94,8 +183,8 @@
       <div class="db-mod-name">Tóner</div>
       <div class="db-mod-count">{{ stats.toners }} tipos activos</div>
       <div class="db-mod-actions" onclick="event.stopPropagation()">
-        <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Entrega</a>
-        <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
+        <a class="btn primary" href="{% url 'toner_entrega' %}">+ Entrega</a>
+        <a class="btn" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
       </div>
     </div>
 
