@@ -1,5 +1,7 @@
 # StockFlow — Sistema de Inventario de Insumos IT
 
+[![Tests](https://github.com/bereail/StockFlow/actions/workflows/tests.yml/badge.svg)](https://github.com/bereail/StockFlow/actions/workflows/tests.yml)
+
 Aplicación de **escritorio** para gestionar el inventario de insumos informáticos de una
 organización: tóners, artículos, PCs, impresoras, préstamos, reparaciones, pedidos y
 movimientos, con historial y reportes. Backend Django corriendo embebido, con interfaz nativa
@@ -18,22 +20,30 @@ trazabilidad.
 
 ## Funcionalidades
 
-- **Dashboard** con accesos rápidos y contadores (tóners entregados en el mes, préstamos
-  activos, tareas pendientes, reparaciones en curso).
+- **Dashboard** con accesos rápidos, contadores (tóners entregados en el mes, préstamos
+  activos, tareas pendientes, reparaciones en curso), alertas de stock crítico y actividad
+  reciente.
+- **Vista de detalle por entidad** (tóner, artículo, PC, impresora, servicio): cada una con
+  su historial propio; la de Servicio suma una timeline unificada de todo lo que le pasó
+  (movimientos, préstamos, reparaciones, pedidos, notas, asignaciones de impresora) en 7 tabs.
+- **Listados** con orden por columna y filtros por estado/servicio.
 - **Tóner**: registro de entregas, historial, exportación a CSV.
 - **Artículos, PCs, Impresoras**: alta, edición y seguimiento de equipamiento.
 - **Servicios**: catálogo de sectores/áreas de destino.
-- **Movimientos**: trazabilidad de entregas y traslados.
+- **Movimientos**: trazabilidad de entregas y traslados, con validación de stock disponible.
 - **Préstamos, Intercambios, Reparaciones, Pedidos, Patrimonios, Notas, Pendientes**: módulos
   de gestión completa del ciclo de vida del inventario.
 - **Panel de administración** de Django para gestión avanzada.
 - **Reportes** exportables.
+- **Accesibilidad**: navegación completa por teclado, foco visible, roles/ARIA en tabs y
+  filas de tabla, formularios con `<label>` asociado — verificado con
+  [axe-core](https://github.com/dequelabs/axe-core) contra cada pantalla (0 violaciones).
 
 ## Capturas
 
-| Dashboard | Tóner |
+| Dashboard | Servicio (detalle) |
 |---|---|
-| ![Dashboard](docs/screenshots/01-dashboard.jpg) | ![Tóner](docs/screenshots/02-toner.jpg) |
+| ![Dashboard](docs/screenshots/01-dashboard.jpg) | ![Detalle de servicio](docs/screenshots/02-servicio-detalle.jpg) |
 
 ## Arquitectura
 
@@ -49,7 +59,7 @@ config/            # settings, urls (proyecto Django)
 inventario/         # app principal: modelos, vistas, forms, templates
   forms/             # un archivo de formulario por entidad
   fixtures/           # datos de ejemplo para `manage.py seed`
-  tests.py            # 70 tests
+  tests.py            # 121 tests
 desktop_app.py       # punto de entrada de la app de escritorio (pywebview + waitress)
 manage.py             # punto de entrada estándar de Django (desarrollo)
 StockToner.spec        # configuración de PyInstaller para el build del .exe
@@ -111,7 +121,8 @@ superusuario, crea uno de prueba (`demo` / `demo1234`) solo para uso local.
 
 ## Testing
 
-**70 tests automatizados**, cubriendo modelos y flujos principales:
+**121 tests automatizados**, cubriendo modelos y flujos principales. Corren automáticamente
+en cada push/PR vía GitHub Actions.
 
 ```bash
 python manage.py test inventario
