@@ -53,7 +53,7 @@
         </thead>
         <tbody>
           {% for d in donaciones %}
-          <tr style="cursor:pointer" data-href="{% url 'patrimonio_standalone_edit' d.pk %}">
+          <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' d.pk %}">
             <td><strong class="mono">{{ d.numero_patrimonio }}</strong></td>
             <td>{{ d.articulo.nombre|default:"—" }}</td>
             <td>{{ d.donante|default:"—" }}</td>

@@ -8,7 +8,7 @@ from inventario.models import (
     Toner, Articulo, ActivoPC, Impresora, Servicio,
     Item, Movimiento, MovimientoDetalle,
     AsignacionImpresora, Nota, Pendiente, Reparacion,
-    Prestamo, PrestamoDetalle, Pedido, PatrimonioUnidad, Intercambio,
+    Prestamo, PrestamoDetalle, Pedido, PedidoDetalle, PatrimonioUnidad, Intercambio,
 )
 from inventario.services.servicios import historial_de_servicio
 from inventario.services.listados import ordenar
@@ -942,6 +942,47 @@ class EntidadDetailTest(TestCase):
         self.assertEqual(r_post.status_code, 302)
         impresora.refresh_from_db()
         self.assertEqual(impresora.estado, "INACTIVA")
+
+    def test_patrimonio_detail_independiente_ok(self):
+        articulo = Articulo.objects.create(nombre="Notebook", es_patrimonial=True)
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-900", articulo=articulo,
+            servicio_asignado=self.servicio, asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{pat.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "PAT-900")
+        self.assertContains(r, "independiente")
+
+    def test_patrimonio_detail_muestra_datos_de_equipo(self):
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-901", nombre_pc="PC-FARM-03", ip="10.0.0.5",
+            usuario_asignado="jperez", asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{pat.pk}/")
+        self.assertContains(r, "PC-FARM-03")
+        self.assertContains(r, "10.0.0.5")
+        self.assertContains(r, "jperez")
+
+    def test_patrimonio_detail_muestra_donacion(self):
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-902", es_donacion=True, donante="Fundación XYZ",
+            asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{pat.pk}/")
+        self.assertContains(r, "Donación")
+        self.assertContains(r, "Fundación XYZ")
+
+    def test_patrimonio_detail_muestra_link_al_pedido_de_origen(self):
+        articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+        item = item_de_articulo(articulo)
+        pedido = Pedido.objects.create(numero="PED-500")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item, cantidad=1)
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-903", pedido_detalle=detalle, asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{pat.pk}/")
+        self.assertContains(r, "PED-500")
 
 
 # ============================================================

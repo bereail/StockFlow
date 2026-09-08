@@ -57,6 +57,28 @@ def patrimonios_list(request):
 
 
 @login_required
+def patrimonio_detail(request, pk):
+    pat = get_object_or_404(
+        PatrimonioUnidad.objects.select_related(
+            "articulo",
+            "servicio_asignado",
+            "asignado_por",
+            "pedido_detalle__pedido",
+            "pedido_detalle__item__toner",
+            "pedido_detalle__item__activo_pc",
+            "pedido_detalle__item__impresora",
+            "pedido_detalle__item__articulo",
+        ),
+        pk=pk,
+    )
+    editar_url = "patrimonio_edit" if pat.pedido_detalle_id else "patrimonio_standalone_edit"
+    return render(request, "inventario/patrimonios/patrimonio_detail.html", {
+        "pat": pat,
+        "editar_url": editar_url,
+    })
+
+
+@login_required
 def patrimonio_standalone_create(request):
     if request.method == "POST":
         form = PatrimonioStandaloneForm(request.POST, user=request.user)

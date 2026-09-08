@@ -153,7 +153,7 @@
             <thead><tr><th>Patrimonio</th><th>Artículo</th><th>Usuario</th><th style="width:120px">Alta</th></tr></thead>
             <tbody>
               {% for p in patrimonios %}
-                <tr style="cursor:pointer" data-href="{% url 'patrimonio_edit' p.pk %}">
+                <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' p.pk %}">
                   <td><strong>{{ p.numero_patrimonio }}</strong></td>
                   <td class="muted">{{ p.articulo.nombre|default:p.detalle_item|default:"—" }}</td>
                   <td class="muted">{{ p.usuario_asignado|default:"—" }}</td>

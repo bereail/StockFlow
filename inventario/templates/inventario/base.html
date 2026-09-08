@@ -204,7 +204,7 @@
           <span>Servicios</span>
         </a>
 
-        <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_edit patrimonio_create' %}active{% endif %}"
+        <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_detail patrimonio_edit patrimonio_create patrimonio_standalone_create patrimonio_standalone_edit donaciones_list donacion_create' %}active{% endif %}"
            href="{% url 'patrimonios_list' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>

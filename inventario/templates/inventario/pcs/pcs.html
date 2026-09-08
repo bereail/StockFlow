@@ -111,7 +111,7 @@
         </thead>
         <tbody>
           {% for pat in pats %}
-          <tr style="cursor:pointer" data-href="{% url 'patrimonio_edit' pat.pk %}?next={{ request.get_full_path }}">
+          <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' pat.pk %}">
             <td><strong class="mono">{{ pat.numero_patrimonio }}</strong></td>
             <td>
               {% with it=pat.pedido_detalle.item %}

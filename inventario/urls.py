@@ -106,6 +106,7 @@ urlpatterns = [
     path("pedidos/<int:pk>/eliminar/", views.pedido_delete, name="pedido_delete"),
     path("pedidos/<int:pk>/pendientes/nuevo/", views.pendiente_create_for_pedido, name="pendiente_create_for_pedido"),
     path("patrimonios/", views.patrimonios_list, name="patrimonios_list"),
+    path("patrimonios/<int:pk>/", views.patrimonio_detail, name="patrimonio_detail"),
     path("patrimonios/nuevo/", views.patrimonio_standalone_create, name="patrimonio_standalone_create"),
     path("patrimonios/donaciones/", views.donaciones_list, name="donaciones_list"),
     path("patrimonios/donaciones/nueva/", views.donacion_create, name="donacion_create"),

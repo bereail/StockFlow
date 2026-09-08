@@ -80,7 +80,7 @@
         <thead><tr><th>Patrimonio</th><th>Servicio asignado</th><th style="width:120px">Alta</th></tr></thead>
         <tbody>
           {% for p in patrimonios %}
-            <tr style="cursor:pointer" data-href="{% url 'patrimonio_edit' p.pk %}">
+            <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' p.pk %}">
               <td><strong>{{ p.numero_patrimonio }}</strong></td>
               <td class="muted">{{ p.servicio_asignado.nombre|default:"—" }}</td>
               <td class="muted mono">{{ p.fecha|date:"d/m/Y" }}</td>
