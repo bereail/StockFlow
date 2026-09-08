@@ -80,16 +80,21 @@ def patrimonio_detail(request, pk):
 
 @login_required
 def patrimonio_standalone_create(request):
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+
     if request.method == "POST":
         form = PatrimonioStandaloneForm(request.POST, user=request.user)
         if form.is_valid():
             unidad = form.save()
             messages.success(request, f"Patrimonio {unidad.numero_patrimonio} registrado.")
-            return redirect("patrimonios_list")
+            return redirect(next_url or "patrimonios_list")
     else:
-        form = PatrimonioStandaloneForm(user=request.user)
+        servicio_id = request.GET.get("servicio")
+        form = PatrimonioStandaloneForm(user=request.user, initial={"servicio_asignado": servicio_id} if servicio_id else None)
 
-    return render(request, "inventario/patrimonios/standalone_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/patrimonios/standalone_form.html", {
+        "form": form, "mode": "create", "next": next_url,
+    })
 
 
 @login_required

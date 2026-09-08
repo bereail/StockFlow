@@ -818,6 +818,10 @@ class ServicioDetailTest(TestCase):
         r = self.client.get(f"/servicios/{self.servicio.pk}/")
         self.assertContains(r, f"/pcs/nuevo/?servicio={self.servicio.pk}")
 
+    def test_servicio_detail_tiene_boton_para_agregar_articulo(self):
+        r = self.client.get(f"/servicios/{self.servicio.pk}/")
+        self.assertContains(r, f"/patrimonios/nuevo/?servicio={self.servicio.pk}")
+
 
 class PcCreateConServicioPreseleccionadoTest(TestCase):
     def setUp(self):
@@ -838,6 +842,31 @@ class PcCreateConServicioPreseleccionadoTest(TestCase):
         )
         self.assertRedirects(r, f"/servicios/{self.servicio.pk}/#equipamiento", fetch_redirect_response=False)
         self.assertTrue(ActivoPC.objects.filter(nombre_pc="PC-GUARDIA-01", servicio=self.servicio).exists())
+
+
+class PatrimonioStandaloneCreateConServicioPreseleccionadoTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin6", "admin6@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.articulo = Articulo.objects.create(nombre="Monitor Samsung", es_patrimonial=True)
+
+    def test_get_preselecciona_el_servicio(self):
+        r = self.client.get(f"/patrimonios/nuevo/?servicio={self.servicio.pk}")
+        self.assertContains(r, f'value="{self.servicio.pk}" selected')
+
+    def test_post_con_next_redirige_ahi(self):
+        r = self.client.post(
+            f"/patrimonios/nuevo/?servicio={self.servicio.pk}",
+            {
+                "articulo": self.articulo.pk, "numero_patrimonio": "PAT-GUARDIA-01",
+                "servicio_asignado": self.servicio.pk, "next": f"/servicios/{self.servicio.pk}/#equipamiento",
+            },
+        )
+        self.assertRedirects(r, f"/servicios/{self.servicio.pk}/#equipamiento", fetch_redirect_response=False)
+        self.assertTrue(PatrimonioUnidad.objects.filter(numero_patrimonio="PAT-GUARDIA-01", servicio_asignado=self.servicio).exists())
 
 
 class HistorialServicioTest(TestCase):

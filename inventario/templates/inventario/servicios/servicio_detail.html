@@ -187,8 +187,11 @@
 
     <div class="card">
       <div class="card-header">
-        <span class="card-label">Patrimonios / artículos</span>
-        <span class="chip">{{ stats.patrimonios }}</span>
+        <div class="row" style="gap:8px;align-items:center">
+          <span class="card-label">Patrimonios / artículos</span>
+          <span class="chip">{{ stats.patrimonios }}</span>
+        </div>
+        <a class="btn" href="{% url 'patrimonio_standalone_create' %}?servicio={{ servicio.id }}&next={{ request.path }}%23equipamiento">+ Nuevo artículo</a>
       </div>
       {% if patrimonios %}
         <div class="table-wrapper table-wrapper--flush">
