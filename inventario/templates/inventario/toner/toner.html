@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% load ordenamiento %}
 {% block title %}Tóner{% endblock %}
 {% block content %}
 
@@ -10,18 +11,23 @@
   <div class="page-actions">
     <form method="get" style="display:contents">
       <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)" aria-label="Buscar tóners">
-      <button class="btn2 primary" type="submit">Buscar</button>
+      <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
+        <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Desactivados</option>
+      </select>
+      <button class="btn primary" type="submit">Buscar</button>
     </form>
-    <a class="btn2" href="{% url 'toner_historial' %}">Historial</a>
-    <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
-    <button class="btn2" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
+    <a class="btn" href="{% url 'toner_historial' %}">Historial</a>
+    <a class="btn" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
+    <button class="btn" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
             title="Descargar CSV de entregas (compatible con Excel)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
       </svg>
       CSV
     </button>
-    <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
+    <a class="btn primary" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
   </div>
 </div>
 
@@ -30,7 +36,7 @@
   <div class="card-header">
     <span class="card-label">Últimas entregas</span>
     {% if mostrar_ver_todo %}
-      <a class="btn2" href="{% url 'toner_historial' %}">Ver todo</a>
+      <a class="btn" href="{% url 'toner_historial' %}">Ver todo</a>
     {% endif %}
   </div>
   <div>
@@ -71,8 +77,8 @@
       <span class="chip">{{ page_obj.paginator.count }}</span>
     </div>
     <div class="row" style="gap:8px">
-      <a class="btn2" href="{% url 'toner_create' %}">Nuevo</a>
-      <a class="btn2" href="{% url 'toner_historial' %}">Historial</a>
+      <a class="btn" href="{% url 'toner_create' %}">Nuevo</a>
+      <a class="btn" href="{% url 'toner_historial' %}">Historial</a>
       <span class="collapse-chevron" aria-hidden="true">
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </span>
@@ -83,13 +89,16 @@
       <table>
         <thead>
           <tr>
-            <th>Marca</th><th>Nombre</th><th>Modelo impresora</th><th>Estado</th>
+            <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
+            <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
+            <th>{% sort_th "modelo_impresora" "Modelo impresora" sort_actual dir_actual %}</th>
+            <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
             <th style="width:200px">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for t in toners %}
-            <tr>
+            <tr style="cursor:pointer" data-href="{% url 'toner_detail' t.id %}">
               <td>{{ t.marca|default:"-" }}</td>
               <td><strong>{{ t.nombre }}</strong></td>
               <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
@@ -98,10 +107,10 @@
                 {% else %}<span class="chip">Desactivado</span>{% endif %}
               </td>
               <td>
-                <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
-                <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
+                <a class="btn" href="{% url 'toner_edit' t.id %}" onclick="event.stopPropagation()">Editar</a>
+                <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline" onclick="event.stopPropagation()">
                   {% csrf_token %}
-                  <button class="btn2 btn-ghost" type="submit">
+                  <button class="btn btn-ghost" type="submit">
                     {% if t.activo %}Desactivar{% else %}Activar{% endif %}
                   </button>
                 </form>
@@ -112,7 +121,7 @@
               <div class="empty-state">
                 <div class="empty-state-title">No hay toners cargados</div>
                 <div class="empty-state-sub">Agregá el primero para empezar.</div>
-                <a class="btn2 primary" href="{% url 'toner_create' %}">+ Nuevo toner</a>
+                <a class="btn primary" href="{% url 'toner_create' %}">+ Nuevo toner</a>
               </div>
             </td></tr>
           {% endfor %}

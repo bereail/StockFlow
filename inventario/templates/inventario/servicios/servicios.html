@@ -10,7 +10,7 @@
   <div class="page-actions">
     <form method="get" style="display:contents">
       <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o descripción" aria-label="Buscar servicios">
-      <button class="btn2 primary" type="submit">Buscar</button>
+      <button class="btn primary" type="submit">Buscar</button>
     </form>
   </div>
 </div>
@@ -21,7 +21,7 @@
       <span class="card-label">Servicios</span>
       <span class="chip">{{ page_obj.paginator.count }}</span>
     </div>
-    <a class="btn2" href="{% url 'servicio_create' %}">+ Nuevo</a>
+    <a class="btn" href="{% url 'servicio_create' %}">+ Nuevo</a>
   </div>
   <div>
     <div class="table-wrapper table-wrapper--flush">
@@ -35,12 +35,11 @@
         </thead>
         <tbody>
           {% for s in servicios %}
-            <tr>
+            <tr style="cursor:pointer" data-href="{% url 'servicio_detail' s.id %}">
               <td><strong>{{ s.nombre }}</strong></td>
               <td class="muted">{{ s.descripcion|default:"-" }}</td>
               <td>
-                <a class="btn2" href="{% url 'servicio_edit' s.id %}">Editar</a>
-                <a class="btn2" href="{% url 'movimientos_list' %}?servicio={{ s.id }}">Movimientos</a>
+                <a class="btn" href="{% url 'servicio_edit' s.id %}" onclick="event.stopPropagation()">Editar</a>
               </td>
             </tr>
           {% empty %}
@@ -49,7 +48,7 @@
                 <div class="empty-state">
                   <div class="empty-state-title">No hay servicios cargados</div>
                   <div class="empty-state-sub">Creá el primer servicio para registrar movimientos y entregas.</div>
-                  <a class="btn2 primary" href="{% url 'servicio_create' %}">+ Nuevo servicio</a>
+                  <a class="btn primary" href="{% url 'servicio_create' %}">+ Nuevo servicio</a>
                 </div>
               </td>
             </tr>

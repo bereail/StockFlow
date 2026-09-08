@@ -1,0 +1,390 @@
+{% extends "inventario/base.html" %}
+{% block title %}{{ servicio.nombre }}{% endblock %}
+{% block content %}
+
+<div class="servicio-hero">
+  <div>
+    <div class="page-subtitle muted" style="margin-bottom:2px">
+      <a href="{% url 'servicios_page' %}">Servicios</a> / {{ servicio.nombre }}
+    </div>
+    <div class="servicio-hero-title">{{ servicio.nombre }}</div>
+    {% if servicio.descripcion %}<div class="servicio-hero-sub">{{ servicio.descripcion }}</div>{% endif %}
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="{% url 'servicio_edit' servicio.id %}">Editar</a>
+    <a class="btn primary" href="{% url 'movimiento_create' %}">+ Nuevo movimiento</a>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.pcs }}</div>
+    <div class="stat-label">PCs</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.impresoras }}</div>
+    <div class="stat-label">Impresoras</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.patrimonios }}</div>
+    <div class="stat-label">Patrimonios</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.movimientos }}</div>
+    <div class="stat-label">Movimientos</div>
+  </div>
+  <div class="stat-card" style="{% if stats.prestamos_activos %}border-left:3px solid var(--ok){% endif %}">
+    <div class="stat-value">{{ stats.prestamos_activos }}</div>
+    <div class="stat-label">Préstamos activos</div>
+  </div>
+  <div class="stat-card" style="{% if stats.reparaciones_activas %}border-left:3px solid var(--danger){% endif %}">
+    <div class="stat-value">{{ stats.reparaciones_activas }}</div>
+    <div class="stat-label">Reparaciones en curso</div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn" data-tab="resumen">Resumen</button>
+    <button class="tab-btn" data-tab="equipamiento">Equipamiento <span class="chip">{{ stats.pcs|add:stats.impresoras|add:stats.patrimonios }}</span></button>
+    <button class="tab-btn" data-tab="movimientos">Movimientos <span class="chip">{{ stats.movimientos }}</span></button>
+    <button class="tab-btn" data-tab="historial">Historial</button>
+    <button class="tab-btn" data-tab="impresoras">Impresoras <span class="chip">{{ stats.impresoras }}</span></button>
+    <button class="tab-btn" data-tab="documentacion">Documentación</button>
+    <button class="tab-btn" data-tab="estadisticas">Estadísticas</button>
+  </div>
+
+  <!-- ══════════ RESUMEN ══════════ -->
+  <div class="tab-panel" data-tab-panel="resumen">
+
+    {% if prestamos_vencidos or reparaciones_activas or pendientes_abiertos %}
+    <div class="card" style="border-color:rgba(var(--warn-rgb),.30);background:rgba(var(--warn-rgb),.03);margin-bottom:14px">
+      <div class="card-label" style="margin-bottom:8px">Alertas</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        {% for p in prestamos_vencidos %}
+          <a class="row" style="gap:8px" href="{% url 'prestamo_detail' p.pk %}">
+            <span class="chip danger">Vencido</span>
+            <span>Préstamo de {{ p.items_label }} — venció hace {{ p.dias_restantes|cut:"-" }} día{{ p.dias_restantes|cut:"-"|pluralize }}</span>
+          </a>
+        {% endfor %}
+        {% for r in reparaciones_activas %}
+          <a class="row" style="gap:8px" href="{% url 'reparacion_detail' r.pk %}">
+            <span class="chip warn">En curso</span>
+            <span>Reparación de {{ r.item }} — {{ r.get_estado_display }}</span>
+          </a>
+        {% endfor %}
+        {% if pendientes_abiertos %}
+          <a class="row" style="gap:8px" href="{% url 'pendientes_page' %}">
+            <span class="chip warn">{{ pendientes_abiertos|length }}</span>
+            <span>tarea{{ pendientes_abiertos|length|pluralize }} pendiente{{ pendientes_abiertos|length|pluralize }} para este servicio</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:10px">Última actividad</div>
+      {% if historial %}
+        <div class="timeline-vertical">
+          {% for e in historial|slice:":6" %}
+            <div class="timeline-event">
+              <div class="timeline-event-dot" style="--ac:var(--{{ e.color }})"></div>
+              <div class="timeline-event-date" style="--ac:var(--{{ e.color }})">{{ e.fecha|date:"d M Y, H:i" }}</div>
+              {% if e.url %}
+                <a class="timeline-event-card" style="display:block" href="{% url e.url e.url_pk %}">
+                  <div class="timeline-event-title">{{ e.titulo }}</div>
+                  {% if e.detalle %}<div class="timeline-event-detail">{{ e.detalle }}</div>{% endif %}
+                </a>
+              {% else %}
+                <div class="timeline-event-card">
+                  <div class="timeline-event-title">{{ e.titulo }}</div>
+                  {% if e.detalle %}<div class="timeline-event-detail">{{ e.detalle }}</div>{% endif %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-title">Todavía no hay actividad</div>
+          <div class="empty-state-sub">Los movimientos, asignaciones y préstamos de este servicio van a aparecer acá.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ EQUIPAMIENTO ══════════ -->
+  <div class="tab-panel" data-tab-panel="equipamiento">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <span class="card-label">PCs asignadas</span>
+        <span class="chip">{{ stats.pcs }}</span>
+      </div>
+      {% if activos_pc %}
+        <div class="table-wrapper table-wrapper--flush">
+          <table>
+            <thead><tr><th>Nombre</th><th>IP</th><th>Patrimonio</th><th>Serie</th></tr></thead>
+            <tbody>
+              {% for pc in activos_pc %}
+                <tr style="cursor:pointer" data-href="{% url 'pcs_edit' pc.pk %}">
+                  <td><strong>{{ pc.nombre_pc }}</strong></td>
+                  <td class="mono muted">{{ pc.ip|default:"—" }}</td>
+                  <td class="muted">{{ pc.patrimonio|default:"—" }}</td>
+                  <td class="muted">{{ pc.serie|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">No hay PCs asignadas a este servicio.</div></div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Patrimonios / artículos</span>
+        <span class="chip">{{ stats.patrimonios }}</span>
+      </div>
+      {% if patrimonios %}
+        <div class="table-wrapper table-wrapper--flush">
+          <table>
+            <thead><tr><th>Patrimonio</th><th>Artículo</th><th>Usuario</th><th style="width:120px">Alta</th></tr></thead>
+            <tbody>
+              {% for p in patrimonios %}
+                <tr style="cursor:pointer" data-href="{% url 'patrimonio_edit' p.pk %}">
+                  <td><strong>{{ p.numero_patrimonio }}</strong></td>
+                  <td class="muted">{{ p.articulo.nombre|default:p.detalle_item|default:"—" }}</td>
+                  <td class="muted">{{ p.usuario_asignado|default:"—" }}</td>
+                  <td class="muted mono">{{ p.fecha|date:"d/m/Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">No hay patrimonios asignados a este servicio.</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ MOVIMIENTOS ══════════ -->
+  <div class="tab-panel" data-tab-panel="movimientos">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Últimos movimientos</span>
+        <a class="btn" href="{% url 'movimientos_list' %}?servicio={{ servicio.id }}">Ver todos →</a>
+      </div>
+      {% if movimientos_recientes %}
+        <div class="table-wrapper table-wrapper--flush">
+          <table>
+            <thead>
+              <tr><th style="width:140px">Fecha</th><th style="width:90px">Tipo</th><th>Detalle</th></tr>
+            </thead>
+            <tbody>
+              {% for m in movimientos_recientes %}
+                <tr style="cursor:pointer" data-href="{% url 'movimiento_edit' m.pk %}">
+                  <td class="muted mono">{{ m.fecha|date:"d/m/Y H:i" }}</td>
+                  <td>
+                    {% if m.tipo == "INGRESO" %}<span class="chip ok">Ingreso</span>
+                    {% elif m.tipo == "EGRESO" %}<span class="chip danger">Egreso</span>
+                    {% else %}<span class="chip warn">Ajuste</span>{% endif %}
+                  </td>
+                  <td class="muted" style="font-size:12px">
+                    {% for d in m.detalles.all %}
+                      {{ d.item }} <span class="muted">×{{ d.cantidad }}</span>{% if not forloop.last %} · {% endif %}
+                    {% empty %}—{% endfor %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">Este servicio todavía no tiene movimientos.</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ HISTORIAL (timeline completa) ══════════ -->
+  <div class="tab-panel" data-tab-panel="historial">
+    <div class="card">
+      <div class="card-label" style="margin-bottom:12px">Historial completo</div>
+      {% if historial %}
+        <div class="timeline-vertical">
+          {% for e in historial %}
+            <div class="timeline-event">
+              <div class="timeline-event-dot" style="--ac:var(--{{ e.color }})"></div>
+              <div class="timeline-event-date" style="--ac:var(--{{ e.color }})">{{ e.fecha|date:"d M Y, H:i" }}</div>
+              {% if e.url %}
+                <a class="timeline-event-card" style="display:block" href="{% url e.url e.url_pk %}">
+                  <div class="timeline-event-title">{{ e.titulo }}</div>
+                  {% if e.detalle %}<div class="timeline-event-detail">{{ e.detalle }}</div>{% endif %}
+                </a>
+              {% else %}
+                <div class="timeline-event-card">
+                  <div class="timeline-event-title">{{ e.titulo }}</div>
+                  {% if e.detalle %}<div class="timeline-event-detail">{{ e.detalle }}</div>{% endif %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-title">Sin historial todavía</div>
+          <div class="empty-state-sub">Acá se va a armar la línea de tiempo completa del servicio: movimientos, asignaciones, préstamos, reparaciones, pedidos y notas.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ IMPRESORAS ══════════ -->
+  <div class="tab-panel" data-tab-panel="impresoras">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Impresoras asignadas</span>
+        <span class="chip">{{ stats.impresoras }}</span>
+      </div>
+      {% if asignaciones_activas %}
+        <div style="display:flex;flex-direction:column;gap:8px">
+          {% for a in asignaciones_activas %}
+            <a class="card" style="display:block;padding:12px 14px" href="{% url 'impresora_edit' a.impresora.pk %}">
+              <div class="row space-between" style="margin-bottom:6px">
+                <strong>{{ a.impresora.marca }} {{ a.impresora.modelo }}</strong>
+                <span class="chip {% if a.impresora.estado == 'ACTIVA' %}ok{% else %}off{% endif %}">{{ a.impresora.estado }}</span>
+              </div>
+              <div class="row" style="gap:16px;flex-wrap:wrap;font-size:12px" >
+                <span class="muted">Patrimonio: <span class="text">{{ a.impresora.patrimonio|default:"—" }}</span></span>
+                <span class="muted">IP: <span class="mono text">{{ a.impresora.ip|default:"—" }}</span></span>
+                <span class="muted">Conexión: <span class="text">{{ a.impresora.get_conexion_display }}</span></span>
+                <span class="muted">Tóner: <span class="text">{{ a.impresora.toner|default:"—" }}</span></span>
+                <span class="muted">Ubicación: <span class="text">{{ a.ubicacion|default:"—" }}</span></span>
+                <span class="muted">Responsable: <span class="text">{{ a.responsable|default:"—" }}</span></span>
+                <span class="muted">Desde: <span class="text mono">{{ a.fecha_desde|date:"d/m/Y" }}</span></span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">No hay impresoras asignadas a este servicio.</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ DOCUMENTACIÓN ══════════ -->
+  <div class="tab-panel" data-tab-panel="documentacion">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <span class="card-label">Pedidos</span>
+        <span class="chip">{{ pedidos|length }}</span>
+      </div>
+      {% if pedidos %}
+        <div class="table-wrapper table-wrapper--flush">
+          <table>
+            <thead><tr><th>Número</th><th>Estado</th><th style="width:120px">Creado</th></tr></thead>
+            <tbody>
+              {% for p in pedidos %}
+                <tr style="cursor:pointer" data-href="{% url 'pedido_detail' p.pk %}">
+                  <td><strong>{{ p.numero }}</strong></td>
+                  <td><span class="chip">{{ p.get_estado_display }}</span></td>
+                  <td class="muted mono">{{ p.creado|date:"d/m/Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">No hay pedidos vinculados a este servicio.</div></div>
+      {% endif %}
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <span class="card-label">Notas</span>
+        <span class="chip">{{ notas|length }}</span>
+      </div>
+      {% if notas %}
+        <div class="table-wrapper table-wrapper--flush">
+          <table>
+            <thead><tr><th>Número</th><th>Estado</th><th style="width:120px">Fecha</th></tr></thead>
+            <tbody>
+              {% for n in notas %}
+                <tr style="cursor:pointer" data-href="{% url 'nota_detail' n.pk %}">
+                  <td><strong>{{ n.numero|default:"—" }}</strong></td>
+                  <td><span class="chip">{{ n.get_estado_display }}</span></td>
+                  <td class="muted mono">{{ n.fecha|date:"d/m/Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">No hay notas vinculadas a este servicio.</div></div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Intercambios</span>
+        <span class="chip">{{ intercambios|length }}</span>
+      </div>
+      {% if intercambios %}
+        <div class="table-wrapper table-wrapper--flush">
+          <table>
+            <thead><tr><th>Rol</th><th>Con</th><th>Estado</th><th style="width:120px">Fecha</th></tr></thead>
+            <tbody>
+              {% for i in intercambios %}
+                <tr style="cursor:pointer" data-href="{% url 'intercambio_detail' i.pk %}">
+                  <td class="muted">{% if i.servicio_afectado_id == servicio.id %}Espera compensación{% else %}Se queda el equipo{% endif %}</td>
+                  <td>{% if i.servicio_afectado_id == servicio.id %}{{ i.servicio_beneficiario }}{% else %}{{ i.servicio_afectado }}{% endif %}</td>
+                  <td><span class="chip">{{ i.get_estado_display }}</span></td>
+                  <td class="muted mono">{{ i.fecha_intercambio|date:"d/m/Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">No hay intercambios vinculados a este servicio.</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ ESTADÍSTICAS ══════════ -->
+  <div class="tab-panel" data-tab-panel="estadisticas">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-label" style="margin-bottom:8px">Entregas de tóner por mes (últimos 6 meses)</div>
+      {% if entregas_toner_por_mes %}
+        {% for f in entregas_toner_por_mes %}
+          <div class="bar-row">
+            <div class="bar-row-label">{{ f.mes|date:"M Y" }}</div>
+            <div class="bar-row-track"><div class="bar-row-fill" style="width:{{ f.pct }}%"></div></div>
+            <div class="bar-row-value">{{ f.total }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">Sin entregas de tóner en los últimos 6 meses.</div></div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:8px">Movimientos totales por mes (últimos 6 meses)</div>
+      {% if movimientos_por_mes %}
+        {% for f in movimientos_por_mes %}
+          <div class="bar-row">
+            <div class="bar-row-label">{{ f.mes|date:"M Y" }}</div>
+            <div class="bar-row-track"><div class="bar-row-fill" style="width:{{ f.pct }}%"></div></div>
+            <div class="bar-row-value">{{ f.total }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><div class="empty-state-sub">Sin movimientos en los últimos 6 meses.</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

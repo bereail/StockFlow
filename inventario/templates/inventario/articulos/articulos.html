@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% load ordenamiento %}
 {% block title %}Artículos{% endblock %}
 {% block content %}
 
@@ -9,7 +10,12 @@
   </div>
   <form method="get" class="page-actions">
     <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / descripción)" aria-label="Buscar artículos">
-    <button class="btn2 primary" type="submit">Buscar</button>
+    <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
+      <option value="">Todos los estados</option>
+      <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
+      <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+    </select>
+    <button class="btn primary" type="submit">Buscar</button>
   </form>
 </div>
 
@@ -20,9 +26,9 @@
       <span class="chip">{{ page_obj.paginator.count }}</span>
     </div>
     <div class="row" style="gap:8px">
-      <a class="btn2" href="{% url 'articulo_create' %}">Nuevo</a>
-      <a class="btn2" href="{% url 'articulo_entrega' %}">Entrega</a>
-      <a class="btn2" href="{% url 'articulos_historial' %}">Historial</a>
+      <a class="btn" href="{% url 'articulo_create' %}">Nuevo</a>
+      <a class="btn" href="{% url 'articulo_entrega' %}">Entrega</a>
+      <a class="btn" href="{% url 'articulos_historial' %}">Historial</a>
     </div>
   </div>
   <div>
@@ -30,17 +36,17 @@
       <table>
         <thead>
           <tr>
-            <th>Marca</th>
-            <th>Nombre</th>
+            <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
+            <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
             <th>Descripción</th>
             <th>Patrimonial</th>
-            <th>Estado</th>
+            <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
             <th style="width:240px">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for a in articulos %}
-            <tr>
+            <tr style="cursor:pointer" data-href="{% url 'articulo_detail' a.id %}">
               <td>{{ a.marca|default:"-" }}</td>
               <td><strong>{{ a.nombre }}</strong></td>
               <td class="muted">{{ a.descripcion|default:"-" }}</td>
@@ -59,10 +65,10 @@
                 {% endif %}
               </td>
               <td>
-                <a class="btn2" href="{% url 'articulo_edit' a.id %}">Editar</a>
-                <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline">
+                <a class="btn" href="{% url 'articulo_edit' a.id %}" onclick="event.stopPropagation()">Editar</a>
+                <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline" onclick="event.stopPropagation()">
                   {% csrf_token %}
-                  <button class="btn2 btn-ghost" type="submit">
+                  <button class="btn btn-ghost" type="submit">
                     {% if a.activo %}Desactivar{% else %}Activar{% endif %}
                   </button>
                 </form>
@@ -74,7 +80,7 @@
                 <div class="empty-state">
                   <div class="empty-state-title">No hay artículos cargados</div>
                   <div class="empty-state-sub">Creá el primer artículo para comenzar.</div>
-                  <a class="btn2 primary" href="{% url 'articulo_create' %}">+ Nuevo artículo</a>
+                  <a class="btn primary" href="{% url 'articulo_create' %}">+ Nuevo artículo</a>
                 </div>
               </td>
             </tr>

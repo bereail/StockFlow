@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% load ordenamiento %}
 {% block title %}Préstamos{% endblock %}
 
 {% block content %}
@@ -14,8 +15,19 @@
 <form method="get" class="row" style="gap:8px;margin-bottom:14px;flex-wrap:wrap">
   <input name="q" value="{{ q }}" placeholder="Buscar servicio / persona / ítem…"
          style="flex:1;min-width:220px">
+  <select name="servicio" style="width:auto;max-width:200px" aria-label="Filtrar por servicio">
+    <option value="">Todos los servicios</option>
+    {% for s in servicios %}
+      <option value="{{ s.id }}" {% if servicio_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
+    {% endfor %}
+  </select>
+  <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
+    <option value="">Todos los estados</option>
+    <option value="activo" {% if estado == "activo" %}selected{% endif %}>Sin devolver</option>
+    <option value="devuelto" {% if estado == "devuelto" %}selected{% endif %}>Devueltos</option>
+  </select>
   <button class="btn" type="submit">Buscar</button>
-  {% if q %}<a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Limpiar</a>{% endif %}
+  {% if q or servicio_id or estado %}<a class="btn btn-ghost" href="{% url 'prestamos_list' %}">Limpiar</a>{% endif %}
 </form>
 
 <div class="card">
@@ -28,10 +40,10 @@
       <table>
         <thead>
           <tr>
-            <th>Servicio</th>
-            <th>Entregado a</th>
+            <th>{% sort_th "servicio" "Servicio" sort_actual dir_actual %}</th>
+            <th>{% sort_th "entregado_a" "Entregado a" sort_actual dir_actual %}</th>
             <th>Ítems</th>
-            <th style="width:130px">Retiro</th>
+            <th style="width:130px">{% sort_th "fecha" "Retiro" sort_actual dir_actual %}</th>
             <th style="width:100px">Devol. est.</th>
             <th style="width:110px">Días rest.</th>
             <th style="width:100px">Estado</th>
@@ -75,8 +87,8 @@
               {% endif %}
             </td>
             <td style="white-space:nowrap">
-              <a class="btn2" href="{% url 'prestamo_edit' p.id %}" onclick="event.stopPropagation()">Editar</a>
-              <a class="btn2" href="{% url 'prestamo_detail' p.id %}" onclick="event.stopPropagation()" style="margin-left:4px">Ver</a>
+              <a class="btn" href="{% url 'prestamo_edit' p.id %}" onclick="event.stopPropagation()">Editar</a>
+              <a class="btn" href="{% url 'prestamo_detail' p.id %}" onclick="event.stopPropagation()" style="margin-left:4px">Ver</a>
             </td>
           </tr>
           {% empty %}

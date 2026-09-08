@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% load ordenamiento %}
 {% block title %}PCs{% endblock %}
 {% block content %}
 
@@ -10,7 +11,13 @@
   <div class="page-actions">
     <form method="get" style="display:contents">
       <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre / IP / servicio / Nº PAT" aria-label="Buscar PCs">
-      <button class="btn2" type="submit">Buscar</button>
+      <select name="servicio" style="width:auto;max-width:200px" aria-label="Filtrar por servicio">
+        <option value="">Todos los servicios</option>
+        {% for s in servicios %}
+          <option value="{{ s.id }}" {% if servicio_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn" type="submit">Buscar</button>
     </form>
   </div>
 </div>
@@ -22,26 +29,26 @@
       <span class="card-label">PCs registradas</span>
       <span class="chip">{{ page_obj.paginator.count }}</span>
     </div>
-    <a class="btn2 primary" href="{% url 'pcs_create' %}">+ Nueva</a>
+    <a class="btn primary" href="{% url 'pcs_create' %}">+ Nueva</a>
   </div>
   <div>
     <div class="table-wrapper" style="margin:8px -16px 0;border-radius:0">
       <table>
         <thead>
           <tr>
-            <th>Nombre</th>
-            <th>IP</th>
+            <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
+            <th>{% sort_th "ip" "IP" sort_actual dir_actual %}</th>
             <th>Usuario</th>
             <th>Impresora</th>
             <th>Patrimonio</th>
-            <th>Servicio</th>
-            <th>Estado</th>
+            <th>{% sort_th "servicio" "Servicio" sort_actual dir_actual %}</th>
+            <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
             <th style="width:100px">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for pc in pcs %}
-            <tr style="cursor:pointer" data-href="{% url 'pcs_edit' pc.id %}">
+            <tr style="cursor:pointer" data-href="{% url 'pc_detail' pc.id %}">
               <td>
                 <strong>{{ pc.nombre_pc }}</strong>
                 {% if pc.switch %}<div class="muted" style="font-size:.7rem">🔌 {{ pc.switch }}</div>{% endif %}
@@ -58,7 +65,7 @@
                 {% else %}<span class="chip">Inactivo</span>{% endif %}
               </td>
               <td>
-                <a class="btn2" href="{% url 'pcs_edit' pc.id %}" onclick="event.stopPropagation()">Editar</a>
+                <a class="btn" href="{% url 'pcs_edit' pc.id %}" onclick="event.stopPropagation()">Editar</a>
               </td>
             </tr>
           {% empty %}
@@ -67,7 +74,7 @@
                 <div class="empty-state">
                   <div class="empty-state-title">No hay PCs registradas directamente</div>
                   <div class="empty-state-sub">Podés registrar una o verlas desde pedidos abajo.</div>
-                  <a class="btn2 primary" href="{% url 'pcs_create' %}">+ Nueva PC</a>
+                  <a class="btn primary" href="{% url 'pcs_create' %}">+ Nueva PC</a>
                 </div>
               </td>
             </tr>
@@ -127,7 +134,7 @@
               {% else %}—{% endif %}
             </td>
             <td>
-              <a class="btn2" href="{% url 'patrimonio_edit' pat.pk %}?next={% url 'pcs_page' %}" onclick="event.stopPropagation()">Editar</a>
+              <a class="btn" href="{% url 'patrimonio_edit' pat.pk %}?next={% url 'pcs_page' %}" onclick="event.stopPropagation()">Editar</a>
             </td>
           </tr>
           {% empty %}

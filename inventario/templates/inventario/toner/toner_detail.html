@@ -1,0 +1,90 @@
+{% extends "inventario/base.html" %}
+{% block title %}{{ toner }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-subtitle muted" style="margin-bottom:2px">
+      <a href="{% url 'toner_page' %}">Tóner</a> / {{ toner.nombre }}
+    </div>
+    <div class="row" style="gap:10px;align-items:center">
+      <div class="page-title" style="margin:0">{{ toner.nombre }}</div>
+      {% if toner.activo %}<span class="chip ok">Activo</span>{% else %}<span class="chip">Desactivado</span>{% endif %}
+      {% if en_stock_critico %}<span class="chip danger">Stock crítico</span>{% endif %}
+    </div>
+    {% if toner.marca or toner.modelo_impresora %}
+      <div class="page-subtitle muted">{{ toner.marca }}{% if toner.marca and toner.modelo_impresora %} · {% endif %}{{ toner.modelo_impresora }}</div>
+    {% endif %}
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="{% url 'toner_edit' toner.id %}">Editar</a>
+    <a class="btn primary" href="{% url 'toner_entrega' %}">+ Entrega</a>
+  </div>
+</div>
+
+<div class="stats-row" style="margin-bottom:16px">
+  <div class="stat-card" style="{% if en_stock_critico or stock < 0 %}border-left:3px solid var(--danger){% endif %}">
+    <div class="stat-value" style="{% if stock < 0 %}color:var(--danger){% endif %}">{{ stock }}</div>
+    <div class="stat-label">Stock actual</div>
+    {% if stock < 0 %}<div class="chip danger" style="margin-top:6px">Dato histórico inconsistente</div>{% endif %}
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ toner.stock_minimo }}</div>
+    <div class="stat-label">Stock mínimo</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ impresoras_compatibles|length }}</div>
+    <div class="stat-label">Impresoras compatibles</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <span class="card-label">Movimientos recientes</span>
+    <a class="btn" href="{% url 'toner_historial' %}?toner={{ toner.id }}">Ver historial completo →</a>
+  </div>
+  {% if movimientos_recientes %}
+    <div class="table-wrapper table-wrapper--flush">
+      <table>
+        <thead><tr><th style="width:140px">Fecha</th><th style="width:90px">Tipo</th><th>Servicio</th><th style="width:70px">Cant.</th></tr></thead>
+        <tbody>
+          {% for d in movimientos_recientes %}
+            <tr style="cursor:pointer" data-href="{% url 'movimiento_edit' d.movimiento.pk %}">
+              <td class="muted mono">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
+              <td>
+                {% if d.movimiento.tipo == "INGRESO" %}<span class="chip ok">Ingreso</span>
+                {% elif d.movimiento.tipo == "EGRESO" %}<span class="chip danger">Egreso</span>
+                {% else %}<span class="chip warn">Ajuste</span>{% endif %}
+              </td>
+              <td class="muted">{{ d.movimiento.servicio.nombre|default:"—" }}</td>
+              <td class="mono">{{ d.cantidad }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-state-sub">Este tóner todavía no tiene movimientos.</div></div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Impresoras compatibles</span>
+    <span class="chip">{{ impresoras_compatibles|length }}</span>
+  </div>
+  {% if impresoras_compatibles %}
+    <div style="display:flex;flex-direction:column;gap:6px">
+      {% for imp in impresoras_compatibles %}
+        <a class="row space-between" style="padding:8px 4px;border-bottom:1px solid var(--border-color)" href="{% url 'impresora_detail' imp.pk %}">
+          <span>{{ imp.marca }} {{ imp.modelo }}</span>
+          <span class="chip {% if imp.estado == 'ACTIVA' %}ok{% else %}off{% endif %}">{{ imp.estado }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-state-sub">Ninguna impresora tiene este tóner configurado todavía.</div></div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -10,7 +10,7 @@
   <form method="get" class="page-actions">
     <input name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)" style="width:320px">
     <button class="btn" type="submit">Buscar</button>
-    <a class="btn2" href="{% url 'toner_create' %}">+ Nuevo</a>
+    <a class="btn" href="{% url 'toner_create' %}">+ Nuevo</a>
   </form>
 </div>
 
@@ -42,11 +42,11 @@
           </td>
 
           <td>
-            <a class="btn2" href="{% url 'toner_edit' t.id %}">Editar</a>
+            <a class="btn" href="{% url 'toner_edit' t.id %}">Editar</a>
 
             <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
               {% csrf_token %}
-              <button class="btn2 btn-ghost" type="submit">
+              <button class="btn btn-ghost" type="submit">
                 {% if t.activo %}Desactivar{% else %}Activar{% endif %}
               </button>
             </form>

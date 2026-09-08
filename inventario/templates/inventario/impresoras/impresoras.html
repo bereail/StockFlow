@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% load ordenamiento %}
 {% block title %}Impresoras{% endblock %}
 {% block content %}
 
@@ -10,10 +11,16 @@
   <div class="page-actions">
     <form method="get" style="display:contents">
       <input class="search" name="q" value="{{ q }}" placeholder="Buscar por marca / modelo / IP / patrimonio / servicio" aria-label="Buscar impresoras">
-      <button class="btn2" type="submit">Buscar</button>
+      <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVA" {% if estado == "ACTIVA" %}selected{% endif %}>Activa</option>
+        <option value="EN_REPARACION" {% if estado == "EN_REPARACION" %}selected{% endif %}>En reparación</option>
+        <option value="INACTIVA" {% if estado == "INACTIVA" %}selected{% endif %}>Inactiva</option>
+      </select>
+      <button class="btn" type="submit">Buscar</button>
     </form>
-    <a class="btn2" href="{% url 'impresora_entrega' %}">Registrar movimiento</a>
-    <a class="btn2" href="{% url 'impresora_historial' %}">Historial</a>
+    <a class="btn" href="{% url 'impresora_entrega' %}">Registrar movimiento</a>
+    <a class="btn" href="{% url 'impresora_historial' %}">Historial</a>
   </div>
 </div>
 
@@ -23,27 +30,27 @@
       <span class="card-label">Impresoras</span>
       <span class="chip">{{ page_obj.paginator.count }}</span>
     </div>
-    <a class="btn2 primary" href="{% url 'impresora_create' %}">+ Nueva</a>
+    <a class="btn primary" href="{% url 'impresora_create' %}">+ Nueva</a>
   </div>
   <div>
     <div class="table-wrapper table-wrapper--flush">
       <table>
         <thead>
           <tr>
-            <th>Marca</th>
-            <th>Modelo</th>
+            <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
+            <th>{% sort_th "modelo" "Modelo" sort_actual dir_actual %}</th>
             <th>Tipo</th>
             <th>Conexión</th>
-            <th>IP</th>
-            <th>Patrimonio</th>
+            <th>{% sort_th "ip" "IP" sort_actual dir_actual %}</th>
+            <th>{% sort_th "patrimonio" "Patrimonio" sort_actual dir_actual %}</th>
             <th>Servicio</th>
-            <th>Estado</th>
+            <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
             <th style="width:260px">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for i in impresoras %}
-            <tr>
+            <tr style="cursor:pointer" data-href="{% url 'impresora_detail' i.id %}">
               <td>
                 <strong>{{ i.marca }}</strong>
                 {% if i.articulo %}<div class="muted" style="font-size:.7rem">🔖 {{ i.articulo.nombre }}</div>{% endif %}
@@ -73,14 +80,15 @@
                 {% endwith %}
               </td>
               <td>
-                <div class="row" style="gap:6px;flex-wrap:wrap">
-                  <a class="btn2" href="{% url 'impresora_edit' i.id %}">Editar</a>
-                  <a class="btn2" href="{% url 'asignar_impresora' i.id %}">Asignar / Mover</a>
-                  {% if i.estado|upper == "ACTIVA" %}
-                    <a class="btn2" href="{% url 'impresora_toggle' i.id %}">Desactivar</a>
-                  {% else %}
-                    <a class="btn2" href="{% url 'impresora_toggle' i.id %}">Activar</a>
-                  {% endif %}
+                <div class="row" style="gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
+                  <a class="btn" href="{% url 'impresora_edit' i.id %}">Editar</a>
+                  <a class="btn" href="{% url 'asignar_impresora' i.id %}">Asignar / Mover</a>
+                  <form method="post" action="{% url 'impresora_toggle' i.id %}" style="display:inline">
+                    {% csrf_token %}
+                    <button class="btn btn-ghost" type="submit">
+                      {% if i.estado|upper == "ACTIVA" %}Desactivar{% else %}Activar{% endif %}
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>
@@ -90,7 +98,7 @@
                 <div class="empty-state">
                   <div class="empty-state-title">No hay impresoras cargadas</div>
                   <div class="empty-state-sub">Registrá la primera impresora para empezar.</div>
-                  <a class="btn2 primary" href="{% url 'impresora_create' %}">+ Nueva impresora</a>
+                  <a class="btn primary" href="{% url 'impresora_create' %}">+ Nueva impresora</a>
                 </div>
               </td>
             </tr>

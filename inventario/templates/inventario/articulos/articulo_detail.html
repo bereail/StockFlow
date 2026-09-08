@@ -1,0 +1,98 @@
+{% extends "inventario/base.html" %}
+{% block title %}{{ articulo.nombre }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-subtitle muted" style="margin-bottom:2px">
+      <a href="{% url 'articulos_page' %}">Artículos</a> / {{ articulo.nombre }}
+    </div>
+    <div class="row" style="gap:10px;align-items:center">
+      <div class="page-title" style="margin:0">{{ articulo.nombre }}</div>
+      {% if articulo.activo %}<span class="chip ok">Activo</span>{% else %}<span class="chip">Inactivo</span>{% endif %}
+      {% if articulo.es_patrimonial %}<span class="chip warn">Patrimonial</span>{% endif %}
+    </div>
+    {% if articulo.marca %}<div class="page-subtitle muted">{{ articulo.marca }}</div>{% endif %}
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="{% url 'articulo_edit' articulo.id %}">Editar</a>
+    <a class="btn primary" href="{% url 'articulo_entrega' %}">+ Entrega</a>
+  </div>
+</div>
+
+{% if articulo.descripcion or articulo.caracteristicas or articulo.observaciones %}
+<div class="card" style="margin-bottom:14px">
+  {% if articulo.descripcion %}<p style="margin:0 0 8px">{{ articulo.descripcion }}</p>{% endif %}
+  {% if articulo.caracteristicas %}<div class="muted" style="font-size:12.5px;margin-bottom:6px"><strong>Características:</strong> {{ articulo.caracteristicas }}</div>{% endif %}
+  {% if articulo.observaciones %}<div class="muted" style="font-size:12.5px"><strong>Observaciones:</strong> {{ articulo.observaciones }}</div>{% endif %}
+</div>
+{% endif %}
+
+{% if not articulo.es_patrimonial %}
+<div class="stats-row" style="margin-bottom:16px">
+  <div class="stat-card" style="{% if stock < 0 %}border-left:3px solid var(--danger){% endif %}">
+    <div class="stat-value" style="{% if stock < 0 %}color:var(--danger){% endif %}">{{ stock }}</div>
+    <div class="stat-label">Stock actual</div>
+    {% if stock < 0 %}<div class="chip danger" style="margin-top:6px">Dato histórico inconsistente</div>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <span class="card-label">Movimientos recientes</span>
+    <a class="btn" href="{% url 'articulos_historial' %}?articulo={{ articulo.id }}">Ver historial completo →</a>
+  </div>
+  {% if movimientos_recientes %}
+    <div class="table-wrapper table-wrapper--flush">
+      <table>
+        <thead><tr><th style="width:140px">Fecha</th><th style="width:90px">Tipo</th><th>Servicio</th><th style="width:70px">Cant.</th></tr></thead>
+        <tbody>
+          {% for d in movimientos_recientes %}
+            <tr style="cursor:pointer" data-href="{% url 'movimiento_edit' d.movimiento.pk %}">
+              <td class="muted mono">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
+              <td>
+                {% if d.movimiento.tipo == "INGRESO" %}<span class="chip ok">Ingreso</span>
+                {% elif d.movimiento.tipo == "EGRESO" %}<span class="chip danger">Egreso</span>
+                {% else %}<span class="chip warn">Ajuste</span>{% endif %}
+              </td>
+              <td class="muted">{{ d.movimiento.servicio.nombre|default:"—" }}</td>
+              <td class="mono">{{ d.cantidad }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-state-sub">Este artículo todavía no tiene movimientos.</div></div>
+  {% endif %}
+</div>
+
+{% if articulo.es_patrimonial %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-label">Unidades patrimoniales</span>
+    <span class="chip">{{ patrimonios|length }}</span>
+  </div>
+  {% if patrimonios %}
+    <div class="table-wrapper table-wrapper--flush">
+      <table>
+        <thead><tr><th>Patrimonio</th><th>Servicio asignado</th><th style="width:120px">Alta</th></tr></thead>
+        <tbody>
+          {% for p in patrimonios %}
+            <tr style="cursor:pointer" data-href="{% url 'patrimonio_edit' p.pk %}">
+              <td><strong>{{ p.numero_patrimonio }}</strong></td>
+              <td class="muted">{{ p.servicio_asignado.nombre|default:"—" }}</td>
+              <td class="muted mono">{{ p.fecha|date:"d/m/Y" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-state-sub">Todavía no se cargó ninguna unidad patrimonial de este artículo.</div></div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
