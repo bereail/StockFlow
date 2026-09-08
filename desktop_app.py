@@ -37,7 +37,7 @@ from waitress import serve
 # ─── Agrupa correctamente en la barra de tareas de Windows ────────────────────
 try:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-        "HEEP.InventarioHEEP.1"
+        "HEEP.StockFlow.1"
     )
 except Exception:
     pass
@@ -56,8 +56,8 @@ def _ensure_single_instance() -> None:
         sock.close()
         ctypes.windll.user32.MessageBoxW(
             0,
-            "InventarioHEEP ya está abierto.\n\nBuscala en la barra de tareas.",
-            "InventarioHEEP",
+            "StockFlow ya está abierto.\n\nBuscala en la barra de tareas.",
+            "StockFlow",
             0x40,
         )
         sys.exit(0)
@@ -176,7 +176,7 @@ SPLASH_HTML = """<!DOCTYPE html>
       <circle cx="18" cy="14" r="1" fill="#4f8cff" stroke="none"/>
     </svg>
   </div>
-  <h1>InventarioHEEP</h1>
+  <h1>StockFlow</h1>
   <p class="sub">Iniciando sistema…</p>
   <div class="track"><div class="fill"></div></div>
 </div>
@@ -262,7 +262,7 @@ def run_server(port: int) -> None:
 
 def main() -> None:
     _ensure_single_instance()
-    logging.info("Iniciando InventarioHEEP")
+    logging.info("Iniciando StockFlow")
 
     state = _load_window_state()
     port  = get_free_port()
@@ -271,7 +271,7 @@ def main() -> None:
     api = AppAPI()
 
     window = webview.create_window(
-        "InventarioHEEP",
+        "StockFlow",
         html=SPLASH_HTML,
         width=state["width"],
         height=state["height"],
@@ -319,8 +319,8 @@ if __name__ == "__main__":
         logging.exception("Error fatal al iniciar")
         ctypes.windll.user32.MessageBoxW(
             0,
-            f"No se pudo iniciar InventarioHEEP.\n\nDetalle:\n{exc}\n\n"
+            f"No se pudo iniciar StockFlow.\n\nDetalle:\n{exc}\n\n"
             f"Revisá el log en:\n{os.path.join(_APP_DIR, 'app.log')}",
-            "InventarioHEEP — Error",
+            "StockFlow — Error",
             0x10,
         )

@@ -5,7 +5,10 @@ a = Analysis(
     ['desktop_app.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('staticfiles', 'staticfiles'),
+        ('inventario/templates', 'inventario/templates'),
+    ],
     hiddenimports=['whitenoise.middleware'],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +38,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='stockflow_icon.ico',
 )

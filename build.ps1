@@ -1,4 +1,4 @@
-# build.ps1 — Genera StockToner.exe listo para distribuir
+﻿# build.ps1 — Genera StockToner.exe listo para distribuir
 # Uso: .\build.ps1
 # Requiere: PyInstaller instalado en el .venv del proyecto
 
