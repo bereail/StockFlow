@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.forms.models import BaseInlineFormSet
 from django.utils import timezone
 
 from inventario.models import Prestamo, PrestamoDetalle, Item
@@ -68,10 +69,49 @@ class PrestamoDetalleForm(forms.ModelForm):
         return cleaned
 
 
+class PrestamoDetalleBaseFormSet(BaseInlineFormSet):
+    """
+    Evita que un mismo item físico (ej. un proyector) quede prestado en dos
+    préstamos activos a la vez, y que se repita dentro del mismo préstamo.
+    """
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        prestamo_actual = self.instance
+        excluir_pk = prestamo_actual.pk if prestamo_actual and prestamo_actual.pk else None
+
+        items_en_este_form = set()
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or not form.cleaned_data:
+                continue
+            if form.cleaned_data.get("DELETE"):
+                continue
+            item = form.cleaned_data.get("item")
+            if not item:
+                continue
+
+            if item.pk in items_en_este_form:
+                form.add_error("item", f"«{item}» está repetido en este mismo préstamo.")
+                continue
+            items_en_este_form.add(item.pk)
+
+            en_prestamo = PrestamoDetalle.objects.filter(
+                item=item,
+                prestamo__fecha_devolucion_real__isnull=True,
+            )
+            if excluir_pk:
+                en_prestamo = en_prestamo.exclude(prestamo_id=excluir_pk)
+            if en_prestamo.exists():
+                form.add_error("item", f"«{item}» ya está prestado y todavía no fue devuelto.")
+
+
 PrestamoDetalleFormSet = inlineformset_factory(
     Prestamo,
     PrestamoDetalle,
     form=PrestamoDetalleForm,
+    formset=PrestamoDetalleBaseFormSet,
     extra=2,
     can_delete=True,
 )

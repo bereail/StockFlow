@@ -30,6 +30,11 @@ class Toner(models.Model):
     activo = models.BooleanField(default=True)
     marca = models.CharField(max_length=100, blank=True)
     modelo_impresora = models.CharField(max_length=100, blank=True)
+    stock_minimo = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Stock mínimo",
+        help_text="Si el stock disponible cae a este número o menos, aparece como alerta en el dashboard. 0 = sin alerta.",
+    )
 
     class Meta:
         ordering = ["nombre", "marca"]
@@ -191,6 +196,19 @@ class Impresora(models.Model):
 
     class Meta:
         ordering = ["marca", "modelo"]
+        constraints = [
+            # La IP no tiene constraint de base de datos a propósito: hay
+            # instalaciones reales con IPs repetidas de antes de esta validación.
+            # Se bloquea a nivel de formulario/clean() (ver más abajo) para no
+            # dejar cargar más duplicados, sin romper el arranque de instalaciones
+            # existentes. Una vez que los datos históricos estén limpios, se puede
+            # promover a UniqueConstraint(fields=["ip"], condition=Q(ip__isnull=False)).
+            models.UniqueConstraint(
+                fields=["patrimonio"],
+                condition=~Q(patrimonio=""),
+                name="uniq_impresora_patrimonio",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.marca} {self.modelo}"
@@ -198,6 +216,16 @@ class Impresora(models.Model):
     def clean(self):
         if self.conexion == "IP" and not self.ip:
             raise ValidationError({"ip": "Si la conexión es por red (IP), debés cargar la IP."})
+
+        if self.ip:
+            duplicada = Impresora.objects.filter(ip=self.ip).exclude(pk=self.pk)
+            if duplicada.exists():
+                raise ValidationError({"ip": f"Ya existe otra impresora con la IP {self.ip}."})
+
+        if self.patrimonio:
+            duplicada = Impresora.objects.filter(patrimonio=self.patrimonio).exclude(pk=self.pk)
+            if duplicada.exists():
+                raise ValidationError({"patrimonio": f"Ya existe otra impresora con el patrimonio {self.patrimonio}."})
 
     @property
     def asignacion_activa(self):
