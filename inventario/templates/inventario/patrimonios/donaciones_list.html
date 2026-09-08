@@ -9,13 +9,13 @@
     <div class="page-subtitle muted">Artículos recibidos por donación, con su número de patrimonio y trazabilidad</div>
   </div>
   <div class="page-actions">
-    <a class="btn2 primary" href="{% url 'donacion_create' %}">
+    <a class="btn primary" href="{% url 'donacion_create' %}">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
       Nueva donación
     </a>
-    <a class="btn2" href="{% url 'patrimonios_list' %}">← Volver a Patrimonios</a>
+    <a class="btn" href="{% url 'patrimonios_list' %}">← Volver a Patrimonios</a>
   </div>
 </div>
 
@@ -61,7 +61,7 @@
             <td>{{ d.servicio_asignado|default:"—" }}</td>
             <td class="muted" style="font-size:.78rem">{{ d.fecha|date:"d/m/Y" }}</td>
             <td>
-              <a class="btn2" href="{% url 'patrimonio_standalone_edit' d.pk %}" onclick="event.stopPropagation()">Editar</a>
+              <a class="btn" href="{% url 'patrimonio_standalone_edit' d.pk %}" onclick="event.stopPropagation()">Editar</a>
             </td>
           </tr>
           {% empty %}

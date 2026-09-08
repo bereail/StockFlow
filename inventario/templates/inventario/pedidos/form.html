@@ -8,9 +8,9 @@
   </div>
 
   {% if is_edit %}
-    <a class="btn2" href="{% url 'pedido_detail' pedido.pk %}">← Volver</a>
+    <a class="btn" href="{% url 'pedido_detail' pedido.pk %}">← Volver</a>
   {% else %}
-    <a class="btn2" href="{% url 'pedidos_list' %}">← Volver</a>
+    <a class="btn" href="{% url 'pedidos_list' %}">← Volver</a>
   {% endif %}
 </div>
 
@@ -66,7 +66,7 @@
   <div class="panel panel--narrow">
     <div class="card-header" style="margin-bottom:16px">
       <span class="panel-section-title">Ítems</span>
-      <button type="button" class="btn2 btn-ghost" onclick="addDetallePedido()">+ Fila</button>
+      <button type="button" class="btn btn-ghost" onclick="addDetallePedido()">+ Fila</button>
     </div>
 
     {{ formset.management_form }}
@@ -109,7 +109,7 @@
                 {% if f.instance.pk %}
                   {{ f.DELETE }}
                 {% else %}
-                  <button type="button" class="btn2 btn-ghost" title="Quitar fila"
+                  <button type="button" class="btn btn-ghost" title="Quitar fila"
                           style="padding:4px 8px;color:var(--muted)"
                           onclick="this.closest('tr').remove()">✕</button>
                 {% endif %}

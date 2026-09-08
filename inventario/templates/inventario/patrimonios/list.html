@@ -9,14 +9,14 @@
     <div class="page-subtitle muted">Registro de artículos con número de patrimonio</div>
   </div>
   <div class="page-actions">
-    <a class="btn2 primary" href="{% url 'patrimonio_standalone_create' %}">
+    <a class="btn primary" href="{% url 'patrimonio_standalone_create' %}">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
       Nuevo patrimonio
     </a>
-    <a class="btn2" href="{% url 'donaciones_list' %}">Donaciones</a>
-    <a class="btn2" href="{% url 'movimientos_list' %}">Ver movimientos</a>
+    <a class="btn" href="{% url 'donaciones_list' %}">Donaciones</a>
+    <a class="btn" href="{% url 'movimientos_list' %}">Ver movimientos</a>
   </div>
 </div>
 
@@ -100,7 +100,7 @@
               {% endif %}
             </td>
             <td>
-              <a class="btn2" href="{{ editar_url }}?next={% url 'patrimonios_list' %}" onclick="event.stopPropagation()">Editar</a>
+              <a class="btn" href="{{ editar_url }}?next={% url 'patrimonios_list' %}" onclick="event.stopPropagation()">Editar</a>
             </td>
           </tr>
           {% empty %}

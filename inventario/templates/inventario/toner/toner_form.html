@@ -6,7 +6,7 @@
     <div class="page-title">{% if mode == "edit" %}Editar tóner{% else %}Nuevo tóner{% endif %}</div>
     <div class="page-subtitle muted">{% if mode == "edit" %}{{ toner.nombre }}{% else %}Alta en el catálogo de tóner{% endif %}</div>
   </div>
-  <a class="btn2" href="{% url 'toner_page' %}">← Volver</a>
+  <a class="btn" href="{% url 'toner_page' %}">← Volver</a>
 </div>
 
 <div class="card panel--narrow">
@@ -39,9 +39,16 @@
       {% for e in form.activo.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
     </div>
 
+    <div class="field col-4">
+      <label class="label" for="{{ form.stock_minimo.id_for_label }}">Stock mínimo</label>
+      {{ form.stock_minimo }}
+      <div class="field-hint">Si el stock cae a este número o menos, avisa en el dashboard.</div>
+      {% for e in form.stock_minimo.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+
     <div class="form-actions col-12">
-      <button type="submit" class="btn2 primary">Guardar</button>
-      <a class="btn2" href="{% url 'toner_page' %}">Cancelar</a>
+      <button type="submit" class="btn primary">Guardar</button>
+      <a class="btn" href="{% url 'toner_page' %}">Cancelar</a>
     </div>
   </form>
 </div>

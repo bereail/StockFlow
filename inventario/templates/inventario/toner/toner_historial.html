@@ -8,8 +8,8 @@
     <div class="page-subtitle muted">Todos los egresos de tóner registrados</div>
   </div>
   <div class="page-actions">
-    <a class="btn2" href="{% url 'toner_reporte_servicios' %}">Reporte por servicio</a>
-    <button class="btn2 primary" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
+    <a class="btn" href="{% url 'toner_reporte_servicios' %}">Reporte por servicio</a>
+    <button class="btn primary" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
             title="Descargar CSV completo (compatible con Excel)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -55,8 +55,8 @@
       </div>
       <div class="field" style="justify-content:flex-end;padding-top:18px">
         <div style="display:flex;gap:8px">
-          <button class="btn2 primary" type="submit">Filtrar</button>
-          <a class="btn2 btn-ghost" href="{% url 'toner_historial' %}">Limpiar</a>
+          <button class="btn primary" type="submit">Filtrar</button>
+          <a class="btn btn-ghost" href="{% url 'toner_historial' %}">Limpiar</a>
         </div>
       </div>
     </div>
@@ -112,7 +112,7 @@
             <div class="empty-state">
               <div class="empty-state-title">Sin entregas registradas</div>
               <div class="empty-state-sub">Intentá con otros filtros o registrá la primera entrega.</div>
-              <a class="btn2 primary" href="{% url 'toner_entrega' %}">+ Nueva entrega</a>
+              <a class="btn primary" href="{% url 'toner_entrega' %}">+ Nueva entrega</a>
             </div>
           </td>
         </tr>

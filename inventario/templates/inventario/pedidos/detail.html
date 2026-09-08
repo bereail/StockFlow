@@ -131,7 +131,7 @@
             <span class="chip {% if cargados == d.cantidad %}ok{% endif %}" style="font-size:.75rem">{{ cargados }}/{{ d.cantidad }} pat.</span>
             {% if pedido.estado in "RECIBIDO ENTREGADO CERRADO" %}
               {% if cargados < d.cantidad %}
-                <a class="btn2" href="{% url 'patrimonio_create' d.pk %}" style="font-size:.78rem">+ Patrimonio</a>
+                <a class="btn" href="{% url 'patrimonio_create' d.pk %}" style="font-size:.78rem">+ Patrimonio</a>
               {% endif %}
             {% endif %}
             {% if d.detalle %}<span class="muted" style="font-size:.78rem">{{ d.detalle }}</span>{% endif %}
@@ -147,7 +147,7 @@
               {% if pat.usuario_asignado %}<span class="muted">·</span><span>{{ pat.usuario_asignado }}</span>{% endif %}
               {% if pat.servicio_asignado %}<span class="muted">·</span><span>{{ pat.servicio_asignado }}</span>{% endif %}
               {% if pat.serial %}<span class="muted" style="font-size:.75rem">SN: {{ pat.serial }}</span>{% endif %}
-              <a class="btn2" href="{% url 'patrimonio_edit' pat.pk %}" style="margin-left:auto;font-size:.75rem">Editar</a>
+              <a class="btn" href="{% url 'patrimonio_edit' pat.pk %}" style="margin-left:auto;font-size:.75rem">Editar</a>
             </div>
             {% endfor %}
           </div>
@@ -173,7 +173,7 @@
         {% endif %}
           <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
             {% csrf_token %}
-            <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
+            <button type="submit" class="btn btn-ghost" title="Click para avanzar estado"
                     style="min-width:110px;font-size:.75rem
                     {% if p.estado == 'COMPLETADO' %};border-color:var(--ok);color:var(--ok)
                     {% elif p.estado == 'CANCELADO' %};border-color:var(--muted);color:var(--muted)
@@ -198,7 +198,7 @@
           <form method="post" action="{% url 'pendiente_delete' p.id %}" style="margin:0"
                 data-confirm="¿Eliminar esta tarea?">
             {% csrf_token %}
-            <button class="btn2 btn-ghost" type="submit" title="Eliminar" style="padding:6px 10px;color:var(--muted)">✕</button>
+            <button class="btn btn-ghost" type="submit" title="Eliminar" style="padding:6px 10px;color:var(--muted)">✕</button>
           </form>
         </div>
       {% empty %}
@@ -215,7 +215,7 @@
           </div>
           <div>{{ pendiente_form.fecha_limite }}</div>
           <div>{{ pendiente_form.servicio }}</div>
-          <button class="btn2 primary" type="submit" style="font-size:.82rem">+ Agregar</button>
+          <button class="btn primary" type="submit" style="font-size:.82rem">+ Agregar</button>
         </form>
       </details>
     </div>
@@ -279,7 +279,7 @@
     <div class="card" style="margin-bottom:14px">
       <div class="card-header">
         <span class="card-label">Ítems del pedido</span>
-        <button type="button" class="btn2 btn-ghost" onclick="addDetalle()" style="font-size:.8rem">+ Fila</button>
+        <button type="button" class="btn btn-ghost" onclick="addDetalle()" style="font-size:.8rem">+ Fila</button>
       </div>
       {{ formset.management_form }}
       <div class="table-wrapper" style="margin:0 -16px">
@@ -299,7 +299,7 @@
                 <td>{{ df.cantidad }}</td>
                 <td>{{ df.detalle }}</td>
                 <td>
-                  <button type="button" class="btn2 btn-ghost" title="Eliminar fila"
+                  <button type="button" class="btn btn-ghost" title="Eliminar fila"
                           style="padding:4px 8px;color:var(--muted)"
                           onclick="removeDetalle(this)">✕</button>
                 </td>

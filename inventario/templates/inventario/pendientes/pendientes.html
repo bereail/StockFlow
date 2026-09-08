@@ -17,7 +17,7 @@
       <option value="CANCELADO"   {% if estado_filtro == "CANCELADO"   %}selected{% endif %}>Cancelado</option>
     </select>
     {% if estado_filtro %}
-      <a class="btn2 btn-ghost" href="{% url 'pendientes_page' %}">Limpiar</a>
+      <a class="btn btn-ghost" href="{% url 'pendientes_page' %}">Limpiar</a>
     {% endif %}
   </form>
 </div>
@@ -75,7 +75,7 @@
           <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+              <button type="submit" class="btn btn-ghost estado-toggle" title="Click para avanzar estado"
                       style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
@@ -86,7 +86,7 @@
           <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+              <button type="submit" class="btn btn-ghost estado-toggle" title="Click para avanzar estado"
                       style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
@@ -97,7 +97,7 @@
           <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+              <button type="submit" class="btn btn-ghost estado-toggle" title="Click para avanzar estado"
                       style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
@@ -108,7 +108,7 @@
           <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="btn2 btn-ghost estado-toggle" title="Click para avanzar estado"
+              <button type="submit" class="btn btn-ghost estado-toggle" title="Click para avanzar estado"
                       style="--ac:{{ ac }};--ac-rgb:{{ acrgb }}">
                 {{ p.get_estado_display }}
               </button>
@@ -167,7 +167,7 @@
                 {% csrf_token %}
                 <textarea name="observacion" rows="2" placeholder="Nota rápida..."
                           style="width:100%;margin-bottom:6px">{{ p.observacion }}</textarea>
-                <button class="btn2 btn-ghost" type="submit" style="font-size:.78rem">Guardar</button>
+                <button class="btn btn-ghost" type="submit" style="font-size:.78rem">Guardar</button>
               </form>
             </details>
           </div>
@@ -176,7 +176,7 @@
           <form method="post" action="{% url 'pendiente_delete' p.id %}" style="margin:0"
                 data-confirm="¿Eliminar esta tarea?">
             {% csrf_token %}
-            <button class="btn2 btn-ghost" type="submit" title="Eliminar"
+            <button class="btn btn-ghost" type="submit" title="Eliminar"
                     style="padding:6px 10px;color:var(--muted)">✕</button>
           </form>
 

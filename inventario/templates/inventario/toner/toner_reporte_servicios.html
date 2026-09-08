@@ -8,8 +8,8 @@
     <div class="page-subtitle muted">Consumo agrupado · {{ total_global }} unidades entregadas en total</div>
   </div>
   <div class="page-actions">
-    <a class="btn2" href="{% url 'toner_historial' %}">Historial detallado</a>
-    <button class="btn2 primary"
+    <a class="btn" href="{% url 'toner_historial' %}">Historial detallado</a>
+    <button class="btn primary"
             onclick="downloadCsv('{% url 'toner_reporte_csv' %}?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}', 'toner_por_servicio.csv')"
             title="Descargar CSV (abre bien en Excel)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -54,8 +54,8 @@
       <input type="hidden" name="vista" value="{{ vista }}">
       <div class="field" style="justify-content:flex-end;padding-top:18px">
         <div style="display:flex;gap:8px">
-          <button class="btn2 primary" type="submit">Filtrar</button>
-          <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}">Limpiar</a>
+          <button class="btn primary" type="submit">Filtrar</button>
+          <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}">Limpiar</a>
         </div>
       </div>
     </div>
@@ -80,11 +80,11 @@
 
 <!-- Tabs de vista -->
 <div style="display:flex;gap:6px;margin-bottom:12px">
-  <a class="btn2 {% if vista == 'servicio' %}primary{% endif %}"
+  <a class="btn {% if vista == 'servicio' %}primary{% endif %}"
      href="?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&vista=servicio">
     Por servicio
   </a>
-  <a class="btn2 {% if vista == 'mensual' %}primary{% endif %}"
+  <a class="btn {% if vista == 'mensual' %}primary{% endif %}"
      href="?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&vista=mensual">
     Por mes
   </a>
@@ -128,7 +128,7 @@
           <div class="empty-state">
             <div class="empty-state-title">Sin datos para los filtros seleccionados</div>
             <div class="empty-state-sub">Probá cambiando el rango de fechas o quitando filtros.</div>
-            <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}">Ver todo</a>
+            <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}">Ver todo</a>
           </div>
         </td></tr>
         {% endfor %}
@@ -197,7 +197,7 @@
     <div class="empty-state">
       <div class="empty-state-title">Sin datos para los filtros seleccionados</div>
       <div class="empty-state-sub">Probá cambiando el rango de fechas o quitando filtros.</div>
-      <a class="btn2 btn-ghost" href="{% url 'toner_reporte_servicios' %}?vista=mensual">Ver todo</a>
+      <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}?vista=mensual">Ver todo</a>
     </div>
   </div>
 {% endif %}

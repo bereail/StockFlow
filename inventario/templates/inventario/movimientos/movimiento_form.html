@@ -7,7 +7,7 @@
     <div class="page-title">{{ title|default:"Nuevo Movimiento" }}</div>
     <div class="page-subtitle muted">Cabecera + detalles (tóners / artículos)</div>
   </div>
-  <a class="btn2" href="{% url 'dashboard' %}">← Volver</a>
+  <a class="btn" href="{% url 'dashboard' %}">← Volver</a>
 </div>
 
 <form method="post" novalidate>
@@ -60,7 +60,7 @@
   <div class="panel panel--narrow" style="margin-bottom:16px" id="toner-card">
     <div class="row space-between" style="margin-bottom:4px">
       <div class="panel-section-title">Tóners</div>
-      <button type="button" class="btn2" id="btn-add-toner">+ Agregar fila</button>
+      <button type="button" class="btn" id="btn-add-toner">+ Agregar fila</button>
     </div>
 
     {{ toner_formset.management_form }}
@@ -122,7 +122,7 @@
   <div class="panel panel--narrow" style="margin-bottom:16px" id="art-card">
     <div class="row space-between" style="margin-bottom:4px">
       <div class="panel-section-title">Artículos</div>
-      <button type="button" class="btn2" id="btn-add-art">+ Agregar fila</button>
+      <button type="button" class="btn" id="btn-add-art">+ Agregar fila</button>
     </div>
 
     {{ art_formset.management_form }}

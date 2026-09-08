@@ -102,7 +102,7 @@
     {% endif %}
       <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
         {% csrf_token %}
-        <button type="submit" class="btn2 btn-ghost" title="Click para avanzar estado"
+        <button type="submit" class="btn btn-ghost" title="Click para avanzar estado"
                 style="min-width:110px;font-size:.75rem
                 {% if p.estado == 'COMPLETADO' %};border-color:var(--ok);color:var(--ok)
                 {% elif p.estado == 'CANCELADO' %};border-color:var(--muted);color:var(--muted)
@@ -127,7 +127,7 @@
       <form method="post" action="{% url 'pendiente_delete' p.id %}" style="margin:0"
             data-confirm="¿Eliminar esta tarea?">
         {% csrf_token %}
-        <button class="btn2 btn-ghost" type="submit" title="Eliminar" style="padding:6px 10px;color:var(--muted)">✕</button>
+        <button class="btn btn-ghost" type="submit" title="Eliminar" style="padding:6px 10px;color:var(--muted)">✕</button>
       </form>
     </div>
   {% empty %}
@@ -144,7 +144,7 @@
       </div>
       <div>{{ pendiente_form.fecha_limite }}</div>
       <div>{{ pendiente_form.servicio }}</div>
-      <button class="btn2 primary" type="submit" style="font-size:.82rem">+ Agregar</button>
+      <button class="btn primary" type="submit" style="font-size:.82rem">+ Agregar</button>
     </form>
   </details>
 </div>

@@ -16,7 +16,7 @@
     <input type="month" id="mes-global" style="width:160px;flex-shrink:0"
            title="Dejalo vacío para incluir todos los períodos">
     <span class="muted" style="font-size:11px">— Vacío = todos los períodos</span>
-    <button class="btn2 btn-ghost" style="margin-left:auto" onclick="document.getElementById('mes-global').value=''">Limpiar</button>
+    <button class="btn btn-ghost" style="margin-left:auto" onclick="document.getElementById('mes-global').value=''">Limpiar</button>
   </div>
 </div>
 
@@ -38,8 +38,8 @@
     <div style="font-size:26px;font-weight:900;color:var(--primary);line-height:1;margin:4px 0 2px">{{ total_entregas_toner }}</div>
     <div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">unidades entregadas (total)</div>
     <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn2" href="{% url 'toner_reporte_servicios' %}" style="flex:1;justify-content:center">Ver reporte</a>
-      <button class="btn2 primary" style="flex:1;justify-content:center" onclick="descargar('{% url "reporte_toner_html" %}', 'toner')">
+      <a class="btn" href="{% url 'toner_reporte_servicios' %}" style="flex:1;justify-content:center">Ver reporte</a>
+      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargar('{% url "reporte_toner_html" %}', 'toner')">
         {% include "inventario/_icon_download.html" %} Descargar
       </button>
     </div>
@@ -68,8 +68,8 @@
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn2" href="{% url 'patrimonios_list' %}" style="flex:1;justify-content:center">Ver lista</a>
-      <button class="btn2 primary" style="flex:1;justify-content:center" onclick="descargar('{% url "reporte_pcs_html" %}', 'pcs')">
+      <a class="btn" href="{% url 'patrimonios_list' %}" style="flex:1;justify-content:center">Ver lista</a>
+      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargar('{% url "reporte_pcs_html" %}', 'pcs')">
         {% include "inventario/_icon_download.html" %} Descargar
       </button>
     </div>
@@ -105,8 +105,8 @@
       </select>
     </div>
     <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn2" href="{% url 'pedidos_list' %}" style="flex:1;justify-content:center">Ver lista</a>
-      <button class="btn2 primary" style="flex:1;justify-content:center" onclick="descargarPedidos()">
+      <a class="btn" href="{% url 'pedidos_list' %}" style="flex:1;justify-content:center">Ver lista</a>
+      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargarPedidos()">
         {% include "inventario/_icon_download.html" %} Descargar
       </button>
     </div>
@@ -136,8 +136,8 @@
       </select>
     </div>
     <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn2" href="{% url 'movimientos_list' %}" style="flex:1;justify-content:center">Ver lista</a>
-      <button class="btn2 primary" style="flex:1;justify-content:center" onclick="descargarMovimientos()">
+      <a class="btn" href="{% url 'movimientos_list' %}" style="flex:1;justify-content:center">Ver lista</a>
+      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargarMovimientos()">
         {% include "inventario/_icon_download.html" %} Descargar
       </button>
     </div>

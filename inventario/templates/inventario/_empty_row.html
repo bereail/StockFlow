@@ -8,7 +8,7 @@ Fila de estado vacío reutilizable para tablas. Uso:
     <div class="empty-state">
       <div class="empty-state-title">{{ title }}</div>
       {% if sub %}<div class="empty-state-sub">{{ sub }}</div>{% endif %}
-      {% if cta_url %}<a class="btn2 primary" href="{% url cta_url %}">{{ cta_label }}</a>{% endif %}
+      {% if cta_url %}<a class="btn primary" href="{% url cta_url %}">{{ cta_label }}</a>{% endif %}
     </div>
   </td>
 </tr>
