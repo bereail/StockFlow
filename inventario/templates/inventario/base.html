@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{% block title %}InventarioHEEP{% endblock %}</title>
+  <title>{% block title %}StockFlow{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b8def' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect fill='%23060f1e' width='24' height='24' rx='5'/><rect x='6' y='2' width='12' height='8' rx='1'/><path d='M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z'/><rect x='7' y='16' width='10' height='6' rx='1'/><circle cx='18' cy='14' r='1' fill='%235b8def' stroke='none'/></svg>">
   {% now "U" as cachebust %}
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
@@ -23,7 +23,7 @@
       <rect x="7" y="16" width="10" height="6" rx="1"/>
       <circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/>
     </svg>
-    InventarioHEEP
+    StockFlow
   </a>
 
   <div class="titlebar-spacer"></div>
@@ -52,7 +52,7 @@
     <span class="username">{{ user.username }}</span>
     <form method="post" action="{% url 'logout' %}" style="margin:0">
       {% csrf_token %}
-      <button type="submit" class="btn2" style="padding:6px 12px;font-size:12.5px;">Salir</button>
+      <button type="submit" class="btn" style="padding:6px 12px;font-size:12.5px;">Salir</button>
     </form>
   </div>
   {% endif %}
@@ -73,7 +73,7 @@
 
     <span class="sidebar-section-title">Inventario</span>
 
-    <a class="sidebar-link {% if name in 'toner_page toner_list toner_create toner_edit toner_entrega toner_historial' %}active{% endif %}"
+    <a class="sidebar-link {% if name in 'toner_page toner_list toner_create toner_edit toner_detail toner_entrega toner_historial' %}active{% endif %}"
        href="{% url 'toner_page' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="6" y="2" width="12" height="8" rx="1"/>
@@ -91,7 +91,7 @@
       <span>Pedidos</span>
     </a>
 
-    <a class="sidebar-link {% if name in 'pcs_page pcs_create pcs_edit' %}active{% endif %}"
+    <a class="sidebar-link {% if name in 'pcs_page pcs_create pcs_edit pc_detail' %}active{% endif %}"
        href="{% url 'pcs_page' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
@@ -111,7 +111,7 @@
 
     <span class="sidebar-section-title">Más</span>
 
-    {% with mas_names='articulos_page articulo_create articulo_edit articulo_entrega articulos_historial impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora servicios_page servicio_create servicio_edit notas_list nota_create nota_detail nota_edit nota_delete intercambios_list intercambio_create intercambio_detail prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver pendientes_page reparaciones_list reparacion_create reparacion_edit patrimonios_list patrimonio_edit patrimonio_create reportes diagrama_bd' %}
+    {% with mas_names='articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora servicios_page servicio_create servicio_edit servicio_detail notas_list nota_create nota_detail nota_edit nota_delete intercambios_list intercambio_create intercambio_detail prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver pendientes_page reparaciones_list reparacion_create reparacion_edit patrimonios_list patrimonio_edit patrimonio_create reportes diagrama_bd' %}
     <div class="sidebar-group {% if name in mas_names %}has-active{% endif %}">
       <button type="button" class="sidebar-link sidebar-group-trigger" aria-haspopup="true" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -130,7 +130,7 @@
 
         <span class="sidebar-group-label">Inventario</span>
 
-        <a class="sidebar-link {% if name in 'articulos_page articulo_create articulo_edit articulo_entrega articulos_historial' %}active{% endif %}"
+        <a class="sidebar-link {% if name in 'articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial' %}active{% endif %}"
            href="{% url 'articulos_page' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -140,7 +140,7 @@
           <span>Artículos</span>
         </a>
 
-        <a class="sidebar-link {% if name in 'impresoras_page impresora_create impresora_edit impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
+        <a class="sidebar-link {% if name in 'impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
            href="{% url 'impresoras_page' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <polyline points="6 9 6 2 18 2 18 9"/>
@@ -150,28 +150,17 @@
           <span>Impresoras</span>
         </a>
 
-        <a class="sidebar-link {% if name in 'servicios_page servicio_create servicio_edit' %}active{% endif %}"
-           href="{% url 'servicios_page' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-          <span>Servicios</span>
-        </a>
-
         <div class="sidebar-group-divider" role="separator"></div>
 
-        <span class="sidebar-group-label">Gestión</span>
+        <span class="sidebar-group-label">Operaciones</span>
 
-        <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
-           href="{% url 'notas_list' %}" role="menuitem">
+        <a class="sidebar-link {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
+           href="{% url 'prestamos_list' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
+            <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
+            <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
           </svg>
-          <span>Notas</span>
+          <span>Préstamos</span>
         </a>
 
         <a class="sidebar-link {% if name in 'intercambios_list intercambio_create intercambio_detail' %}active{% endif %}"
@@ -185,13 +174,12 @@
           <span>Intercambios</span>
         </a>
 
-        <a class="sidebar-link {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
-           href="{% url 'prestamos_list' %}" role="menuitem">
+        <a class="sidebar-link {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
+           href="{% url 'reparaciones_list' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-            <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
           </svg>
-          <span>Préstamos</span>
+          <span>Reparaciones</span>
         </a>
 
         <a class="sidebar-link {% if name == 'pendientes_page' %}active{% endif %}"
@@ -203,12 +191,17 @@
           <span>Pendientes</span>
         </a>
 
-        <a class="sidebar-link {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
-           href="{% url 'reparaciones_list' %}" role="menuitem">
+        <div class="sidebar-group-divider" role="separator"></div>
+
+        <span class="sidebar-group-label">Organización</span>
+
+        <a class="sidebar-link {% if name in 'servicios_page servicio_create servicio_edit servicio_detail' %}active{% endif %}"
+           href="{% url 'servicios_page' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          <span>Reparaciones</span>
+          <span>Servicios</span>
         </a>
 
         <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_edit patrimonio_create' %}active{% endif %}"
@@ -221,6 +214,21 @@
           </svg>
           <span>Patrimonios</span>
         </a>
+
+        <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
+           href="{% url 'notas_list' %}" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>Notas</span>
+        </a>
+
+        <div class="sidebar-group-divider" role="separator"></div>
+
+        <span class="sidebar-group-label">Reportes</span>
 
         <a class="sidebar-link {% if name == 'reportes' %}active{% endif %}"
            href="{% url 'reportes' %}" role="menuitem">
@@ -476,8 +484,8 @@ function _showConfirmPopover(anchor, message, onConfirm) {
   pop.innerHTML =
     '<p></p>' +
     '<div class="confirm-pop-actions">' +
-      '<button type="button" class="btn2 btn-ghost" data-act="cancel">Cancelar</button>' +
-      '<button type="button" class="btn2 danger" data-act="ok">Confirmar</button>' +
+      '<button type="button" class="btn btn-ghost" data-act="cancel">Cancelar</button>' +
+      '<button type="button" class="btn danger" data-act="ok">Confirmar</button>' +
     '</div>';
   pop.querySelector('p').textContent = message;
   document.body.appendChild(pop);
@@ -523,6 +531,62 @@ function _showConfirmPopover(anchor, message, onConfirm) {
         window.location.href = tr.dataset.href;
       }
     });
+  });
+})();
+
+/* ── Tabs (ej: expediente de servicio) ── */
+(function () {
+  document.querySelectorAll('.tabs-wrap').forEach(function (wrap) {
+    var lista = wrap.querySelector('.tabs');
+    var btns = wrap.querySelectorAll('.tab-btn');
+    var panels = wrap.querySelectorAll('.tab-panel');
+    if (!btns.length) return;
+
+    var uid = 'tabs' + Math.random().toString(36).slice(2, 8);
+    if (lista) lista.setAttribute('role', 'tablist');
+    btns.forEach(function (b) {
+      var id = uid + '-tab-' + b.dataset.tab;
+      b.id = id;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-controls', uid + '-panel-' + b.dataset.tab);
+      b.setAttribute('tabindex', '-1');
+    });
+    panels.forEach(function (p) {
+      p.id = uid + '-panel-' + p.dataset.tabPanel;
+      p.setAttribute('role', 'tabpanel');
+      p.setAttribute('aria-labelledby', uid + '-tab-' + p.dataset.tabPanel);
+    });
+
+    function activar(nombre) {
+      btns.forEach(function (b) {
+        var activo = b.dataset.tab === nombre;
+        b.classList.toggle('active', activo);
+        b.setAttribute('aria-selected', activo ? 'true' : 'false');
+        b.setAttribute('tabindex', activo ? '0' : '-1');
+      });
+      panels.forEach(function (p) { p.classList.toggle('active', p.dataset.tabPanel === nombre); });
+    }
+
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () {
+        activar(b.dataset.tab);
+        history.replaceState(null, '', '#' + b.dataset.tab);
+      });
+      b.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        var next = i + (e.key === 'ArrowRight' ? 1 : -1);
+        if (next < 0) next = btns.length - 1;
+        if (next >= btns.length) next = 0;
+        btns[next].focus();
+        activar(btns[next].dataset.tab);
+        history.replaceState(null, '', '#' + btns[next].dataset.tab);
+      });
+    });
+
+    var deLaUrl = (location.hash || '').replace('#', '');
+    var existe = deLaUrl && wrap.querySelector('.tab-btn[data-tab="' + deLaUrl + '"]');
+    activar(existe ? deLaUrl : btns[0].dataset.tab);
   });
 })();
 
