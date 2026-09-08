@@ -1,14 +1,20 @@
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.utils import timezone
 
 from inventario.models import (
     Toner, Articulo, ActivoPC, Impresora, Servicio,
     Item, Movimiento, MovimientoDetalle,
     AsignacionImpresora, Nota, Pendiente, Reparacion,
-    Prestamo, Pedido, PatrimonioUnidad, Intercambio,
+    Prestamo, PrestamoDetalle, Pedido, PatrimonioUnidad, Intercambio,
 )
-from inventario.services.stock import stock_de_item, hay_stock_suficiente
+from inventario.services.servicios import historial_de_servicio
+from inventario.services.listados import ordenar
+from inventario.services.stock import (
+    stock_de_item, hay_stock_suficiente, verificar_stock_suficiente, toners_con_stock_critico,
+)
 from inventario.services.items import (
     item_de_toner, item_de_articulo, item_de_pc, item_de_impresora,
 )
@@ -65,6 +71,34 @@ class StockServiceTest(TestCase):
 
     def test_hay_stock_suficiente_sin_stock(self):
         self.assertFalse(hay_stock_suficiente(self.item.id, 1))
+
+    def test_verificar_stock_suficiente_ok_no_lanza(self):
+        self._mov("INGRESO", 5)
+        verificar_stock_suficiente(self.item, 5)  # no debe lanzar
+
+    def test_verificar_stock_suficiente_insuficiente_lanza(self):
+        self._mov("INGRESO", 5)
+        with self.assertRaises(ValidationError):
+            verificar_stock_suficiente(self.item, 6)
+
+    def test_stock_critico_sin_minimo_configurado_no_alerta(self):
+        self._mov("INGRESO", 1)
+        self.assertEqual(toners_con_stock_critico(), [])
+
+    def test_stock_critico_por_debajo_del_minimo_alerta(self):
+        self.toner.stock_minimo = 5
+        self.toner.save(update_fields=["stock_minimo"])
+        self._mov("INGRESO", 3)
+        criticos = toners_con_stock_critico()
+        self.assertEqual(len(criticos), 1)
+        self.assertEqual(criticos[0]["toner"], self.toner)
+        self.assertEqual(criticos[0]["stock"], 3)
+
+    def test_stock_por_encima_del_minimo_no_alerta(self):
+        self.toner.stock_minimo = 5
+        self.toner.save(update_fields=["stock_minimo"])
+        self._mov("INGRESO", 10)
+        self.assertEqual(toners_con_stock_critico(), [])
 
     def test_multiplos_ingresos_y_egresos(self):
         self._mov("INGRESO", 20)
@@ -223,6 +257,28 @@ class ImpresoraModelTest(TestCase):
         imp = Impresora(marca="HP", modelo="1102", tipo="Laser", conexion="USB", ip=None)
         imp.clean()  # no debe lanzar
 
+    def test_ip_duplicada_falla(self):
+        Impresora.objects.create(marca="HP", modelo="1102", tipo="Laser", conexion="IP", ip="192.168.1.50")
+        dup = Impresora(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="IP", ip="192.168.1.50")
+        with self.assertRaises(ValidationError):
+            dup.clean()
+
+    def test_dos_impresoras_sin_ip_no_chocan(self):
+        Impresora.objects.create(marca="HP", modelo="1102", tipo="Laser", conexion="USB", ip=None)
+        otra = Impresora(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB", ip=None)
+        otra.clean()  # no debe lanzar: NULL no cuenta como duplicado
+
+    def test_patrimonio_duplicado_falla(self):
+        Impresora.objects.create(marca="HP", modelo="1102", tipo="Laser", conexion="USB", patrimonio="12345")
+        dup = Impresora(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB", patrimonio="12345")
+        with self.assertRaises(ValidationError):
+            dup.clean()
+
+    def test_dos_impresoras_sin_patrimonio_no_chocan(self):
+        Impresora.objects.create(marca="HP", modelo="1102", tipo="Laser", conexion="USB", patrimonio="")
+        otra = Impresora(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB", patrimonio="")
+        otra.clean()  # no debe lanzar: patrimonio vacío no cuenta como duplicado
+
 
 # ============================================================
 # VISTAS — smoke tests
@@ -241,6 +297,17 @@ class ViewsSmokeTest(TestCase):
 
     def test_dashboard(self):
         self._get_ok("/")
+
+    def test_dashboard_muestra_alerta_de_stock_critico(self):
+        servicio = Servicio.objects.create(nombre="Terapia")
+        toner = Toner.objects.create(nombre="CE285A", marca="HP", stock_minimo=5)
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=2)
+
+        r = self.client.get("/")
+        self.assertContains(r, "Stock crítico")
+        self.assertContains(r, "CE285A")
 
     def test_toner_page(self):
         self._get_ok("/toner/")
@@ -317,6 +384,25 @@ class ViewsSmokeTest(TestCase):
     def test_pedidos_reporte_csv(self):
         self._get_ok("/reportes/pedidos.csv")
 
+    def test_reporte_movimientos_html_escapa_observaciones_maliciosas(self):
+        payload = "<script>alert(1)</script>"
+        servicio = Servicio.objects.create(nombre="Terapia")
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=servicio, observaciones=payload)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=1)
+
+        r = self.client.get("/reportes/movimientos.html")
+        contenido = r.content.decode("utf-8")
+        self.assertNotIn(payload, contenido)
+        self.assertIn("&lt;script&gt;", contenido)
+
+    def test_reporte_toner_html_escapa_parametro_mes_reflejado(self):
+        payload = '"><script>alert(1)</script>'
+        r = self.client.get("/reportes/toner.html", {"mes": payload})
+        contenido = r.content.decode("utf-8")
+        self.assertNotIn("<script>alert(1)</script>", contenido)
+
 
 # ============================================================
 # VISTAS — operaciones de escritura
@@ -345,7 +431,7 @@ class VistasCrudTest(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertTrue(Articulo.objects.filter(nombre="Teclado USB").exists())
 
-    def test_entrega_rapida_toner(self):
+    def test_entrega_rapida_toner_sin_stock_no_se_permite(self):
         from django.utils import timezone
         toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
         r = self.client.post("/toner/entrega/", {
@@ -354,9 +440,126 @@ class VistasCrudTest(TestCase):
             "cantidad": 2,
             "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
         })
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 200)  # re-renderiza el form con error, no redirige
         item = item_de_toner(toner)
-        self.assertEqual(stock_de_item(item.id), -2)
+        self.assertEqual(stock_de_item(item.id), 0)  # el stock no queda negativo
+
+    def test_entrega_rapida_toner_con_stock_suficiente(self):
+        from django.utils import timezone
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=5)
+
+        r = self.client.post("/toner/entrega/", {
+            "servicio": self.servicio.pk,
+            "toner": toner.pk,
+            "cantidad": 2,
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+        })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(stock_de_item(item.id), 3)
+
+    def test_entrega_rapida_articulo_sin_stock_no_se_permite(self):
+        from django.utils import timezone
+        articulo = Articulo.objects.create(nombre="Mouse óptico")
+        r = self.client.post("/articulos/entrega/", {
+            "servicio": self.servicio.pk,
+            "articulo": articulo.pk,
+            "cantidad": 1,
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+        })
+        self.assertEqual(r.status_code, 200)
+        item = item_de_articulo(articulo)
+        self.assertEqual(stock_de_item(item.id), 0)
+
+    def test_movimiento_create_egreso_sin_stock_no_se_permite(self):
+        from django.utils import timezone
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        r = self.client.post("/movimientos/nuevo/", {
+            "tipo": "EGRESO",
+            "servicio": self.servicio.pk,
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+            "toner-TOTAL_FORMS": "1",
+            "toner-INITIAL_FORMS": "0",
+            "toner-MIN_NUM_FORMS": "0",
+            "toner-MAX_NUM_FORMS": "1000",
+            "toner-0-toner": str(toner.pk),
+            "toner-0-cantidad": "3",
+            "art-TOTAL_FORMS": "0",
+            "art-INITIAL_FORMS": "0",
+            "art-MIN_NUM_FORMS": "0",
+            "art-MAX_NUM_FORMS": "1000",
+        })
+        self.assertEqual(r.status_code, 200)
+        item = item_de_toner(toner)
+        self.assertEqual(stock_de_item(item.id), 0)
+        self.assertFalse(Movimiento.objects.filter(tipo="EGRESO").exists())
+
+    def _crear_item_prestable(self, nombre="Proyector Epson"):
+        articulo = Articulo.objects.create(nombre=nombre)
+        item = item_de_articulo(articulo)
+        item.prestable = True
+        item.save(update_fields=["prestable"])
+        return item
+
+    def _formset_data(self, item_pk, extra=None):
+        from django.utils import timezone
+        data = {
+            "servicio": self.servicio.pk,
+            "entregado_a": "Juan Pérez",
+            "fecha_retiro": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+            "detalles-TOTAL_FORMS": "1",
+            "detalles-INITIAL_FORMS": "0",
+            "detalles-MIN_NUM_FORMS": "0",
+            "detalles-MAX_NUM_FORMS": "1000",
+            "detalles-0-item": str(item_pk),
+            "detalles-0-cantidad": "1",
+        }
+        if extra:
+            data.update(extra)
+        return data
+
+    def test_prestamo_create_ok(self):
+        item = self._crear_item_prestable()
+        r = self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(Prestamo.objects.filter(detalles__item=item).exists())
+
+    def test_prestamo_no_permite_doble_reserva_del_mismo_item(self):
+        item = self._crear_item_prestable()
+        r1 = self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        self.assertEqual(r1.status_code, 302)
+
+        r2 = self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        self.assertEqual(r2.status_code, 200)  # re-renderiza con error, no crea un segundo préstamo
+        self.assertEqual(Prestamo.objects.filter(detalles__item=item).count(), 1)
+
+    def test_prestamo_devuelto_libera_el_item_para_prestar_de_nuevo(self):
+        item = self._crear_item_prestable()
+        r1 = self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        prestamo1 = Prestamo.objects.get(detalles__item=item)
+
+        self.client.post(f"/prestamos/{prestamo1.pk}/devolver/")
+        prestamo1.refresh_from_db()
+        self.assertTrue(prestamo1.devuelto)
+
+        r2 = self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        self.assertEqual(r2.status_code, 302)
+        self.assertEqual(Prestamo.objects.filter(detalles__item=item).count(), 2)
+
+    def test_prestamo_edit_reeditar_sin_cambios_no_dispara_error_de_doble_reserva(self):
+        item = self._crear_item_prestable()
+        self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        prestamo = Prestamo.objects.get(detalles__item=item)
+        detalle = prestamo.detalles.first()
+
+        data = self._formset_data(item.pk, extra={
+            "detalles-INITIAL_FORMS": "1",
+            "detalles-0-id": str(detalle.pk),
+        })
+        r = self.client.post(f"/prestamos/{prestamo.pk}/editar/", data)
+        self.assertEqual(r.status_code, 302)
 
     def test_toggle_toner(self):
         toner = Toner.objects.create(nombre="CE255A", marca="HP", activo=True)
@@ -534,3 +737,287 @@ class LoginRedirectTest(TestCase):
         r = self.client.get("/toner/")
         self.assertEqual(r.status_code, 302)
         self.assertIn("/accounts/login/", r["Location"])
+
+
+# ============================================================
+# SERVICIO — vista de detalle (expediente completo)
+# ============================================================
+
+class ServicioDetailTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin3", "admin3@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Terapia Intensiva")
+
+    def test_servicio_detail_vacio_ok(self):
+        r = self.client.get(f"/servicios/{self.servicio.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Terapia Intensiva")
+
+    def test_servicio_detail_404_si_no_existe(self):
+        r = self.client.get("/servicios/99999/")
+        self.assertEqual(r.status_code, 404)
+
+    def test_servicio_detail_con_datos_relacionados(self):
+        ActivoPC.objects.create(nombre_pc="PC-TI-01", servicio=self.servicio, activo=True)
+
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=2)
+
+        impresora = Impresora.objects.create(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB")
+        AsignacionImpresora.objects.create(impresora=impresora, servicio=self.servicio)
+
+        prestable_item = item_de_articulo(Articulo.objects.create(nombre="Proyector"))
+        prestable_item.prestable = True
+        prestable_item.save(update_fields=["prestable"])
+        prestamo = Prestamo.objects.create(servicio=self.servicio)
+        PrestamoDetalle.objects.create(prestamo=prestamo, item=prestable_item, cantidad=1)
+
+        Reparacion.objects.create(item=item, servicio=self.servicio)
+
+        pedido = Pedido.objects.create(numero="PED-001")
+        pedido.servicios.add(self.servicio)
+
+        Nota.objects.create(numero="N-001", servicio_solicitante=self.servicio)
+
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-001", servicio_asignado=self.servicio, asignado_por=self.user,
+        )
+
+        r = self.client.get(f"/servicios/{self.servicio.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "PC-TI-01")
+        self.assertContains(r, "Brother")
+        self.assertContains(r, "PED-001")
+        self.assertContains(r, "PAT-001")
+
+
+class HistorialServicioTest(TestCase):
+    def setUp(self):
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        self.item = item_de_toner(self.toner)
+
+    def test_historial_incluye_movimiento_con_color_correcto(self):
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=self.item, cantidad=5)
+
+        eventos = historial_de_servicio(self.servicio)
+        self.assertEqual(len(eventos), 1)
+        self.assertEqual(eventos[0]["tipo"], "movimiento_ingreso")
+        self.assertEqual(eventos[0]["color"], "ok")
+
+    def test_historial_ordenado_por_fecha_descendente(self):
+        from django.utils import timezone
+        mov1 = Movimiento.objects.create(
+            tipo="INGRESO", servicio=self.servicio, fecha=timezone.now() - timezone.timedelta(days=5),
+        )
+        MovimientoDetalle.objects.create(movimiento=mov1, item=self.item, cantidad=5)
+        mov2 = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio, fecha=timezone.now())
+        MovimientoDetalle.objects.create(movimiento=mov2, item=self.item, cantidad=1)
+
+        eventos = historial_de_servicio(self.servicio)
+        self.assertEqual(eventos[0]["tipo"], "movimiento_egreso")
+        self.assertEqual(eventos[1]["tipo"], "movimiento_ingreso")
+
+    def test_historial_mezcla_fechas_date_y_datetime_sin_lanzar(self):
+        # AsignacionImpresora.fecha_desde es date; Movimiento.fecha es datetime.
+        # No debe lanzar TypeError al ordenar ambos tipos juntos.
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=self.item, cantidad=5)
+        impresora = Impresora.objects.create(marca="HP", modelo="404", tipo="Laser", conexion="USB")
+        AsignacionImpresora.objects.create(impresora=impresora, servicio=self.servicio)
+
+        eventos = historial_de_servicio(self.servicio)
+        self.assertEqual(len(eventos), 2)
+
+
+# ============================================================
+# VISTAS DE DETALLE POR ENTIDAD
+# ============================================================
+
+class EntidadDetailTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin4", "admin4@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Farmacia")
+
+    def test_toner_detail_vacio_ok(self):
+        toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        r = self.client.get(f"/toner/{toner.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "CE285A")
+
+    def test_toner_detail_muestra_stock_y_movimientos(self):
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=7)
+
+        r = self.client.get(f"/toner/{toner.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "TK-1110")
+        # el stock (7) aparece en la página
+        self.assertContains(r, ">7<")
+
+    def test_toner_detail_muestra_impresoras_compatibles(self):
+        toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        Impresora.objects.create(marca="HP", modelo="1102", tipo="Laser", conexion="USB", toner=toner)
+        r = self.client.get(f"/toner/{toner.pk}/")
+        self.assertContains(r, "1102")
+
+    def test_toner_detail_marca_stock_negativo_como_inconsistente(self):
+        # Stock negativo histórico (de antes de la validación) debe marcarse
+        # visualmente, no ocultarse.
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio, anulado=False)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=3)
+        # fuerza el egreso directo en la DB para simular el estado histórico
+        # (sin pasar por la validación, que ahora lo bloquearía)
+        r = self.client.get(f"/toner/{toner.pk}/")
+        self.assertContains(r, "Dato histórico inconsistente")
+
+    def test_articulo_detail_vacio_ok(self):
+        articulo = Articulo.objects.create(nombre="Mouse óptico")
+        r = self.client.get(f"/articulos/{articulo.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Mouse óptico")
+
+    def test_articulo_detail_patrimonial_muestra_unidades(self):
+        articulo = Articulo.objects.create(nombre="Notebook", es_patrimonial=True)
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-777", articulo=articulo,
+            servicio_asignado=self.servicio, asignado_por=self.user,
+        )
+        r = self.client.get(f"/articulos/{articulo.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "PAT-777")
+
+    def test_pc_detail_vacio_ok(self):
+        pc = ActivoPC.objects.create(nombre_pc="PC-FARM-01", servicio=self.servicio)
+        r = self.client.get(f"/pcs/{pc.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "PC-FARM-01")
+
+    def test_pc_detail_muestra_reparaciones(self):
+        pc = ActivoPC.objects.create(nombre_pc="PC-FARM-02", servicio=self.servicio)
+        item = item_de_pc(pc)
+        Reparacion.objects.create(item=item, servicio=self.servicio, diagnostico="No enciende")
+        r = self.client.get(f"/pcs/{pc.pk}/")
+        self.assertContains(r, "No enciende")
+
+    def test_impresora_detail_vacio_ok(self):
+        impresora = Impresora.objects.create(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB")
+        r = self.client.get(f"/impresoras/{impresora.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "HL-1212")
+
+    def test_impresora_detail_muestra_historial_de_asignaciones(self):
+        impresora = Impresora.objects.create(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB")
+        AsignacionImpresora.objects.create(impresora=impresora, servicio=self.servicio, ubicacion="Mostrador")
+        r = self.client.get(f"/impresoras/{impresora.pk}/")
+        self.assertContains(r, "Farmacia")
+        self.assertContains(r, "Mostrador")
+
+    def test_impresora_detail_muestra_reparaciones(self):
+        impresora = Impresora.objects.create(marca="Brother", modelo="HL-1212", tipo="Laser", conexion="USB")
+        item = item_de_impresora(impresora)
+        Reparacion.objects.create(item=item, diagnostico="Atasco de papel")
+        r = self.client.get(f"/impresoras/{impresora.pk}/")
+        self.assertContains(r, "Atasco de papel")
+
+    def test_impresora_toggle_requiere_post(self):
+        impresora = Impresora.objects.create(marca="HP", modelo="404", tipo="Laser", conexion="USB", estado="ACTIVA")
+        r_get = self.client.get(f"/impresoras/{impresora.pk}/toggle/")
+        self.assertEqual(r_get.status_code, 405)
+
+        r_post = self.client.post(f"/impresoras/{impresora.pk}/toggle/")
+        self.assertEqual(r_post.status_code, 302)
+        impresora.refresh_from_db()
+        self.assertEqual(impresora.estado, "INACTIVA")
+
+
+# ============================================================
+# LISTADOS — orden y filtros
+# ============================================================
+
+class ListadosOrdenServicioTest(TestCase):
+    def test_ordenar_por_defecto_ascendente(self):
+        s = Servicio.objects.create(nombre="Zeta")
+        Toner.objects.create(nombre="Z", marca="Marca Z")
+        Toner.objects.create(nombre="A", marca="Marca A")
+        qs, clave, direccion = ordenar(
+            self._request(), Toner.objects.all(),
+            campos={"marca": "marca"}, default="marca",
+        )
+        self.assertEqual(clave, "marca")
+        self.assertEqual(direccion, "asc")
+        self.assertEqual(list(qs.values_list("marca", flat=True)), ["Marca A", "Marca Z"])
+
+    def test_direccion_default_desc_cuando_se_pide(self):
+        Toner.objects.create(nombre="Z", marca="Marca Z")
+        Toner.objects.create(nombre="A", marca="Marca A")
+        qs, clave, direccion = ordenar(
+            self._request(), Toner.objects.all(),
+            campos={"marca": "marca"}, default="marca", direccion_default="desc",
+        )
+        self.assertEqual(direccion, "desc")
+        self.assertEqual(list(qs.values_list("marca", flat=True)), ["Marca Z", "Marca A"])
+
+    def test_campo_no_permitido_cae_al_default(self):
+        qs, clave, direccion = ordenar(
+            self._request(sort="__raro__"), Toner.objects.all(),
+            campos={"marca": "marca"}, default="marca",
+        )
+        self.assertEqual(clave, "marca")
+
+    def _request(self, **params):
+        from django.test import RequestFactory
+        return RequestFactory().get("/", params)
+
+
+class ListadosFiltrosVistaTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin5", "admin5@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_toner_filtro_estado_activo(self):
+        Toner.objects.create(nombre="Activo1", activo=True)
+        Toner.objects.create(nombre="Inactivo1", activo=False)
+        r = self.client.get("/toner/?estado=inactivo")
+        self.assertContains(r, "Inactivo1")
+        self.assertNotContains(r, "Activo1")
+
+    def test_impresoras_filtro_estado(self):
+        Impresora.objects.create(marca="HP", modelo="ModeloUno", tipo="Laser", conexion="USB", estado="ACTIVA")
+        Impresora.objects.create(marca="Brother", modelo="ModeloDos", tipo="Laser", conexion="USB", estado="INACTIVA")
+        r = self.client.get("/impresoras/?estado=INACTIVA")
+        self.assertContains(r, "ModeloDos")
+        self.assertNotContains(r, "ModeloUno")
+
+    def test_prestamos_filtro_por_servicio_y_estado(self):
+        s1 = Servicio.objects.create(nombre="Quirófano")
+        s2 = Servicio.objects.create(nombre="Rayos")
+        Prestamo.objects.create(servicio=s1, entregado_a="Persona Q")
+        Prestamo.objects.create(servicio=s2, entregado_a="Persona R")
+
+        r = self.client.get(f"/prestamos/?servicio={s1.pk}")
+        self.assertContains(r, "Persona Q")
+        self.assertNotContains(r, "Persona R")
+
+    def test_prestamos_orden_por_defecto_es_mas_reciente_primero(self):
+        s = Servicio.objects.create(nombre="Quirófano")
+        vieja = Prestamo.objects.create(servicio=s, entregado_a="Viejo", fecha_retiro=timezone.now() - timezone.timedelta(days=10))
+        nueva = Prestamo.objects.create(servicio=s, entregado_a="Nuevo", fecha_retiro=timezone.now())
+        r = self.client.get("/prestamos/")
+        contenido = r.content.decode("utf-8")
+        self.assertLess(contenido.index("Nuevo"), contenido.index("Viejo"))
