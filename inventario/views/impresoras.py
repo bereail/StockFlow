@@ -8,11 +8,13 @@ from django.db.models import Q, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.timezone import is_naive, make_aware
-from ..models import Impresora, AsignacionImpresora, Movimiento, MovimientoDetalle
+from django.views.decorators.http import require_POST
+from ..models import Impresora, AsignacionImpresora, Movimiento, MovimientoDetalle, Reparacion
 from ..forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
 from ..forms.asignaciones import AsignacionImpresoraForm
 from ..services.items import item_de_impresora
 from ..services.impresoras import asignar_impresora_a_servicio
+from ..services.listados import ordenar
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def impresoras_page(request):
     q = (request.GET.get("q") or "").strip()
+    estado = (request.GET.get("estado") or "").strip()
 
     impresoras = (
         Impresora.objects
@@ -30,7 +33,6 @@ def impresoras_page(request):
                 queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
             )
         )
-        .order_by("-id")
     )
 
     if q:
@@ -40,11 +42,48 @@ def impresoras_page(request):
             Q(patrimonio__icontains=q) |
             Q(ip__icontains=q)
         )
+    if estado:
+        impresoras = impresoras.filter(estado=estado)
+
+    impresoras, sort_actual, dir_actual = ordenar(
+        request, impresoras,
+        campos={"marca": "marca", "modelo": "modelo", "ip": "ip", "patrimonio": "patrimonio", "estado": "estado"},
+        default="marca",
+    )
 
     paginator = Paginator(impresoras, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/impresoras/impresoras.html", {
         "impresoras": page_obj, "page_obj": page_obj, "q": q,
+        "estado": estado, "sort_actual": sort_actual, "dir_actual": dir_actual,
+    })
+
+
+@login_required
+def impresora_detail(request, pk):
+    impresora = get_object_or_404(Impresora.objects.select_related("toner", "articulo"), pk=pk)
+
+    asignaciones = (
+        impresora.asignaciones
+        .select_related("servicio")
+        .order_by("-fecha_desde")
+    )
+
+    item = item_de_impresora(impresora)
+    reparaciones = (
+        Reparacion.objects
+        .filter(item=item)
+        .select_related("proveedor")
+        .order_by("-creado")
+    )
+
+    pcs_asociadas = impresora.computadoras.select_related("servicio").order_by("nombre_pc")
+
+    return render(request, "inventario/impresoras/impresora_detail.html", {
+        "impresora": impresora,
+        "asignaciones": asignaciones,
+        "reparaciones": reparaciones,
+        "pcs_asociadas": pcs_asociadas,
     })
 
 
@@ -113,6 +152,7 @@ def impresora_edit(request, pk):
 
 
 @login_required
+@require_POST
 def impresora_toggle(request, pk):
     impresora = get_object_or_404(Impresora, pk=pk)
     impresora.estado = "INACTIVA" if impresora.estado == "ACTIVA" else "ACTIVA"
@@ -175,6 +215,7 @@ def impresora_entrega(request):
 @login_required
 def impresora_historial(request):
     q = (request.GET.get("q") or "").strip()
+    impresora_id = (request.GET.get("impresora") or "").strip()
 
     detalles = (
         MovimientoDetalle.objects
@@ -190,9 +231,11 @@ def impresora_historial(request):
             Q(movimiento__servicio__nombre__icontains=q) |
             Q(movimiento__observaciones__icontains=q)
         )
+    if impresora_id:
+        detalles = detalles.filter(item__impresora_id=impresora_id)
 
     paginator = Paginator(detalles, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/impresoras/impresoras_historial.html", {
-        "detalles": page_obj, "page_obj": page_obj, "q": q,
+        "detalles": page_obj, "page_obj": page_obj, "q": q, "impresora_id": impresora_id,
     })

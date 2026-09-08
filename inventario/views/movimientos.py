@@ -1,4 +1,5 @@
 import csv
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.forms import formset_factory
 from django.contrib import messages
@@ -12,6 +13,7 @@ from django.views.decorators.http import require_POST
 from ..models import Toner, Servicio, Item, Movimiento, MovimientoDetalle
 from ..forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
 from ..services.items import item_de_toner, item_de_articulo
+from ..services.stock import verificar_stock_suficiente
 
 
 TonerFormSet = formset_factory(MovimientoDetalleTonerForm, extra=1, can_delete=True)
@@ -49,29 +51,50 @@ def movimiento_create(request):
                     "art_formset": art_formset,
                 })
 
-            with transaction.atomic():
-                movimiento = form.save()
+            detalles_a_crear = []
+            for f in toner_formset:
+                if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
+                    continue
+                toner = f.cleaned_data.get("toner")
+                cantidad = f.cleaned_data.get("cantidad")
+                if not toner or not cantidad:
+                    continue
+                detalles_a_crear.append((item_de_toner(toner), cantidad))
 
-                for f in toner_formset:
-                    if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
-                        continue
-                    toner = f.cleaned_data.get("toner")
-                    cantidad = f.cleaned_data.get("cantidad")
-                    if not toner or not cantidad:
-                        continue
-                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item_de_toner(toner), cantidad=cantidad)
+            for f in art_formset:
+                if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
+                    continue
+                articulo = f.cleaned_data.get("articulo")
+                cantidad = f.cleaned_data.get("cantidad")
+                if not articulo or not cantidad:
+                    continue
+                detalles_a_crear.append((item_de_articulo(articulo), cantidad))
 
-                for f in art_formset:
-                    if not f.cleaned_data or f.cleaned_data.get("DELETE", False):
-                        continue
-                    articulo = f.cleaned_data.get("articulo")
-                    cantidad = f.cleaned_data.get("cantidad")
-                    if not articulo or not cantidad:
-                        continue
-                    MovimientoDetalle.objects.create(movimiento=movimiento, item=item_de_articulo(articulo), cantidad=cantidad)
+            try:
+                with transaction.atomic():
+                    if form.cleaned_data.get("tipo") == "EGRESO":
+                        cantidad_por_item = {}
+                        item_por_pk = {}
+                        for item, cantidad in detalles_a_crear:
+                            cantidad_por_item[item.pk] = cantidad_por_item.get(item.pk, 0) + cantidad
+                            item_por_pk[item.pk] = item
+                        for item_pk, cantidad_total in cantidad_por_item.items():
+                            verificar_stock_suficiente(item_por_pk[item_pk], cantidad_total)
 
-            messages.success(request, "✅ Movimiento guardado.")
-            return redirect("movimientos_list")
+                    movimiento = form.save()
+                    for item, cantidad in detalles_a_crear:
+                        MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
+
+                messages.success(request, "✅ Movimiento guardado.")
+                return redirect("movimientos_list")
+            except ValidationError as e:
+                messages.error(request, e.message)
+                return render(request, "inventario/movimientos/movimiento_form.html", {
+                    "title": "Nuevo Movimiento",
+                    "form": form,
+                    "toner_formset": toner_formset,
+                    "art_formset": art_formset,
+                })
 
         messages.error(request, "❌ Revisá el formulario, hay errores.")
 

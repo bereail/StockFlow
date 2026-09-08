@@ -9,6 +9,7 @@ urlpatterns = [
     path("toner/lista/", views.toner_list, name="toner_list"),
     path("toner/entrega/", views.toner_entrega, name="toner_entrega"),
     path("toner/nuevo/", views.toner_create, name="toner_create"),
+    path("toner/<int:pk>/", views.toner_detail, name="toner_detail"),
     path("toner/<int:pk>/editar/", views.toner_edit, name="toner_edit"),
     path("toner/<int:pk>/toggle/", views.toner_toggle, name="toner_toggle"),
     path("toner/historial/", views.toner_historial, name="toner_historial"),
@@ -31,6 +32,7 @@ urlpatterns = [
     # ARTICULOS
     path("articulos/", views.articulos_page, name="articulos_page"),
     path("articulos/nuevo/", views.articulo_create, name="articulo_create"),
+    path("articulos/<int:pk>/", views.articulo_detail, name="articulo_detail"),
     path("articulos/<int:pk>/editar/", views.articulo_edit, name="articulo_edit"),
     path("articulos/<int:pk>/toggle/", views.articulo_toggle, name="articulo_toggle"),
     path("articulos/entrega/", views.articulo_entrega, name="articulo_entrega"),
@@ -40,16 +42,19 @@ urlpatterns = [
     # SERVICIOS
     path("servicios/", views.servicios_page, name="servicios_page"),
     path("servicios/nuevo/", views.servicio_create, name="servicio_create"),
+    path("servicios/<int:pk>/", views.servicio_detail, name="servicio_detail"),
     path("servicios/<int:pk>/editar/", views.servicio_edit, name="servicio_edit"),
 
     # PCS
     path("pcs/", views.pcs_page, name="pcs_page"),
     path("pcs/nuevo/", views.pcs_create, name="pcs_create"),
+    path("pcs/<int:pk>/", views.pc_detail, name="pc_detail"),
     path("pcs/<int:pk>/editar/", views.pcs_edit, name="pcs_edit"),
 
     # IMPRESORAS
     path("impresoras/", views.impresoras_page, name="impresoras_page"),
     path("impresoras/nuevo/", views.impresora_create, name="impresora_create"),
+    path("impresoras/<int:pk>/", views.impresora_detail, name="impresora_detail"),
     path("impresoras/<int:pk>/editar/", views.impresora_edit, name="impresora_edit"),
     path("impresoras/<int:pk>/toggle/", views.impresora_toggle, name="impresora_toggle"),
     path("impresoras/entrega/", views.impresora_entrega, name="impresora_entrega"),

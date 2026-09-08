@@ -3,15 +3,18 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
-from ..models import ActivoPC, PatrimonioUnidad
+from ..models import ActivoPC, PatrimonioUnidad, Reparacion, Servicio
 from ..forms.pcs import ActivoPCForm
+from ..services.items import item_de_pc
+from ..services.listados import ordenar
 
 
 @login_required
 def pcs_page(request):
     q = (request.GET.get("q") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
 
-    pcs = ActivoPC.objects.select_related("servicio").order_by("-id")
+    pcs = ActivoPC.objects.select_related("servicio")
     if q:
         pcs = pcs.filter(
             Q(nombre_pc__icontains=q) |
@@ -20,6 +23,14 @@ def pcs_page(request):
             Q(serie__icontains=q) |
             Q(servicio__nombre__icontains=q)
         )
+    if servicio_id:
+        pcs = pcs.filter(servicio_id=servicio_id)
+
+    pcs, sort_actual, dir_actual = ordenar(
+        request, pcs,
+        campos={"nombre": "nombre_pc", "ip": "ip", "servicio": "servicio__nombre", "estado": "activo"},
+        default="nombre",
+    )
 
     # PCs registradas desde pedidos (patrimonios con nombre de equipo o tipo PC/articulo)
     pats = (
@@ -49,8 +60,28 @@ def pcs_page(request):
 
     return render(request, "inventario/pcs/pcs.html", {
         "q": q,
+        "servicio_id": servicio_id,
+        "servicios": Servicio.objects.order_by("nombre"),
+        "sort_actual": sort_actual,
+        "dir_actual": dir_actual,
         "pcs": page_obj, "page_obj": page_obj,
         "pats": page_obj_pats, "page_obj_pats": page_obj_pats,
+    })
+
+
+@login_required
+def pc_detail(request, pk):
+    pc = get_object_or_404(ActivoPC.objects.select_related("servicio", "impresora", "articulo"), pk=pk)
+    item = item_de_pc(pc)
+    reparaciones = (
+        Reparacion.objects
+        .filter(item=item)
+        .select_related("proveedor")
+        .order_by("-creado")
+    )
+    return render(request, "inventario/pcs/pc_detail.html", {
+        "pc": pc,
+        "reparaciones": reparaciones,
     })
 
 

@@ -5,19 +5,21 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from ..models import Prestamo
+from ..models import Prestamo, Servicio
 from ..forms.prestamos import PrestamoForm, PrestamoDetalleFormSet
+from ..services.listados import ordenar
 
 
 @login_required
 def prestamos_list(request):
     q = (request.GET.get("q") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    estado = (request.GET.get("estado") or "").strip()
 
     prestamos = (
         Prestamo.objects
         .select_related("servicio")
         .prefetch_related("detalles", "detalles__item")
-        .order_by("-fecha_retiro")
     )
 
     if q:
@@ -28,11 +30,27 @@ def prestamos_list(request):
             Q(detalles__detalle__icontains=q) |
             Q(detalles__item__tipo__icontains=q)
         ).distinct()
+    if servicio_id:
+        prestamos = prestamos.filter(servicio_id=servicio_id)
+    if estado == "activo":
+        prestamos = prestamos.filter(fecha_devolucion_real__isnull=True)
+    elif estado == "devuelto":
+        prestamos = prestamos.filter(fecha_devolucion_real__isnull=False)
+
+    prestamos, sort_actual, dir_actual = ordenar(
+        request, prestamos,
+        campos={"fecha": "fecha_retiro", "servicio": "servicio__nombre", "entregado_a": "entregado_a"},
+        default="fecha",
+        direccion_default="desc",
+    )
 
     paginator = Paginator(prestamos, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/prestamos/list.html", {
         "prestamos": page_obj, "page_obj": page_obj, "q": q,
+        "servicio_id": servicio_id, "estado": estado,
+        "servicios": Servicio.objects.order_by("nombre"),
+        "sort_actual": sort_actual, "dir_actual": dir_actual,
     })
 
 

@@ -1,6 +1,7 @@
 import csv
 import io
 from datetime import datetime
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -13,19 +14,32 @@ from django.utils import timezone
 from ..models import Toner, Servicio, Movimiento, MovimientoDetalle
 from ..forms.toner import TonerForm, EntregaRapidaTonerForm
 from ..services.items import item_de_toner
+from ..services.listados import ordenar
+from ..services.stock import stock_de_item, verificar_stock_suficiente
 
 
 @login_required
 def toner_page(request):
     q = (request.GET.get("q") or "").strip()
+    estado = (request.GET.get("estado") or "").strip()
 
-    toners = Toner.objects.all().order_by("-id")
+    toners = Toner.objects.all()
     if q:
         toners = toners.filter(
             Q(nombre__icontains=q) |
             Q(marca__icontains=q) |
             Q(modelo_impresora__icontains=q)
         )
+    if estado == "activo":
+        toners = toners.filter(activo=True)
+    elif estado == "inactivo":
+        toners = toners.filter(activo=False)
+
+    toners, sort_actual, dir_actual = ordenar(
+        request, toners,
+        campos={"marca": "marca", "nombre": "nombre", "modelo_impresora": "modelo_impresora", "estado": "activo"},
+        default="nombre",
+    )
 
     movimientos_qs = (
         MovimientoDetalle.objects
@@ -42,8 +56,11 @@ def toner_page(request):
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/toner/toner.html", {
         "q": q,
+        "estado": estado,
         "toners": page_obj,
         "page_obj": page_obj,
+        "sort_actual": sort_actual,
+        "dir_actual": dir_actual,
         "movimientos": movimientos,
         "mostrar_ver_todo": mostrar_ver_todo,
     })
@@ -90,25 +107,55 @@ def toner_entrega(request):
                 extra = f"Entregado a: {entregado_a.strip()}"
                 obs = f"{extra}\n{obs}".strip() if obs else extra
 
-            with transaction.atomic():
-                mov = Movimiento.objects.create(
-                    tipo="EGRESO",
-                    fecha=fecha,
-                    servicio=servicio,
-                    observaciones=obs,
-                )
+            try:
+                with transaction.atomic():
+                    item = item_de_toner(toner)
+                    verificar_stock_suficiente(item, cantidad)
 
-                MovimientoDetalle.objects.create(
-                    movimiento=mov,
-                    item=item_de_toner(toner),
-                    cantidad=cantidad,
-                )
+                    mov = Movimiento.objects.create(
+                        tipo="EGRESO",
+                        fecha=fecha,
+                        servicio=servicio,
+                        observaciones=obs,
+                    )
 
-            return redirect("toner_page")
+                    MovimientoDetalle.objects.create(
+                        movimiento=mov,
+                        item=item,
+                        cantidad=cantidad,
+                    )
+
+                return redirect("toner_page")
+            except ValidationError as e:
+                messages.error(request, e.message)
     else:
         form = EntregaRapidaTonerForm()
 
     return render(request, "inventario/toner/toner_entrega.html", {"form": form})
+
+
+@login_required
+def toner_detail(request, pk: int):
+    toner = get_object_or_404(Toner, pk=pk)
+    item = item_de_toner(toner)
+    stock = stock_de_item(item.pk)
+
+    movimientos_recientes = (
+        MovimientoDetalle.objects
+        .filter(item=item, movimiento__anulado=False)
+        .select_related("movimiento", "movimiento__servicio")
+        .order_by("-movimiento__fecha")[:10]
+    )
+
+    impresoras_compatibles = toner.impresoras.order_by("marca", "modelo")
+
+    return render(request, "inventario/toner/toner_detail.html", {
+        "toner": toner,
+        "stock": stock,
+        "en_stock_critico": toner.stock_minimo > 0 and stock <= toner.stock_minimo,
+        "movimientos_recientes": movimientos_recientes,
+        "impresoras_compatibles": impresoras_compatibles,
+    })
 
 
 @login_required

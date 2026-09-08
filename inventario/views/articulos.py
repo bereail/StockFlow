@@ -1,4 +1,5 @@
 import csv
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,6 +11,9 @@ from django.utils import timezone
 from ..models import Articulo, Movimiento, MovimientoDetalle
 from ..forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
 from ..services.items import item_de_articulo
+from ..services.listados import ordenar
+from ..services.stock import stock_de_item
+from ..services.stock import verificar_stock_suficiente
 
 
 @login_required
@@ -44,21 +48,61 @@ def backup_articulos_csv(request):
 @login_required
 def articulos_page(request):
     q = (request.GET.get("q") or "").strip()
+    estado = (request.GET.get("estado") or "").strip()
 
-    articulos = Articulo.objects.all().order_by("marca", "nombre")
+    articulos = Articulo.objects.all()
     if q:
         articulos = articulos.filter(
             Q(nombre__icontains=q) |
             Q(marca__icontains=q) |
             Q(descripcion__icontains=q)
         )
+    if estado == "activo":
+        articulos = articulos.filter(activo=True)
+    elif estado == "inactivo":
+        articulos = articulos.filter(activo=False)
+
+    articulos, sort_actual, dir_actual = ordenar(
+        request, articulos,
+        campos={"marca": "marca", "nombre": "nombre", "estado": "activo"},
+        default="nombre",
+    )
 
     paginator = Paginator(articulos, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/articulos/articulos.html", {
         "q": q,
+        "estado": estado,
         "articulos": page_obj,
         "page_obj": page_obj,
+        "sort_actual": sort_actual,
+        "dir_actual": dir_actual,
+    })
+
+
+@login_required
+def articulo_detail(request, pk: int):
+    articulo = get_object_or_404(Articulo, pk=pk)
+    item = item_de_articulo(articulo)
+    stock = stock_de_item(item.pk)
+
+    movimientos_recientes = (
+        MovimientoDetalle.objects
+        .filter(item=item, movimiento__anulado=False)
+        .select_related("movimiento", "movimiento__servicio")
+        .order_by("-movimiento__fecha")[:10]
+    )
+
+    patrimonios = (
+        articulo.patrimonios.select_related("servicio_asignado").order_by("-fecha")
+        if articulo.es_patrimonial else articulo.patrimonios.none()
+    )
+
+    return render(request, "inventario/articulos/articulo_detail.html", {
+        "articulo": articulo,
+        "stock": stock,
+        "movimientos_recientes": movimientos_recientes,
+        "patrimonios": patrimonios,
     })
 
 
@@ -118,28 +162,34 @@ def articulo_entrega(request):
             observaciones = form.cleaned_data.get("observaciones") or ""
             fecha = form.cleaned_data.get("fecha") or timezone.now()
 
-            with transaction.atomic():
-                mov = Movimiento.objects.create(
-                    tipo="EGRESO",
-                    fecha=fecha,
-                    servicio=servicio,
-                    observaciones=observaciones.strip(),
-                )
+            try:
+                with transaction.atomic():
+                    item = item_de_articulo(articulo)
+                    verificar_stock_suficiente(item, cantidad)
 
-                MovimientoDetalle.objects.create(
-                    movimiento=mov,
-                    item=item_de_articulo(articulo),
-                    cantidad=cantidad,
-                )
+                    mov = Movimiento.objects.create(
+                        tipo="EGRESO",
+                        fecha=fecha,
+                        servicio=servicio,
+                        observaciones=observaciones.strip(),
+                    )
 
-                # La entrega de una unidad puntual es, en la práctica, su
-                # asignación actual: queda registrada la misma forma que se
-                # ve después en Patrimonios/Pedidos.
-                if unidad and unidad.servicio_asignado_id != servicio.id:
-                    unidad.servicio_asignado = servicio
-                    unidad.save(update_fields=["servicio_asignado"])
+                    MovimientoDetalle.objects.create(
+                        movimiento=mov,
+                        item=item,
+                        cantidad=cantidad,
+                    )
 
-            return redirect("articulos_page")
+                    # La entrega de una unidad puntual es, en la práctica, su
+                    # asignación actual: queda registrada la misma forma que se
+                    # ve después en Patrimonios/Pedidos.
+                    if unidad and unidad.servicio_asignado_id != servicio.id:
+                        unidad.servicio_asignado = servicio
+                        unidad.save(update_fields=["servicio_asignado"])
+
+                return redirect("articulos_page")
+            except ValidationError as e:
+                messages.error(request, e.message)
     else:
         form = EntregaRapidaArticuloForm()
 
@@ -149,6 +199,7 @@ def articulo_entrega(request):
 @login_required
 def articulos_historial(request):
     q = (request.GET.get("q") or "").strip()
+    articulo_id = (request.GET.get("articulo") or "").strip()
 
     detalles = (MovimientoDetalle.objects
         .select_related("movimiento", "item", "item__articulo", "movimiento__servicio", "movimiento__documento")
@@ -163,9 +214,11 @@ def articulos_historial(request):
             Q(movimiento__servicio__nombre__icontains=q) |
             Q(movimiento__observaciones__icontains=q)
         )
+    if articulo_id:
+        detalles = detalles.filter(item__articulo_id=articulo_id)
 
     paginator = Paginator(detalles, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/articulos/articulos_historial.html", {
-        "detalles": page_obj, "page_obj": page_obj, "q": q,
+        "detalles": page_obj, "page_obj": page_obj, "q": q, "articulo_id": articulo_id,
     })
