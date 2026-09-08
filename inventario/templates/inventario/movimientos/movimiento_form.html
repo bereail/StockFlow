@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title">{{ title|default:"Nuevo Movimiento" }}</div>
+    <h1 class="page-title">{{ title|default:"Nuevo Movimiento" }}</h1>
     <div class="page-subtitle muted">Cabecera + detalles (tóners / artículos)</div>
   </div>
   <a class="btn" href="{% url 'dashboard' %}">← Volver</a>
@@ -112,9 +112,9 @@
 
     <!-- guardo el HTML de empty_form en data-attrs -->
     <div id="toner-empty-form"
-         data-toner='{{ toner_formset.empty_form.toner|escapejs }}'
-         data-cantidad='{{ toner_formset.empty_form.cantidad|escapejs }}'
-         data-delete='{{ toner_formset.empty_form.DELETE|escapejs }}'>
+         data-toner='{{ toner_formset.empty_form.toner }}'
+         data-cantidad='{{ toner_formset.empty_form.cantidad }}'
+         data-delete='{{ toner_formset.empty_form.DELETE }}'>
     </div>
   </div>
 
@@ -172,9 +172,9 @@
     </template>
 
     <div id="art-empty-form"
-         data-articulo='{{ art_formset.empty_form.articulo|escapejs }}'
-         data-cantidad='{{ art_formset.empty_form.cantidad|escapejs }}'
-         data-delete='{{ art_formset.empty_form.DELETE|escapejs }}'>
+         data-articulo='{{ art_formset.empty_form.articulo }}'
+         data-cantidad='{{ art_formset.empty_form.cantidad }}'
+         data-delete='{{ art_formset.empty_form.DELETE }}'>
     </div>
   </div>
 
@@ -207,6 +207,22 @@
     tipo.addEventListener("change", refresh);
     refresh();
   })();
+
+  // Accesibilidad: los <select>/<input> de cada fila del formset no traen
+  // <label> propio (la columna de la tabla ya da el contexto visual), así
+  // que se asocia por aria-label. Se aplica tanto a las filas iniciales
+  // como a las agregadas dinámicamente por addFormRow.
+  function labelizeRow(tr, kind) {
+    if (!tr) return;
+    var select = tr.querySelector("select");
+    var numberInput = tr.querySelector('input[type="number"]');
+    var checkbox = tr.querySelector('input[type="checkbox"]');
+    if (select) select.setAttribute("aria-label", kind === "toner" ? "Tóner" : "Artículo");
+    if (numberInput) numberInput.setAttribute("aria-label", "Cantidad");
+    if (checkbox) checkbox.setAttribute("aria-label", "Eliminar fila");
+  }
+  document.querySelectorAll("#toner-tbody .toner-row").forEach(function (tr) { labelizeRow(tr, "toner"); });
+  document.querySelectorAll("#art-tbody .art-row").forEach(function (tr) { labelizeRow(tr, "articulo"); });
 
   // helper: agrega una fila al formset usando empty_form (__prefix__)
   function addFormRow(prefix, tbodyId, totalFormsId, emptyDataDivId, templateId) {
@@ -246,6 +262,7 @@
 
     // inserto
     tbody.insertAdjacentHTML("beforeend", rowHtml);
+    labelizeRow(tbody.lastElementChild, prefix);
 
     // incremento TOTAL_FORMS
     totalForms.value = index + 1;
