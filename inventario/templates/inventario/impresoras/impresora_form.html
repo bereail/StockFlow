@@ -3,9 +3,9 @@
 
 <div class="row space-between" style="margin-bottom:12px">
   <div>
-    <div class="page-title">
+    <h1 class="page-title">
       {% if mode == "edit" %}Editar impresora{% else %}Nueva impresora{% endif %}
-    </div>
+    </h1>
     <div class="page-subtitle">Completar datos y guardar</div>
   </div>
 
@@ -34,41 +34,34 @@
       <div class="form-subsection-title">🖨️ Identificación</div>
 
       <div class="field col-12">
-        <div class="label">Artículo de catálogo (opcional)</div>
-        {{ form.articulo }}
+        <label class="label" for="id_articulo">Artículo de catálogo (opcional)</label>        {{ form.articulo }}
         {% for e in form.articulo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <div class="label">Marca</div>
-        {{ form.marca }}
+        <label class="label" for="id_marca">Marca</label>        {{ form.marca }}
         {% for e in form.marca.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <div class="label">Modelo</div>
-        {{ form.modelo }}
+        <label class="label" for="id_modelo">Modelo</label>        {{ form.modelo }}
         {% for e in form.modelo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <div class="label">Tipo</div>
-        {{ form.tipo }}
+        <label class="label" for="id_tipo">Tipo</label>        {{ form.tipo }}
       </div>
 
       <div class="field col-4">
-        <div class="label">N° de patrimonio</div>
-        {{ form.patrimonio }}
+        <label class="label" for="id_patrimonio">N° de patrimonio</label>        {{ form.patrimonio }}
       </div>
 
       <div class="field col-4">
-        <div class="label">Estado</div>
-        {{ form.estado }}
+        <label class="label" for="id_estado">Estado</label>        {{ form.estado }}
       </div>
 
       <div class="field col-4">
-        <div class="label">Activa</div>
-        <div style="display:flex;align-items:center;min-height:34px">
+        <label class="label" for="id_activo">Activa</label>        <div style="display:flex;align-items:center;min-height:34px">
           {{ form.activo }}
         </div>
       </div>
@@ -76,45 +69,38 @@
       <div class="form-subsection-title">🌐 Red (opcional)</div>
 
       <div class="field col-4">
-        <div class="label">Conexión</div>
-        {{ form.conexion }}
+        <label class="label" for="id_conexion">Conexión</label>        {{ form.conexion }}
         {% for e in form.conexion.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <div class="label">Dirección IP</div>
-        {{ form.ip }}
+        <label class="label" for="id_ip">Dirección IP</label>        {{ form.ip }}
         {% for e in form.ip.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <div class="label">Puerta de enlace</div>
-        {{ form.puerta_enlace }}
+        <label class="label" for="id_puerta_enlace">Puerta de enlace</label>        {{ form.puerta_enlace }}
         {% for e in form.puerta_enlace.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-6">
-        <div class="label">Máscara de subred</div>
-        {{ form.submascara }}
+        <label class="label" for="id_submascara">Máscara de subred</label>        {{ form.submascara }}
         {% for e in form.submascara.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-6">
-        <div class="label">DNS</div>
-        {{ form.dns }}
+        <label class="label" for="id_dns">DNS</label>        {{ form.dns }}
         {% for e in form.dns.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="form-subsection-title">🧴 Consumibles y detalle</div>
 
       <div class="field col-6">
-        <div class="label">Toner</div>
-        {{ form.toner }}
+        <label class="label" for="id_toner">Toner</label>        {{ form.toner }}
       </div>
 
       <div class="field col-12">
-        <div class="label">Observaciones</div>
-        {{ form.observaciones }}
+        <label class="label" for="id_observaciones">Observaciones</label>        {{ form.observaciones }}
       </div>
     </div>
 

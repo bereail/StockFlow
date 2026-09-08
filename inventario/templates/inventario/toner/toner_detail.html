@@ -8,7 +8,7 @@
       <a href="{% url 'toner_page' %}">Tóner</a> / {{ toner.nombre }}
     </div>
     <div class="row" style="gap:10px;align-items:center">
-      <div class="page-title" style="margin:0">{{ toner.nombre }}</div>
+      <h1 class="page-title" style="margin:0">{{ toner.nombre }}</h1>
       {% if toner.activo %}<span class="chip ok">Activo</span>{% else %}<span class="chip">Desactivado</span>{% endif %}
       {% if en_stock_critico %}<span class="chip danger">Stock crítico</span>{% endif %}
     </div>

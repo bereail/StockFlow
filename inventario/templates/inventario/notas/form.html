@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">{% if modo_edicion %}Editar nota{{ nota.numero|default:"" }}{% else %}Nueva nota{% endif %}</div>
+    <h1 class="page-title">{% if modo_edicion %}Editar nota{{ nota.numero|default:"" }}{% else %}Nueva nota{% endif %}</h1>
   </div>
   {% if modo_edicion %}
     <a class="btn btn-ghost" href="{% url 'nota_detail' nota.pk %}">← Volver</a>
@@ -18,9 +18,9 @@
   {% csrf_token %}
 
   <div class="card" style="margin-bottom:14px">
-    <h3 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+    <h2 style="margin:0 0 14px;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
       Datos de la nota
-    </h3>
+    </h2>
 
     {% if form.non_field_errors %}
       <div class="form-error" style="margin-bottom:12px">{{ form.non_field_errors }}</div>
@@ -61,9 +61,9 @@
 
   <div class="card" style="margin-bottom:14px">
     <div class="row space-between" style="margin-bottom:14px">
-      <h3 style="margin:0;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
+      <h2 style="margin:0;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">
         Ítems
-      </h3>
+      </h2>
       <button type="button" class="btn btn-ghost" id="btn-add-item">+ Agregar artículo</button>
     </div>
 
@@ -135,6 +135,21 @@
 </form>
 
 <script>
+  // Accesibilidad: las celdas de item/cantidad/detalle/quitar no traen
+  // <label> propio (la columna de la tabla ya da el contexto visual).
+  function labelizeNotaRow(tr) {
+    if (!tr) return;
+    var select = tr.querySelector("select");
+    var cantidad = tr.querySelector('input[name*="-cantidad"]');
+    var detalle = tr.querySelector('input[name*="-detalle"], textarea[name*="-detalle"]');
+    var del = tr.querySelector('input[name*="-DELETE"]');
+    if (select) select.setAttribute("aria-label", "Ítem");
+    if (cantidad) cantidad.setAttribute("aria-label", "Cantidad");
+    if (detalle) detalle.setAttribute("aria-label", "Detalle");
+    if (del) del.setAttribute("aria-label", "Quitar fila");
+  }
+  document.querySelectorAll("#nota-detalle-tbody .nota-detalle-row").forEach(labelizeNotaRow);
+
   document.getElementById("btn-add-item")?.addEventListener("click", () => {
     const tbody = document.getElementById("nota-detalle-tbody");
     const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
@@ -156,6 +171,7 @@
       .replace("__DELETE__", del);
 
     tbody.insertAdjacentHTML("beforeend", rowHtml);
+    labelizeNotaRow(tbody.lastElementChild);
     totalForms.value = index + 1;
     window.HeepSearchableSelect?.enhanceAll(tbody.lastElementChild);
   });

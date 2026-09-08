@@ -100,6 +100,20 @@ a:focus-visible, button:focus-visible {
   border-radius: 4px;
 }
 
+/* Texto solo para lectores de pantalla (ej: <label> de un campo cuya
+   columna de tabla ya lo indica visualmente) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* =========================================================
    3) TITLEBAR
 ========================================================= */
@@ -488,7 +502,7 @@ main.container {
   gap: 10px;
   margin-bottom: 10px;
 }
-.card-header h3 { margin: 0; font-size: 13.5px; font-weight: 800; }
+.card-header h2, .card-header h3 { margin: 0; font-size: 13.5px; font-weight: 800; }
 
 .card-label {
   font-size: 12.5px;
@@ -1695,6 +1709,7 @@ a.timeline-event-card:hover {
   margin-bottom: 14px;
 }
 .db-greeting {
+  margin: 0;
   font-size: 16px;
   font-weight: 700;
   color: var(--text);

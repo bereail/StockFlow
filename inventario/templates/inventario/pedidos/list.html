@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Pedidos</div>
+    <h1 class="page-title">Pedidos</h1>
     <div class="page-subtitle muted">Control de pedidos de insumos y equipos</div>
   </div>
   <a class="btn primary" href="{% url 'pedido_create' %}">+ Nuevo pedido</a>
@@ -16,16 +16,16 @@
   <form method="get" class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <input type="hidden" name="page" value="1">
     <div style="flex:2;min-width:200px">
-      <div class="label" style="margin-bottom:4px">Buscar</div>
-      <input name="q" value="{{ q }}" placeholder="Número / nota / para qué / obs…">
+      <label class="label" style="margin-bottom:4px" for="id_q">Buscar</label>
+      <input name="q" id="id_q" value="{{ q }}" placeholder="Número / nota / para qué / obs…">
     </div>
     <div style="flex:2;min-width:180px">
-      <div class="label" style="margin-bottom:4px">Ítem</div>
-      <input name="item" value="{{ item_q }}" placeholder="Nombre / marca / modelo del ítem…">
+      <label class="label" style="margin-bottom:4px" for="id_item">Ítem</label>
+      <input name="item" id="id_item" value="{{ item_q }}" placeholder="Nombre / marca / modelo del ítem…">
     </div>
     <div style="flex:2;min-width:180px">
-      <div class="label" style="margin-bottom:4px">Servicio</div>
-      <select name="servicio">
+      <label class="label" style="margin-bottom:4px" for="id_servicio">Servicio</label>
+      <select name="servicio" id="id_servicio">
         <option value="">Todos los servicios</option>
         {% for s in servicios %}
           <option value="{{ s.id }}" {% if servicio_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
@@ -33,8 +33,8 @@
       </select>
     </div>
     <div style="flex:1;min-width:160px">
-      <div class="label" style="margin-bottom:4px">Estado</div>
-      <select name="estado">
+      <label class="label" style="margin-bottom:4px" for="id_estado">Estado</label>
+      <select name="estado" id="id_estado">
         <option value="">Todos</option>
         {% for value, label in estados %}
           <option value="{{ value }}" {% if estado == value %}selected{% endif %}>{{ label }}</option>

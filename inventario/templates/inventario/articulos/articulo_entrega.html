@@ -3,7 +3,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Entrega rápida</div>
+    <h1 class="page-title">Entrega rápida</h1>
     <div class="page-subtitle muted">Egreso de artículos a un servicio</div>
   </div>
   <a class="btn" href="{% url 'articulos_page' %}">← Volver</a>
@@ -14,34 +14,28 @@
     {% csrf_token %}
 
     <div class="field col-6">
-      <div class="label">Servicio</div>
-      {{ form.servicio }}
+      <label class="label" for="id_servicio">Servicio</label>      {{ form.servicio }}
     </div>
 
     <div class="field col-6">
-      <div class="label">Artículo</div>
-      {{ form.articulo }}
+      <label class="label" for="id_articulo">Artículo</label>      {{ form.articulo }}
     </div>
 
     <div class="field col-6">
-      <div class="label">Cantidad</div>
-      {{ form.cantidad }}
+      <label class="label" for="id_cantidad">Cantidad</label>      {{ form.cantidad }}
     </div>
 
     <div class="field col-6">
-      <div class="label">Fecha</div>
-      {{ form.fecha }}
+      <label class="label" for="id_fecha">Fecha</label>      {{ form.fecha }}
     </div>
 
     <div class="field col-12" id="campo-unidad" style="overflow:hidden; max-height:0; opacity:0; transition:max-height .2s ease, opacity .2s ease; margin:0">
-      <div class="label">Unidad patrimonial (opcional)</div>
-      {{ form.unidad_patrimonial }}
+      <label class="label" for="id_unidad_patrimonial">Unidad patrimonial (opcional)</label>      {{ form.unidad_patrimonial }}
       {% for e in form.unidad_patrimonial.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
     </div>
 
     <div class="field col-12">
-      <div class="label">Observaciones</div>
-      {{ form.observaciones }}
+      <label class="label" for="id_observaciones">Observaciones</label>      {{ form.observaciones }}
     </div>
 
     <div class="form-actions col-12">

@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Movimientos</div>
+    <h1 class="page-title">Movimientos</h1>
     <div class="page-subtitle muted">Ingresos, egresos y ajustes de stock</div>
   </div>
   <div class="page-actions">
@@ -17,8 +17,8 @@
 <div class="card" style="margin-bottom:14px">
   <form method="get" class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <div style="flex:1;min-width:160px">
-      <div class="label" style="margin-bottom:4px">Tipo</div>
-      <select name="tipo">
+      <label class="label" style="margin-bottom:4px" for="id_tipo">Tipo</label>
+      <select name="tipo" id="id_tipo">
         <option value="">Todos</option>
         <option value="INGRESO" {% if filtros.tipo == "INGRESO" %}selected{% endif %}>Ingreso</option>
         <option value="EGRESO"  {% if filtros.tipo == "EGRESO"  %}selected{% endif %}>Egreso</option>
@@ -27,8 +27,8 @@
     </div>
 
     <div style="flex:2;min-width:200px">
-      <div class="label" style="margin-bottom:4px">Servicio</div>
-      <select name="servicio">
+      <label class="label" style="margin-bottom:4px" for="id_servicio">Servicio</label>
+      <select name="servicio" id="id_servicio">
         <option value="">Todos los servicios</option>
         {% for s in servicios %}
           <option value="{{ s.id }}" {% if filtros.servicio == s.id|stringformat:"s" %}selected{% endif %}>
@@ -39,8 +39,8 @@
     </div>
 
     <div style="flex:2;min-width:200px">
-      <div class="label" style="margin-bottom:4px">Buscar</div>
-      <input name="q" value="{{ filtros.q }}" placeholder="Toner, artículo, observaciones…">
+      <label class="label" style="margin-bottom:4px" for="id_q">Buscar</label>
+      <input name="q" id="id_q" value="{{ filtros.q }}" placeholder="Toner, artículo, observaciones…">
     </div>
 
     <div class="row" style="gap:8px">
@@ -69,7 +69,7 @@
             <th>Servicio</th>
             <th>Detalle</th>
             <th style="width:90px">Estado</th>
-            <th style="width:60px"></th>
+            <th style="width:60px"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>

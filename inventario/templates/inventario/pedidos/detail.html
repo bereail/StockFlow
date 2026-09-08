@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Pedido {{ pedido.numero }}</div>
+    <h1 class="page-title">Pedido {{ pedido.numero }}</h1>
     <div class="page-subtitle muted">{{ pedido.servicios.all|join:", "|default:"Sin servicio" }}</div>
   </div>
   <div style="display:flex;gap:8px">
@@ -289,7 +289,7 @@
               <th>Ítem</th>
               <th style="width:90px">Cantidad</th>
               <th>Detalle</th>
-              <th style="width:40px"></th>
+              <th style="width:40px"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>

@@ -4,7 +4,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">{{ modo_edicion|yesno:"Editar,Cargar" }} Patrimonio</div>
+    <h1 class="page-title">{{ modo_edicion|yesno:"Editar,Cargar" }} Patrimonio</h1>
     <div class="page-subtitle muted">
       Pedido {{ pedido.numero }} · {{ detalle.item }}
       {% if not modo_edicion %} · {{ cargados }}/{{ maximo }} cargados{% endif %}

@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Nota {{ nota.numero|default:"sin número" }}</div>
+    <h1 class="page-title">Nota {{ nota.numero|default:"sin número" }}</h1>
     <div class="page-subtitle muted">{{ nota.servicio_solicitante|default:"Sin servicio" }} · {{ nota.fecha|date:"d/m/Y" }}</div>
   </div>
   <a class="btn btn-ghost" href="{% url 'notas_list' %}">← Volver</a>

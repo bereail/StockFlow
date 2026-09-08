@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Notas</div>
+    <h1 class="page-title">Notas</h1>
     <div class="page-subtitle muted">Registro de notas por servicio</div>
   </div>
   <a class="btn primary" href="{% url 'nota_create' %}">+ Nueva nota</a>
@@ -16,12 +16,12 @@
   <form method="get" class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <input type="hidden" name="page" value="1">
     <div style="flex:2;min-width:200px">
-      <div class="label" style="margin-bottom:4px">Buscar</div>
-      <input name="q" value="{{ q }}" placeholder="Número / servicio / detalle…">
+      <label class="label" style="margin-bottom:4px" for="id_q">Buscar</label>
+      <input name="q" id="id_q" value="{{ q }}" placeholder="Número / servicio / detalle…">
     </div>
     <div style="flex:1;min-width:160px">
-      <div class="label" style="margin-bottom:4px">Estado</div>
-      <select name="estado">
+      <label class="label" style="margin-bottom:4px" for="id_estado">Estado</label>
+      <select name="estado" id="id_estado">
         <option value="">Todos</option>
         {% for value, label in estados %}
           <option value="{{ value }}" {% if estado == value %}selected{% endif %}>{{ label }}</option>
@@ -50,7 +50,7 @@
           <th>Número</th>
           <th>Servicio</th>
           <th style="width:130px">Estado</th>
-          <th style="width:60px"></th>
+          <th style="width:60px"><span class="sr-only">Acciones</span></th>
         </tr>
       </thead>
       <tbody>

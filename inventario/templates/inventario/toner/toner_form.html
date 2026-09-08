@@ -3,7 +3,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">{% if mode == "edit" %}Editar tóner{% else %}Nuevo tóner{% endif %}</div>
+    <h1 class="page-title">{% if mode == "edit" %}Editar tóner{% else %}Nuevo tóner{% endif %}</h1>
     <div class="page-subtitle muted">{% if mode == "edit" %}{{ toner.nombre }}{% else %}Alta en el catálogo de tóner{% endif %}</div>
   </div>
   <a class="btn" href="{% url 'toner_page' %}">← Volver</a>

@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Patrimonios</div>
+    <h1 class="page-title">Patrimonios</h1>
     <div class="page-subtitle muted">Registro de artículos con número de patrimonio</div>
   </div>
   <div class="page-actions">
@@ -24,12 +24,12 @@
 <div class="card" style="margin-bottom:14px">
   <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
     <div style="flex:2;min-width:180px">
-      <div class="label" style="margin-bottom:4px">Buscar</div>
-      <input name="q" value="{{ q }}" placeholder="Nº PAT, nombre PC, IP, serial, usuario, servicio…">
+      <label class="label" style="margin-bottom:4px" for="id_q">Buscar</label>
+      <input name="q" id="id_q" value="{{ q }}" placeholder="Nº PAT, nombre PC, IP, serial, usuario, servicio…">
     </div>
     <div style="flex:1;min-width:140px">
-      <div class="label" style="margin-bottom:4px">Tipo</div>
-      <select name="tipo">
+      <label class="label" style="margin-bottom:4px" for="id_tipo">Tipo</label>
+      <select name="tipo" id="id_tipo">
         <option value="">Todos</option>
         <option value="ARTICULO"   {% if tipo == "ARTICULO"   %}selected{% endif %}>Artículo</option>
         <option value="TONER"      {% if tipo == "TONER"      %}selected{% endif %}>Tóner</option>
@@ -62,7 +62,7 @@
             <th>Usuario</th>
             <th>Servicio asignado</th>
             <th>Pedido</th>
-            <th style="width:70px"></th>
+            <th style="width:70px"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>

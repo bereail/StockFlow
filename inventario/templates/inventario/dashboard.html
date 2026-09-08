@@ -7,7 +7,7 @@
   <!-- ── Header ── -->
   <div class="db-top">
     <div>
-      <div class="db-greeting">Buen día, <strong>{{ user.username }}</strong></div>
+      <h1 class="db-greeting">Buen día, <strong>{{ user.username }}</strong></h1>
       <div class="muted" style="font-size:12px;margin-top:2px">{% now "l d \d\e F \d\e Y" %}</div>
     </div>
     <div style="display:flex;gap:8px">
@@ -88,7 +88,7 @@
             <th>Tóner</th>
             <th style="width:90px">Mínimo</th>
             <th style="width:90px">Stock actual</th>
-            <th style="width:100px"></th>
+            <th style="width:100px"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>

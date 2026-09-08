@@ -3,7 +3,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">{% if is_edit %}Editar pedido{% else %}Nuevo pedido{% endif %}</div>
+    <h1 class="page-title">{% if is_edit %}Editar pedido{% else %}Nuevo pedido{% endif %}</h1>
     <div class="page-subtitle muted">Cabecera + ítems</div>
   </div>
 
@@ -82,7 +82,7 @@
             <th>Ítem</th>
             <th>Cantidad</th>
             <th>Detalle</th>
-            <th style="width:40px"></th>
+            <th style="width:40px"><span class="sr-only">Quitar</span></th>
           </tr>
         </thead>
 
@@ -91,16 +91,19 @@
             <tr class="fila-detalle">
               <td>
                 {{ f.id }}
+                <label class="sr-only" for="{{ f.item.id_for_label }}">Ítem</label>
                 {{ f.item }}
                 {% if f.item.errors %}<div class="form-error">{{ f.item.errors }}</div>{% endif %}
               </td>
 
               <td style="width:110px">
+                <label class="sr-only" for="{{ f.cantidad.id_for_label }}">Cantidad</label>
                 {{ f.cantidad }}
                 {% if f.cantidad.errors %}<div class="form-error">{{ f.cantidad.errors }}</div>{% endif %}
               </td>
 
               <td>
+                <label class="sr-only" for="{{ f.detalle.id_for_label }}">Detalle</label>
                 {{ f.detalle }}
                 {% if f.detalle.errors %}<div class="form-error">{{ f.detalle.errors }}</div>{% endif %}
               </td>
@@ -157,6 +160,9 @@
       el.name  = el.name.replace(/-\d+-/, '-' + idx + '-');
       el.id    = el.id.replace(/-\d+-/, '-' + idx + '-');
       el.value = '';
+    });
+    nueva.querySelectorAll('label[for]').forEach(function (lbl) {
+      lbl.setAttribute('for', lbl.getAttribute('for').replace(/-\d+-/, '-' + idx + '-'));
     });
     tbody.appendChild(nueva);
     total.value = idx + 1;

@@ -5,11 +5,11 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Pendientes</div>
+    <h1 class="page-title">Pendientes</h1>
     <div class="page-subtitle muted">Tareas y seguimientos</div>
   </div>
   <form method="get" class="page-actions" style="gap:8px">
-    <select name="estado" onchange="this.form.submit()">
+    <select name="estado" onchange="this.form.submit()" aria-label="Filtrar por estado">
       <option value="" {% if not estado_filtro %}selected{% endif %}>Todos los estados</option>
       <option value="PENDIENTE"   {% if estado_filtro == "PENDIENTE"   %}selected{% endif %}>Pendiente</option>
       <option value="EN_PROGRESO" {% if estado_filtro == "EN_PROGRESO" %}selected{% endif %}>En progreso</option>
@@ -27,33 +27,33 @@
   <!-- NUEVA TAREA -->
   <div class="card">
     <div class="card-header">
-      <h3>Nueva tarea</h3>
+      <h2>Nueva tarea</h2>
     </div>
     <form method="post" style="padding:0 16px 16px">
       {% csrf_token %}
       <div class="formgrid">
         <div class="field col-4">
-          <span class="label">Tarea</span>
+          <label class="label" for="{{ form.texto.id_for_label }}">Tarea</label>
           {{ form.texto }}
           {% if form.texto.errors %}<div class="form-error">{{ form.texto.errors }}</div>{% endif %}
         </div>
         <div class="field col-2">
-          <span class="label">Fecha límite</span>
+          <label class="label" for="{{ form.fecha_limite.id_for_label }}">Fecha límite</label>
           {{ form.fecha_limite }}
           {% if form.fecha_limite.errors %}<div class="form-error">{{ form.fecha_limite.errors }}</div>{% endif %}
         </div>
         <div class="field col-2">
-          <span class="label">Servicio</span>
+          <label class="label" for="{{ form.servicio.id_for_label }}">Servicio</label>
           {{ form.servicio }}
           {% if form.servicio.errors %}<div class="form-error">{{ form.servicio.errors }}</div>{% endif %}
         </div>
         <div class="field col-2">
-          <span class="label">Pedido vinculado</span>
+          <label class="label" for="{{ form.pedido.id_for_label }}">Pedido vinculado</label>
           {{ form.pedido }}
           {% if form.pedido.errors %}<div class="form-error">{{ form.pedido.errors }}</div>{% endif %}
         </div>
         <div class="field col-2">
-          <span class="label">Nota vinculada</span>
+          <label class="label" for="{{ form.nota.id_for_label }}">Nota vinculada</label>
           {{ form.nota }}
           {% if form.nota.errors %}<div class="form-error">{{ form.nota.errors }}</div>{% endif %}
         </div>

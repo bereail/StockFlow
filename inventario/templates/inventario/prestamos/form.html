@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">{% if prestamo %}Editar préstamo #{{ prestamo.id }}{% else %}Nuevo préstamo{% endif %}</div>
+    <h1 class="page-title">{% if prestamo %}Editar préstamo #{{ prestamo.id }}{% else %}Nuevo préstamo{% endif %}</h1>
   </div>
   <a class="btn btn-ghost" href="{% url 'prestamos_list' %}">← Volver</a>
 </div>
@@ -70,16 +70,25 @@
             <th>Artículo</th>
             <th style="width:90px">Cantidad</th>
             <th>Detalle</th>
-            <th style="width:70px"></th>
+            <th style="width:70px"><span class="sr-only">Borrar</span></th>
           </tr>
         </thead>
         <tbody>
           {% for det_form in formset %}
             {{ det_form.id }}
             <tr>
-              <td>{{ det_form.item }}</td>
-              <td>{{ det_form.cantidad }}</td>
-              <td>{{ det_form.detalle }}</td>
+              <td>
+                <label class="sr-only" for="{{ det_form.item.id_for_label }}">Artículo</label>
+                {{ det_form.item }}
+              </td>
+              <td>
+                <label class="sr-only" for="{{ det_form.cantidad.id_for_label }}">Cantidad</label>
+                {{ det_form.cantidad }}
+              </td>
+              <td>
+                <label class="sr-only" for="{{ det_form.detalle.id_for_label }}">Detalle</label>
+                {{ det_form.detalle }}
+              </td>
               <td>
                 {% if det_form.instance.pk %}
                   <label style="display:flex;align-items:center;gap:4px;font-size:.75rem;color:var(--danger);cursor:pointer">

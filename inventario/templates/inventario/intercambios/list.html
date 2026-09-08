@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Intercambios</div>
+    <h1 class="page-title">Intercambios</h1>
     <div class="page-subtitle muted">Cruces de equipos entre servicios</div>
   </div>
   <a class="btn primary" href="{% url 'intercambio_create' %}">+ Nuevo intercambio</a>
@@ -13,8 +13,8 @@
 
 <form method="get" class="row" style="gap:8px;margin-bottom:14px;flex-wrap:wrap">
   <input name="q" value="{{ q }}" placeholder="Buscar servicio / patrimonio / detalle…"
-         style="flex:1;min-width:220px">
-  <select name="estado" style="min-width:160px">
+         aria-label="Buscar" style="flex:1;min-width:220px">
+  <select name="estado" style="min-width:160px" aria-label="Filtrar por estado">
     <option value="">Todos los estados</option>
     <option value="PENDIENTE" {% if estado == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
     <option value="RESUELTO" {% if estado == "RESUELTO" %}selected{% endif %}>Resuelto</option>
@@ -39,7 +39,7 @@
             <th>Ítem entregado</th>
             <th style="width:130px">Fecha</th>
             <th style="width:110px">Estado</th>
-            <th style="width:110px"></th>
+            <th style="width:110px"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>

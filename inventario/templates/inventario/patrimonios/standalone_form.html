@@ -4,13 +4,13 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">
+    <h1 class="page-title">
       {% if es_donacion %}
         {% if mode == "edit" %}Editar donación{% else %}Registrar donación{% endif %}
       {% else %}
         {% if mode == "edit" %}Editar patrimonio{% else %}Registrar patrimonio{% endif %}
       {% endif %}
-    </div>
+    </h1>
     <div class="page-subtitle muted">
       {% if es_donacion %}Unidad patrimonial recibida como donación{% else %}Unidad de un artículo patrimonial, sin necesidad de un pedido{% endif %}
     </div>
@@ -28,62 +28,51 @@
 
     <div class="formgrid">
       <div class="field col-12">
-        <div class="label">Artículo de catálogo</div>
-        {{ form.articulo }}
+        <label class="label" for="id_articulo">Artículo de catálogo</label>        {{ form.articulo }}
         {% for e in form.articulo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field">
-        <div class="label">Número de patrimonio</div>
-        {{ form.numero_patrimonio }}
+        <label class="label" for="id_numero_patrimonio">Número de patrimonio</label>        {{ form.numero_patrimonio }}
         {% for e in form.numero_patrimonio.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field">
-        <div class="label">Serial (opcional)</div>
-        {{ form.serial }}
+        <label class="label" for="id_serial">Serial (opcional)</label>        {{ form.serial }}
       </div>
 
       <div class="field col-12">
-        <div class="label">Detalle (opcional)</div>
-        {{ form.detalle_item }}
+        <label class="label" for="id_detalle_item">Detalle (opcional)</label>        {{ form.detalle_item }}
       </div>
 
       <div class="field">
-        <div class="label">Nombre / identificador (opcional)</div>
-        {{ form.nombre_pc }}
+        <label class="label" for="id_nombre_pc">Nombre / identificador (opcional)</label>        {{ form.nombre_pc }}
       </div>
 
       <div class="field">
-        <div class="label">Dirección IP (opcional)</div>
-        {{ form.ip }}
+        <label class="label" for="id_ip">Dirección IP (opcional)</label>        {{ form.ip }}
       </div>
 
       <div class="field col-12">
-        <div class="label">Usuario asignado (opcional)</div>
-        {{ form.usuario_asignado }}
+        <label class="label" for="id_usuario_asignado">Usuario asignado (opcional)</label>        {{ form.usuario_asignado }}
       </div>
 
       <div class="field col-12">
-        <div class="label">Servicio asignado (opcional)</div>
-        {{ form.servicio_asignado }}
+        <label class="label" for="id_servicio_asignado">Servicio asignado (opcional)</label>        {{ form.servicio_asignado }}
       </div>
 
       {% if form.donante %}
       <div class="field">
-        <div class="label">Donado por (opcional)</div>
-        {{ form.donante }}
+        <label class="label" for="id_donante">Donado por (opcional)</label>        {{ form.donante }}
       </div>
 
       <div class="field">
-        <div class="label">Contacto del donante (opcional)</div>
-        {{ form.donante_contacto }}
+        <label class="label" for="id_donante_contacto">Contacto del donante (opcional)</label>        {{ form.donante_contacto }}
       </div>
       {% endif %}
 
       <div class="field col-12">
-        <div class="label">Observaciones</div>
-        {{ form.observaciones }}
+        <label class="label" for="id_observaciones">Observaciones</label>        {{ form.observaciones }}
       </div>
     </div>
 

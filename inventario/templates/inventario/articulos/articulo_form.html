@@ -3,9 +3,9 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">
+    <h1 class="page-title">
       {% if mode == "edit" %}Editar artículo{% else %}Nuevo artículo{% endif %}
-    </div>
+    </h1>
     <div class="page-subtitle muted">Todos los campos son opcionales salvo el nombre</div>
   </div>
   <a class="btn" href="{% url 'articulos_page' %}">← Volver</a>
@@ -18,47 +18,40 @@
     <div class="form-subsection-title">📦 Identificación</div>
 
     <div class="field col-8">
-      <div class="label">Nombre</div>
-      {{ form.nombre }}
+      <label class="label" for="id_nombre">Nombre</label>      {{ form.nombre }}
       {% for e in form.nombre.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
     </div>
 
     <div class="field col-4">
-      <div class="label">Marca</div>
-      {{ form.marca }}
+      <label class="label" for="id_marca">Marca</label>      {{ form.marca }}
       {% for e in form.marca.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
     </div>
 
     <div class="field col-12">
-      <div class="label">Descripción</div>
-      {{ form.descripcion }}
+      <label class="label" for="id_descripcion">Descripción</label>      {{ form.descripcion }}
     </div>
 
     <div class="field col-12">
-      <div class="label">Características</div>
-      {{ form.caracteristicas }}
+      <label class="label" for="id_caracteristicas">Características</label>      {{ form.caracteristicas }}
     </div>
 
     <div class="form-subsection-title">🔖 Patrimonio</div>
 
     <div class="field col-6">
-      <div class="label">Es patrimonial</div>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:34px">
+      <label class="label" for="id_es_patrimonial">Es patrimonial</label>      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:34px">
         {{ form.es_patrimonial }}
         <span class="muted" style="font-size:.82rem">Cada unidad cargada en un pedido pide su propio N° de patrimonio</span>
       </label>
     </div>
 
     <div class="field col-6">
-      <div class="label">Activo</div>
-      <div style="display:flex;align-items:center;min-height:34px">
+      <label class="label" for="id_activo">Activo</label>      <div style="display:flex;align-items:center;min-height:34px">
         {{ form.activo }}
       </div>
     </div>
 
     <div class="field col-12" id="campo-genera-ficha">
-      <div class="label">Genera ficha de</div>
-      {{ form.genera_ficha }}
+      <label class="label" for="id_genera_ficha">Genera ficha de</label>      {{ form.genera_ficha }}
       <div class="field-hint">
         Al cargar el N° de patrimonio de una unidad, crea automáticamente su ficha completa (impresora / equipo), en vez de darla de alta a mano.
       </div>

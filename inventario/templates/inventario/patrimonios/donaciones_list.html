@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Donaciones</div>
+    <h1 class="page-title">Donaciones</h1>
     <div class="page-subtitle muted">Artículos recibidos por donación, con su número de patrimonio y trazabilidad</div>
   </div>
   <div class="page-actions">
@@ -22,8 +22,8 @@
 <div class="card" style="margin-bottom:14px">
   <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
     <div style="flex:2;min-width:180px">
-      <div class="label" style="margin-bottom:4px">Buscar</div>
-      <input name="q" value="{{ q }}" placeholder="Nº PAT, donante, artículo, servicio…">
+      <label class="label" style="margin-bottom:4px" for="id_q">Buscar</label>
+      <input name="q" id="id_q" value="{{ q }}" placeholder="Nº PAT, donante, artículo, servicio…">
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn" type="submit">Filtrar</button>
@@ -48,7 +48,7 @@
             <th>Contacto</th>
             <th>Servicio asignado</th>
             <th>Fecha</th>
-            <th style="width:70px"></th>
+            <th style="width:70px"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
