@@ -1690,7 +1690,7 @@ a.timeline-event-card:hover {
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
-.servicio-hero-title { font-size: 22px; font-weight: 900; letter-spacing: -.4px; }
+.servicio-hero-title { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -.4px; }
 .servicio-hero-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
 
 /* =========================================================

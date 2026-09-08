@@ -795,6 +795,50 @@ class ServicioDetailTest(TestCase):
         self.assertContains(r, "PED-001")
         self.assertContains(r, "PAT-001")
 
+    def test_servicio_detail_muestra_pedidos_y_notas_en_el_resumen(self):
+        # Pedidos y notas deben verse sin entrar a la solapa Documentación.
+        pedido = Pedido.objects.create(numero="PED-777")
+        pedido.servicios.add(self.servicio)
+        Nota.objects.create(numero="N-777", servicio_solicitante=self.servicio)
+
+        r = self.client.get(f"/servicios/{self.servicio.pk}/")
+        content = r.content.decode()
+        resumen_start = content.index('data-tab-panel="resumen"')
+        documentacion_start = content.index('data-tab-panel="documentacion"')
+        resumen_html = content[resumen_start:documentacion_start]
+        self.assertIn("PED-777", resumen_html)
+        self.assertIn("N-777", resumen_html)
+
+    def test_servicio_detail_click_en_pc_va_al_detalle_no_a_editar(self):
+        pc = ActivoPC.objects.create(nombre_pc="PC-TI-02", servicio=self.servicio, activo=True)
+        r = self.client.get(f"/servicios/{self.servicio.pk}/")
+        self.assertContains(r, f"/pcs/{pc.pk}/\"")
+
+    def test_servicio_detail_tiene_boton_para_agregar_pc(self):
+        r = self.client.get(f"/servicios/{self.servicio.pk}/")
+        self.assertContains(r, f"/pcs/nuevo/?servicio={self.servicio.pk}")
+
+
+class PcCreateConServicioPreseleccionadoTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin5", "admin5@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+
+    def test_get_preselecciona_el_servicio(self):
+        r = self.client.get(f"/pcs/nuevo/?servicio={self.servicio.pk}")
+        self.assertContains(r, f'value="{self.servicio.pk}" selected')
+
+    def test_post_con_next_redirige_ahi(self):
+        r = self.client.post(
+            f"/pcs/nuevo/?servicio={self.servicio.pk}",
+            {"nombre_pc": "PC-GUARDIA-01", "servicio": self.servicio.pk, "next": f"/servicios/{self.servicio.pk}/#equipamiento"},
+        )
+        self.assertRedirects(r, f"/servicios/{self.servicio.pk}/#equipamiento", fetch_redirect_response=False)
+        self.assertTrue(ActivoPC.objects.filter(nombre_pc="PC-GUARDIA-01", servicio=self.servicio).exists())
+
 
 class HistorialServicioTest(TestCase):
     def setUp(self):

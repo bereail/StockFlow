@@ -587,6 +587,15 @@ function _showConfirmPopover(anchor, message, onConfirm) {
     var deLaUrl = (location.hash || '').replace('#', '');
     var existe = deLaUrl && wrap.querySelector('.tab-btn[data-tab="' + deLaUrl + '"]');
     activar(existe ? deLaUrl : btns[0].dataset.tab);
+
+    /* Enlaces internos a un tab (ej: "Ver todos →" en el resumen) cambian
+       el hash sin recargar la página; hay que re-activar el tab a mano. */
+    window.addEventListener('hashchange', function () {
+      var nombre = (location.hash || '').replace('#', '');
+      if (nombre && wrap.querySelector('.tab-btn[data-tab="' + nombre + '"]')) {
+        activar(nombre);
+      }
+    });
   });
 })();
 

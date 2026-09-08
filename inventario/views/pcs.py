@@ -87,17 +87,22 @@ def pc_detail(request, pk):
 
 @login_required
 def pcs_create(request):
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+
     if request.method == "POST":
         form = ActivoPCForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "PC creada.")
-            return redirect("pcs_page")
+            return redirect(next_url or "pcs_page")
         messages.error(request, "Revisá los errores del formulario.")
     else:
-        form = ActivoPCForm()
+        servicio_id = request.GET.get("servicio")
+        form = ActivoPCForm(initial={"servicio": servicio_id} if servicio_id else None)
 
-    return render(request, "inventario/pcs/pc_form.html", {"form": form, "mode": "create"})
+    return render(request, "inventario/pcs/pc_form.html", {
+        "form": form, "mode": "create", "next": next_url,
+    })
 
 
 @login_required

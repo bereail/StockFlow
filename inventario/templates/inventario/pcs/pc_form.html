@@ -19,7 +19,7 @@
   </div>
 
   <div class="page-actions">
-    <a class="btn" href="{% url 'pcs_page' %}">← Volver</a>
+    <a class="btn" href="{% if next %}{{ next }}{% else %}{% url 'pcs_page' %}{% endif %}">← Volver</a>
   </div>
 </header>
 
@@ -27,6 +27,7 @@
 <div class="card form-card panel--narrow">
   <form method="post" class="formgrid">
     {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
     {% if form.non_field_errors %}
       <div class="form-error col-12">{{ form.non_field_errors }}</div>
@@ -106,7 +107,7 @@
     <!-- Acciones -->
     <div class="form-actions col-12">
       <button class="btn primary" type="submit">Guardar</button>
-      <a class="btn" href="{% url 'pcs_page' %}">Cancelar</a>
+      <a class="btn" href="{% if next %}{{ next }}{% else %}{% url 'pcs_page' %}{% endif %}">Cancelar</a>
     </div>
   </form>
 </div>

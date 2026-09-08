@@ -7,7 +7,7 @@
     <div class="page-subtitle muted" style="margin-bottom:2px">
       <a href="{% url 'servicios_page' %}">Servicios</a> / {{ servicio.nombre }}
     </div>
-    <div class="servicio-hero-title">{{ servicio.nombre }}</div>
+    <h1 class="servicio-hero-title">{{ servicio.nombre }}</h1>
     {% if servicio.descripcion %}<div class="servicio-hero-sub">{{ servicio.descripcion }}</div>{% endif %}
   </div>
   <div class="page-actions">
@@ -83,6 +83,46 @@
     </div>
     {% endif %}
 
+    <div class="row" style="gap:14px;align-items:stretch;flex-wrap:wrap;margin-bottom:14px">
+      <div class="card" style="flex:1;min-width:260px">
+        <div class="card-header">
+          <span class="card-label">Pedidos</span>
+          <a class="btn btn-ghost" href="#documentacion" style="font-size:11.5px">Ver todos ({{ pedidos|length }}) →</a>
+        </div>
+        {% if pedidos %}
+          <div style="display:flex;flex-direction:column;gap:4px">
+            {% for p in pedidos|slice:":4" %}
+              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'pedido_detail' p.pk %}">
+                <span><strong>{{ p.numero }}</strong></span>
+                <span class="chip" style="font-size:10.5px">{{ p.get_estado_display }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding:14px"><div class="empty-state-sub">No hay pedidos vinculados a este servicio.</div></div>
+        {% endif %}
+      </div>
+
+      <div class="card" style="flex:1;min-width:260px">
+        <div class="card-header">
+          <span class="card-label">Notas</span>
+          <a class="btn btn-ghost" href="#documentacion" style="font-size:11.5px">Ver todas ({{ notas|length }}) →</a>
+        </div>
+        {% if notas %}
+          <div style="display:flex;flex-direction:column;gap:4px">
+            {% for n in notas|slice:":4" %}
+              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'nota_detail' n.pk %}">
+                <span><strong>{{ n.numero|default:"—" }}</strong></span>
+                <span class="chip" style="font-size:10.5px">{{ n.get_estado_display }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding:14px"><div class="empty-state-sub">No hay notas vinculadas a este servicio.</div></div>
+        {% endif %}
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-label" style="margin-bottom:10px">Última actividad</div>
       {% if historial %}
@@ -118,8 +158,11 @@
   <div class="tab-panel" data-tab-panel="equipamiento">
     <div class="card" style="margin-bottom:14px">
       <div class="card-header">
-        <span class="card-label">PCs asignadas</span>
-        <span class="chip">{{ stats.pcs }}</span>
+        <div class="row" style="gap:8px;align-items:center">
+          <span class="card-label">PCs asignadas</span>
+          <span class="chip">{{ stats.pcs }}</span>
+        </div>
+        <a class="btn" href="{% url 'pcs_create' %}?servicio={{ servicio.id }}&next={{ request.path }}%23equipamiento">+ Nueva PC</a>
       </div>
       {% if activos_pc %}
         <div class="table-wrapper table-wrapper--flush">
@@ -127,7 +170,7 @@
             <thead><tr><th>Nombre</th><th>IP</th><th>Patrimonio</th><th>Serie</th></tr></thead>
             <tbody>
               {% for pc in activos_pc %}
-                <tr style="cursor:pointer" data-href="{% url 'pcs_edit' pc.pk %}">
+                <tr style="cursor:pointer" data-href="{% url 'pc_detail' pc.pk %}">
                   <td><strong>{{ pc.nombre_pc }}</strong></td>
                   <td class="mono muted">{{ pc.ip|default:"—" }}</td>
                   <td class="muted">{{ pc.patrimonio|default:"—" }}</td>
