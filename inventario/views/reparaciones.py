@@ -1,11 +1,11 @@
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from ..models import Reparacion
 from ..forms.reparaciones import ReparacionForm
+from ..services.busqueda import buscar_texto
 
 
 @login_required
@@ -15,13 +15,9 @@ def reparaciones_list(request):
     reparaciones = Reparacion.objects.select_related("item", "proveedor", "servicio").order_by("-creado")
     if estado:
         reparaciones = reparaciones.filter(estado=estado)
-    if q:
-        reparaciones = reparaciones.filter(
-            Q(proveedor__nombre__icontains=q) |
-            Q(diagnostico__icontains=q) |
-            Q(seguimiento__icontains=q) |
-            Q(servicio__nombre__icontains=q)
-        )
+    reparaciones = buscar_texto(
+        reparaciones, q, "proveedor__nombre", "diagnostico", "seguimiento", "servicio__nombre",
+    )
     paginator = Paginator(reparaciones, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
     return render(request, "inventario/reparaciones/reparaciones_list.html", {

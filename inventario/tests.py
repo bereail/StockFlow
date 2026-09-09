@@ -1226,3 +1226,95 @@ class NotaDetailVolverTest(TestCase):
         next_url = f"/servicios/{self.servicio.pk}/#documentacion"
         r = self.client.get(f"/notas/{self.nota.pk}/?next=/servicios/{self.servicio.pk}/%23documentacion")
         self.assertContains(r, f'href="{next_url}"')
+
+
+# ============================================================
+# buscar_texto() extendido al resto de los listados
+# ============================================================
+
+class BuscarTextoEnListadosTest(TestCase):
+    """Spot-check de que buscar_texto() (accent-insensitive) quedó bien
+    cableado en listados que antes usaban Q(...)__icontains directo,
+    incluyendo los que necesitan .distinct() por relaciones a-muchos."""
+
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin11", "admin11@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Quirófano")
+
+    def test_toner_page_ignora_acentos(self):
+        Toner.objects.create(nombre="Tóner genérico", marca="HP")
+        r = self.client.get("/toner/?q=toner generico")
+        self.assertContains(r, "Tóner genérico")
+
+    def test_pcs_page_ignora_acentos_via_servicio(self):
+        ActivoPC.objects.create(nombre_pc="PC-1", servicio=self.servicio)
+        r = self.client.get("/pcs/?q=quirofano")
+        self.assertContains(r, "PC-1")
+
+    def test_movimientos_list_ignora_acentos(self):
+        Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        r = self.client.get("/movimientos/?q=quirofano")
+        self.assertContains(r, "Quirófano")
+
+    def test_movimientos_list_no_duplica_filas_por_relacion_a_muchos(self):
+        from inventario.services.busqueda import buscar_texto
+        toner = Toner.objects.create(nombre="Genérico", marca="HP")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=1)
+        qs = buscar_texto(
+            Movimiento.objects.all(), "quirofano",
+            "observaciones", "servicio__nombre",
+            "detalles__item__toner__nombre", "detalles__item__articulo__nombre",
+        ).distinct()
+        self.assertEqual(qs.count(), 1)
+
+    def test_prestamos_list_ignora_acentos(self):
+        Prestamo.objects.create(servicio=self.servicio, entregado_a="Alguien")
+        r = self.client.get("/prestamos/?q=quirofano")
+        self.assertContains(r, "Alguien")
+
+    def test_prestamos_list_no_duplica_filas_por_relacion_a_muchos(self):
+        from inventario.services.busqueda import buscar_texto
+        articulo = Articulo.objects.create(nombre="Proyector")
+        item = item_de_articulo(articulo)
+        item.prestable = True
+        item.save(update_fields=["prestable"])
+        prestamo = Prestamo.objects.create(servicio=self.servicio, entregado_a="Alguien")
+        PrestamoDetalle.objects.create(prestamo=prestamo, item=item, cantidad=1)
+        qs = buscar_texto(
+            Prestamo.objects.all(), "quirofano",
+            "servicio__nombre", "entregado_a", "observaciones",
+            "detalles__detalle", "detalles__item__tipo",
+        ).distinct()
+        self.assertEqual(qs.count(), 1)
+
+    def test_reparaciones_list_ignora_acentos_via_servicio(self):
+        from inventario.models import Proveedor
+        toner = Toner.objects.create(nombre="X", marca="HP")
+        item = item_de_toner(toner)
+        proveedor = Proveedor.objects.create(nombre="Técnica SRL")
+        Reparacion.objects.create(item=item, proveedor=proveedor, servicio=self.servicio)
+        r = self.client.get("/reparaciones/?q=quirofano")
+        self.assertContains(r, "Técnica SRL")
+
+    def test_intercambios_list_ignora_acentos_via_servicio(self):
+        otro = Servicio.objects.create(nombre="Guardia")
+        Intercambio.objects.create(
+            servicio_afectado=self.servicio, servicio_beneficiario=otro,
+            creado_por=self.user, motivo="Compensación urgente",
+        )
+        r = self.client.get("/intercambios/?q=quirofano")
+        self.assertContains(r, '<span class="chip">1</span>')
+
+    def test_patrimonios_list_ignora_acentos_via_servicio(self):
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-QUIROFANO-01",
+            servicio_asignado=self.servicio,
+            asignado_por=self.user,
+        )
+        r = self.client.get("/patrimonios/?q=quirofano")
+        self.assertContains(r, "PAT-QUIROFANO-01")

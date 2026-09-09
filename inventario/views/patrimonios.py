@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from ..models import PedidoDetalle, PatrimonioUnidad
 from ..forms.pedidos import PatrimonioUnidadForm
 from ..forms.patrimonios import PatrimonioStandaloneForm, DonacionForm
+from ..services.busqueda import buscar_texto
 
 
 @login_required
@@ -28,21 +29,13 @@ def patrimonios_list(request):
         .order_by("-id")
     )
 
-    if q:
-        pats = pats.filter(
-            Q(numero_patrimonio__icontains=q) |
-            Q(nombre_pc__icontains=q) |
-            Q(ip__icontains=q) |
-            Q(usuario_asignado__icontains=q) |
-            Q(serial__icontains=q) |
-            Q(servicio_asignado__nombre__icontains=q) |
-            Q(detalle_item__icontains=q) |
-            Q(articulo__nombre__icontains=q) |
-            Q(pedido_detalle__item__toner__nombre__icontains=q) |
-            Q(pedido_detalle__item__toner__marca__icontains=q) |
-            Q(pedido_detalle__item__activo_pc__nombre_pc__icontains=q) |
-            Q(pedido_detalle__item__impresora__modelo__icontains=q)
-        )
+    pats = buscar_texto(
+        pats, q,
+        "numero_patrimonio", "nombre_pc", "ip", "usuario_asignado", "serial",
+        "servicio_asignado__nombre", "detalle_item", "articulo__nombre",
+        "pedido_detalle__item__toner__nombre", "pedido_detalle__item__toner__marca",
+        "pedido_detalle__item__activo_pc__nombre_pc", "pedido_detalle__item__impresora__modelo",
+    )
 
     if tipo == "ARTICULO":
         pats = pats.filter(Q(pedido_detalle__item__tipo="ARTICULO") | Q(articulo__isnull=False))
@@ -128,15 +121,11 @@ def donaciones_list(request):
         .order_by("-id")
     )
 
-    if q:
-        donaciones = donaciones.filter(
-            Q(numero_patrimonio__icontains=q) |
-            Q(donante__icontains=q) |
-            Q(donante_contacto__icontains=q) |
-            Q(articulo__nombre__icontains=q) |
-            Q(servicio_asignado__nombre__icontains=q) |
-            Q(detalle_item__icontains=q)
-        )
+    donaciones = buscar_texto(
+        donaciones, q,
+        "numero_patrimonio", "donante", "donante_contacto",
+        "articulo__nombre", "servicio_asignado__nombre", "detalle_item",
+    )
 
     paginator = Paginator(donaciones, 10)
     page_obj = paginator.get_page(request.GET.get("page", 1))

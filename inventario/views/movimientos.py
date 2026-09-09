@@ -5,13 +5,13 @@ from django.forms import formset_factory
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..models import Toner, Servicio, Movimiento, MovimientoDetalle
 from ..forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
+from ..services.busqueda import buscar_texto
 from ..services.items import item_de_toner, item_de_articulo
 from ..services.stock import verificar_stock_suficiente
 
@@ -135,13 +135,13 @@ def movimientos_list(request):
     if tipo:
         movimientos = movimientos.filter(tipo=tipo)
 
+    movimientos = buscar_texto(
+        movimientos, q,
+        "observaciones", "servicio__nombre",
+        "detalles__item__toner__nombre", "detalles__item__articulo__nombre",
+    )
     if q:
-        movimientos = movimientos.filter(
-            Q(observaciones__icontains=q) |
-            Q(servicio__nombre__icontains=q) |
-            Q(detalles__item__toner__nombre__icontains=q) |
-            Q(detalles__item__articulo__nombre__icontains=q)
-        ).distinct()
+        movimientos = movimientos.distinct()
 
     servicios = Servicio.objects.order_by("nombre")
     toners = Toner.objects.order_by("marca", "nombre")

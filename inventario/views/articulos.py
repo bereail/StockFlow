@@ -4,12 +4,12 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from ..models import Articulo, Movimiento, MovimientoDetalle
 from ..forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
+from ..services.busqueda import buscar_texto
 from ..services.items import item_de_articulo
 from ..services.listados import ordenar
 from ..services.stock import stock_de_item
@@ -50,13 +50,7 @@ def articulos_page(request):
     q = (request.GET.get("q") or "").strip()
     estado = (request.GET.get("estado") or "").strip()
 
-    articulos = Articulo.objects.all()
-    if q:
-        articulos = articulos.filter(
-            Q(nombre__icontains=q) |
-            Q(marca__icontains=q) |
-            Q(descripcion__icontains=q)
-        )
+    articulos = buscar_texto(Articulo.objects.all(), q, "nombre", "marca", "descripcion")
     if estado == "activo":
         articulos = articulos.filter(activo=True)
     elif estado == "inactivo":
@@ -207,13 +201,11 @@ def articulos_historial(request):
         .order_by("-movimiento__fecha")
     )
 
-    if q:
-        detalles = detalles.filter(
-            Q(item__articulo__nombre__icontains=q) |
-            Q(item__articulo__marca__icontains=q) |
-            Q(movimiento__servicio__nombre__icontains=q) |
-            Q(movimiento__observaciones__icontains=q)
-        )
+    detalles = buscar_texto(
+        detalles, q,
+        "item__articulo__nombre", "item__articulo__marca",
+        "movimiento__servicio__nombre", "movimiento__observaciones",
+    )
     if articulo_id:
         detalles = detalles.filter(item__articulo_id=articulo_id)
 

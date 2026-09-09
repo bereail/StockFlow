@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Prefetch
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.timezone import is_naive, make_aware
@@ -14,6 +14,7 @@ from ..forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
 from ..forms.asignaciones import AsignacionImpresoraForm
 from ..services.items import item_de_impresora
 from ..services.impresoras import asignar_impresora_a_servicio
+from ..services.busqueda import buscar_texto
 from ..services.listados import ordenar
 
 logger = logging.getLogger(__name__)
@@ -35,13 +36,7 @@ def impresoras_page(request):
         )
     )
 
-    if q:
-        impresoras = impresoras.filter(
-            Q(marca__icontains=q) |
-            Q(modelo__icontains=q) |
-            Q(patrimonio__icontains=q) |
-            Q(ip__icontains=q)
-        )
+    impresoras = buscar_texto(impresoras, q, "marca", "modelo", "patrimonio", "ip")
     if estado:
         impresoras = impresoras.filter(estado=estado)
 
@@ -224,13 +219,11 @@ def impresora_historial(request):
         .order_by("-movimiento__fecha")
     )
 
-    if q:
-        detalles = detalles.filter(
-            Q(item__impresora__marca__icontains=q) |
-            Q(item__impresora__modelo__icontains=q) |
-            Q(movimiento__servicio__nombre__icontains=q) |
-            Q(movimiento__observaciones__icontains=q)
-        )
+    detalles = buscar_texto(
+        detalles, q,
+        "item__impresora__marca", "item__impresora__modelo",
+        "movimiento__servicio__nombre", "movimiento__observaciones",
+    )
     if impresora_id:
         detalles = detalles.filter(item__impresora_id=impresora_id)
 

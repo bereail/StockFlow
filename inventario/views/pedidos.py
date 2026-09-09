@@ -1,13 +1,13 @@
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..models import Servicio, Pedido, PedidoDetalle
 from ..forms.pendientes import PendienteForm
 from ..forms.pedidos import PedidoForm, PedidoDetalleFormSet
+from ..services.busqueda import buscar_texto
 
 
 _SIGUIENTE_ESTADO_PEDIDO = {
@@ -34,25 +34,17 @@ def pedidos_list(request):
         .order_by("-creado")
     )
 
-    if q:
-        pedidos = pedidos.filter(
-            Q(numero__icontains=q) |
-            Q(nota__numero__icontains=q) |
-            Q(para_que__icontains=q) |
-            Q(observaciones__icontains=q)
-        )
+    pedidos = buscar_texto(pedidos, q, "numero", "nota__numero", "para_que", "observaciones")
 
+    pedidos = buscar_texto(
+        pedidos, item_q,
+        "detalles__detalle", "detalles__item__toner__nombre", "detalles__item__toner__marca",
+        "detalles__item__articulo__nombre", "detalles__item__articulo__descripcion",
+        "detalles__item__activo_pc__nombre_pc",
+        "detalles__item__impresora__marca", "detalles__item__impresora__modelo",
+    )
     if item_q:
-        pedidos = pedidos.filter(
-            Q(detalles__detalle__icontains=item_q) |
-            Q(detalles__item__toner__nombre__icontains=item_q) |
-            Q(detalles__item__toner__marca__icontains=item_q) |
-            Q(detalles__item__articulo__nombre__icontains=item_q) |
-            Q(detalles__item__articulo__descripcion__icontains=item_q) |
-            Q(detalles__item__activo_pc__nombre_pc__icontains=item_q) |
-            Q(detalles__item__impresora__marca__icontains=item_q) |
-            Q(detalles__item__impresora__modelo__icontains=item_q)
-        ).distinct()
+        pedidos = pedidos.distinct()
 
     if servicio_id and servicio_id.lower() != "none":
         try:

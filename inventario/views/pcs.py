@@ -1,10 +1,10 @@
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from ..models import ActivoPC, PatrimonioUnidad, Reparacion, Servicio
 from ..forms.pcs import ActivoPCForm
+from ..services.busqueda import buscar_texto
 from ..services.items import item_de_pc
 from ..services.listados import ordenar
 
@@ -14,15 +14,10 @@ def pcs_page(request):
     q = (request.GET.get("q") or "").strip()
     servicio_id = (request.GET.get("servicio") or "").strip()
 
-    pcs = ActivoPC.objects.select_related("servicio")
-    if q:
-        pcs = pcs.filter(
-            Q(nombre_pc__icontains=q) |
-            Q(ip__icontains=q) |
-            Q(patrimonio__icontains=q) |
-            Q(serie__icontains=q) |
-            Q(servicio__nombre__icontains=q)
-        )
+    pcs = buscar_texto(
+        ActivoPC.objects.select_related("servicio"), q,
+        "nombre_pc", "ip", "patrimonio", "serie", "servicio__nombre",
+    )
     if servicio_id:
         pcs = pcs.filter(servicio_id=servicio_id)
 
@@ -43,15 +38,11 @@ def pcs_page(request):
         )
         .order_by("-id")
     )
-    if q:
-        pats = pats.filter(
-            Q(nombre_pc__icontains=q) |
-            Q(numero_patrimonio__icontains=q) |
-            Q(ip__icontains=q) |
-            Q(usuario_asignado__icontains=q) |
-            Q(servicio_asignado__nombre__icontains=q) |
-            Q(pedido_detalle__item__articulo__nombre__icontains=q)
-        )
+    pats = buscar_texto(
+        pats, q,
+        "nombre_pc", "numero_patrimonio", "ip", "usuario_asignado",
+        "servicio_asignado__nombre", "pedido_detalle__item__articulo__nombre",
+    )
 
     paginator_pcs  = Paginator(pcs, 5)
     page_obj       = paginator_pcs.get_page(request.GET.get("page", 1))

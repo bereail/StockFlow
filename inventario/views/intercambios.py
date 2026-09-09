@@ -1,12 +1,12 @@
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..models import Intercambio
 from ..forms.intercambios import IntercambioForm, IntercambioResolverForm
+from ..services.busqueda import buscar_texto
 
 
 @login_required
@@ -27,16 +27,13 @@ def intercambios_list(request):
     if estado:
         intercambios = intercambios.filter(estado=estado)
 
-    if q:
-        intercambios = intercambios.filter(
-            Q(servicio_afectado__nombre__icontains=q) |
-            Q(servicio_beneficiario__nombre__icontains=q) |
-            Q(detalle_saliente__icontains=q) |
-            Q(detalle_entrante__icontains=q) |
-            Q(patrimonio_saliente__numero_patrimonio__icontains=q) |
-            Q(patrimonio_entrante__numero_patrimonio__icontains=q) |
-            Q(motivo__icontains=q)
-        )
+    intercambios = buscar_texto(
+        intercambios, q,
+        "servicio_afectado__nombre", "servicio_beneficiario__nombre",
+        "detalle_saliente", "detalle_entrante",
+        "patrimonio_saliente__numero_patrimonio", "patrimonio_entrante__numero_patrimonio",
+        "motivo",
+    )
 
     paginator = Paginator(intercambios, 10)
     page_obj = paginator.get_page(request.GET.get("page", 1))

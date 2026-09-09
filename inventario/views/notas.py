@@ -2,13 +2,13 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..models import Nota
 from ..forms.nota import NotaForm, NotaDetalleFormSet
 from ..forms.pendientes import PendienteForm
+from ..services.busqueda import buscar_texto
 
 
 @login_required
@@ -63,12 +63,7 @@ def nota_list(request):
     q      = (request.GET.get("q") or "").strip()
     estado = (request.GET.get("estado") or "").strip()
     notas  = Nota.objects.select_related("servicio_solicitante").order_by("-fecha", "-creado")
-    if q:
-        notas = notas.filter(
-            Q(numero__icontains=q) |
-            Q(servicio_solicitante__nombre__icontains=q) |
-            Q(detalle__icontains=q)
-        )
+    notas = buscar_texto(notas, q, "numero", "servicio_solicitante__nombre", "detalle")
     if estado:
         notas = notas.filter(estado=estado)
     paginator = Paginator(notas, 5)

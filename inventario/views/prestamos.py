@@ -2,11 +2,11 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from ..models import Prestamo, Servicio
 from ..forms.prestamos import PrestamoForm, PrestamoDetalleFormSet
+from ..services.busqueda import buscar_texto
 from ..services.listados import ordenar
 
 
@@ -22,14 +22,13 @@ def prestamos_list(request):
         .prefetch_related("detalles", "detalles__item")
     )
 
+    prestamos = buscar_texto(
+        prestamos, q,
+        "servicio__nombre", "entregado_a", "observaciones",
+        "detalles__detalle", "detalles__item__tipo",
+    )
     if q:
-        prestamos = prestamos.filter(
-            Q(servicio__nombre__icontains=q) |
-            Q(entregado_a__icontains=q) |
-            Q(observaciones__icontains=q) |
-            Q(detalles__detalle__icontains=q) |
-            Q(detalles__item__tipo__icontains=q)
-        ).distinct()
+        prestamos = prestamos.distinct()
     if servicio_id:
         prestamos = prestamos.filter(servicio_id=servicio_id)
     if estado == "activo":

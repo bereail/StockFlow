@@ -6,13 +6,14 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Sum, Count
+from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from ..models import Toner, Servicio, Movimiento, MovimientoDetalle
 from ..forms.toner import TonerForm, EntregaRapidaTonerForm
+from ..services.busqueda import buscar_texto
 from ..services.items import item_de_toner
 from ..services.listados import ordenar
 from ..services.stock import stock_de_item, verificar_stock_suficiente
@@ -23,13 +24,7 @@ def toner_page(request):
     q = (request.GET.get("q") or "").strip()
     estado = (request.GET.get("estado") or "").strip()
 
-    toners = Toner.objects.all()
-    if q:
-        toners = toners.filter(
-            Q(nombre__icontains=q) |
-            Q(marca__icontains=q) |
-            Q(modelo_impresora__icontains=q)
-        )
+    toners = buscar_texto(Toner.objects.all(), q, "nombre", "marca", "modelo_impresora")
     if estado == "activo":
         toners = toners.filter(activo=True)
     elif estado == "inactivo":
@@ -69,15 +64,7 @@ def toner_page(request):
 @login_required
 def toner_list(request):
     q = (request.GET.get("q") or "").strip()
-    toners = Toner.objects.all()
-
-    if q:
-        toners = toners.filter(
-            Q(marca__icontains=q) |
-            Q(nombre__icontains=q) |
-            Q(modelo_impresora__icontains=q)
-        )
-
+    toners = buscar_texto(Toner.objects.all(), q, "marca", "nombre", "modelo_impresora")
     toners = toners.order_by("marca", "nombre")
 
     paginator = Paginator(toners, 5)
@@ -212,14 +199,11 @@ def toner_historial(request):
         .order_by("-movimiento__fecha")
     )
 
-    if q:
-        detalles = detalles.filter(
-            Q(item__toner__nombre__icontains=q) |
-            Q(item__toner__marca__icontains=q) |
-            Q(item__toner__modelo_impresora__icontains=q) |
-            Q(movimiento__servicio__nombre__icontains=q) |
-            Q(movimiento__observaciones__icontains=q)
-        )
+    detalles = buscar_texto(
+        detalles, q,
+        "item__toner__nombre", "item__toner__marca", "item__toner__modelo_impresora",
+        "movimiento__servicio__nombre", "movimiento__observaciones",
+    )
     if servicio_id:
         detalles = detalles.filter(movimiento__servicio_id=servicio_id)
     if toner_id:
