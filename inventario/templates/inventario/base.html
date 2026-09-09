@@ -83,6 +83,15 @@
       <span>Tóner</span>
     </a>
 
+    <a class="sidebar-link {% if name in 'servicios_page servicio_create servicio_edit servicio_detail' %}active{% endif %}"
+       href="{% url 'servicios_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Servicios</span>
+    </a>
+
     <a class="sidebar-link {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
        href="{% url 'pedidos_list' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -109,9 +118,20 @@
       <span>Movimientos</span>
     </a>
 
+    <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
+       href="{% url 'notas_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      <span>Notas</span>
+    </a>
+
     <span class="sidebar-section-title">Más</span>
 
-    {% with mas_names='articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora servicios_page servicio_create servicio_edit servicio_detail notas_list nota_create nota_detail nota_edit nota_delete intercambios_list intercambio_create intercambio_detail prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver pendientes_page reparaciones_list reparacion_create reparacion_edit patrimonios_list patrimonio_edit patrimonio_create reportes diagrama_bd' %}
+    {% with mas_names='articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora intercambios_list intercambio_create intercambio_detail prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver pendientes_page reparaciones_list reparacion_create reparacion_edit patrimonios_list patrimonio_edit patrimonio_create reportes diagrama_bd' %}
     <div class="sidebar-group {% if name in mas_names %}has-active{% endif %}">
       <button type="button" class="sidebar-link sidebar-group-trigger" aria-haspopup="true" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -195,15 +215,6 @@
 
         <span class="sidebar-group-label">Organización</span>
 
-        <a class="sidebar-link {% if name in 'servicios_page servicio_create servicio_edit servicio_detail' %}active{% endif %}"
-           href="{% url 'servicios_page' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-          <span>Servicios</span>
-        </a>
-
         <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_detail patrimonio_edit patrimonio_create patrimonio_standalone_create patrimonio_standalone_edit donaciones_list donacion_create' %}active{% endif %}"
            href="{% url 'patrimonios_list' %}" role="menuitem">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -213,17 +224,6 @@
             <line x1="10" y1="14" x2="14" y2="14"/>
           </svg>
           <span>Patrimonios</span>
-        </a>
-
-        <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
-           href="{% url 'notas_list' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-          </svg>
-          <span>Notas</span>
         </a>
 
         <div class="sidebar-group-divider" role="separator"></div>
