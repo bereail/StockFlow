@@ -783,6 +783,31 @@ a.sort-th.is-active { color: var(--primary); }
 }
 
 /* =========================================================
+   13D) MINI LIST (ej: Pedidos/Notas en el resumen de Servicio)
+========================================================= */
+.mini-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background var(--t), border-color var(--t), transform .14s cubic-bezier(.4,0,.2,1);
+}
+.mini-list-row:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-color);
+  transform: translateX(2px);
+}
+.mini-list-row:focus-visible {
+  outline: 2px solid rgba(var(--primary-rgb),.55);
+  outline-offset: 1px;
+}
+.mini-list-row-num { font-size: 13px; font-weight: 700; }
+.mini-list-row-sub { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* =========================================================
    14) FORM GRID
 ========================================================= */
 .formgrid {

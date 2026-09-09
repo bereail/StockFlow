@@ -90,11 +90,24 @@
           <a class="btn btn-ghost" href="#documentacion" style="font-size:11.5px">Ver todos ({{ pedidos|length }}) →</a>
         </div>
         {% if pedidos %}
-          <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;flex-direction:column;gap:2px">
             {% for p in pedidos|slice:":4" %}
-              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'pedido_detail' p.pk %}?next={% url 'servicio_detail' servicio.pk %}">
-                <span><strong>{{ p.numero }}</strong></span>
-                <span class="chip" style="font-size:10.5px">{{ p.get_estado_display }}</span>
+              <a class="mini-list-row" href="{% url 'pedido_detail' p.pk %}?next={% url 'servicio_detail' servicio.pk %}">
+                <span>
+                  <span class="mini-list-row-num">{{ p.numero }}</span>
+                  <span class="mini-list-row-sub">{{ p.creado|date:"d/m/Y" }}</span>
+                </span>
+                {% if p.estado == "HECHO" %}
+                  <span class="badge badge-neutral">{{ p.get_estado_display }}</span>
+                {% elif p.estado == "APROBADO" %}
+                  <span class="badge badge-warn">{{ p.get_estado_display }}</span>
+                {% elif p.estado == "RECIBIDO" or p.estado == "ENTREGADO" %}
+                  <span class="badge badge-ok">{{ p.get_estado_display }}</span>
+                {% elif p.estado == "CANCELADO" %}
+                  <span class="badge badge-danger">{{ p.get_estado_display }}</span>
+                {% else %}
+                  <span class="badge">{{ p.get_estado_display }}</span>
+                {% endif %}
               </a>
             {% endfor %}
           </div>
@@ -109,11 +122,22 @@
           <a class="btn btn-ghost" href="#documentacion" style="font-size:11.5px">Ver todas ({{ notas|length }}) →</a>
         </div>
         {% if notas %}
-          <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;flex-direction:column;gap:2px">
             {% for n in notas|slice:":4" %}
-              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'nota_detail' n.pk %}?next={% url 'servicio_detail' servicio.pk %}">
-                <span><strong>{{ n.numero|default:"—" }}</strong></span>
-                <span class="chip" style="font-size:10.5px">{{ n.get_estado_display }}</span>
+              <a class="mini-list-row" href="{% url 'nota_detail' n.pk %}?next={% url 'servicio_detail' servicio.pk %}">
+                <span>
+                  <span class="mini-list-row-num">{{ n.numero|default:"—" }}</span>
+                  <span class="mini-list-row-sub">{{ n.fecha|date:"d/m/Y" }}</span>
+                </span>
+                {% if n.estado == "FINALIZADA" %}
+                  <span class="badge badge-ok">Finalizada</span>
+                {% elif n.estado == "BORRADOR" %}
+                  <span class="badge badge-neutral">{{ n.get_estado_display }}</span>
+                {% elif n.estado == "CANCELADA" %}
+                  <span class="badge badge-danger">{{ n.get_estado_display }}</span>
+                {% else %}
+                  <span class="badge badge-warn">{{ n.get_estado_display }}</span>
+                {% endif %}
               </a>
             {% endfor %}
           </div>
