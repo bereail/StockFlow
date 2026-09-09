@@ -352,6 +352,14 @@
   document.querySelectorAll('.card-collapsible').forEach(initCollapsible);
 })();
 
+/* ── Tablas con scroll horizontal: alcanzables por teclado ── */
+(function () {
+  document.querySelectorAll('.table-wrapper').forEach(function (wrap) {
+    if (wrap.scrollWidth <= wrap.clientWidth) return;
+    wrap.setAttribute('tabindex', '0');
+  });
+})();
+
 /* ── Sidebar: grupo "Gestión" tipo card flotante (hover + clic) ── */
 (function () {
   document.querySelectorAll('.sidebar-group').forEach(function (group) {

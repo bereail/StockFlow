@@ -1104,60 +1104,6 @@ details.obs summary::-webkit-details-marker { display: none; }
 .timeline-cancelled-badge span { color: var(--danger); font-size: .78rem; font-weight: 700; }
 
 /* =========================================================
-   21) RESPONSIVE — ventana angosta (sin sidebar colapsado)
-========================================================= */
-@media (max-width: 900px) {
-  :root { --sidebar-w: 180px; }
-  .page-title { font-size: 20px; }
-  .db-stats { grid-template-columns: repeat(2, 1fr); }
-  .search-global input:not(:focus) { width: 160px; }
-}
-
-@media (max-width: 700px) {
-  :root { --sidebar-w: 56px; }
-
-  .sidebar-link span { display: none; }
-  .sidebar-section-title { display: none; }
-
-  .sidebar-link {
-    justify-content: center;
-    padding: 10px 0;
-    border-radius: var(--radius-sm);
-  }
-  .sidebar-link svg { width: 18px; height: 18px; }
-  .sidebar-group-chevron { display: none; }
-  .sidebar-group.has-active .sidebar-group-trigger { padding-left: 0; }
-
-  .col-2, .col-3, .col-4, .col-6, .col-8 { grid-column: 1 / -1; }
-  .toggle-grid, .checks ul { grid-template-columns: 1fr; }
-
-  .db-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .db-mod--featured { grid-column: 1 / -1; }
-  .stats-row { gap: 6px; }
-  .stat-card { min-width: 46%; }
-
-  .card, .panel { border-radius: var(--radius-lg); padding: 16px; }
-  .card > .table-wrapper { margin: 12px -16px -16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
-
-  .page-title { font-size: 18px; }
-  main.container { padding: 16px 16px 34px; }
-
-  .toast-stack { bottom: 12px; right: 12px; left: 12px; }
-  .toast { max-width: 100%; font-size: 12.5px; }
-
-  /* Barras de filtros de listados: cada control en su propio ancho natural,
-     apilado prolijo en vez de un select angosto perdido en una fila larga. */
-  .page-actions, .page-header form { flex-wrap: wrap; }
-  .page-actions select, .page-header form select,
-  .page-actions input.search, .page-header form input { flex: 1 1 140px; }
-
-  .bar-row { grid-template-columns: 64px 1fr 34px; gap: 6px; }
-
-  .servicio-hero { gap: 10px; }
-  .tabs-wrap .tabs { gap: 0; }
-}
-
-/* =========================================================
    22A) ANIMACIONES DE ENTRADA
 ========================================================= */
 @keyframes fade-up {
@@ -1732,6 +1678,7 @@ a.timeline-event-card:hover {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   text-decoration: none;
   transition: transform .14s cubic-bezier(.4,0,.2,1), box-shadow .14s ease, border-color var(--t);
 }
@@ -1942,4 +1889,97 @@ select.ssel-native { display: none; }
   padding: 8px 10px;
   font-size: 12.5px;
   color: var(--muted);
+}
+
+/* =========================================================
+   27) RESPONSIVE — ventana angosta (sin sidebar colapsado)
+   Va al final del archivo a propósito: son overrides de reglas
+   definidas en secciones anteriores, y en CSS un selector con la
+   misma especificidad definido más abajo gana aunque esté "menos
+   abajo" que un @media — si esta sección quedara antes de esas
+   reglas base, la base ganaría siempre y la media query no haría
+   nada (nos pasó con .db-stats, .bar-row y .servicio-hero).
+========================================================= */
+@media (max-width: 900px) {
+  :root { --sidebar-w: 180px; }
+  .page-title { font-size: 20px; }
+  .db-stats { grid-template-columns: repeat(2, 1fr); }
+  .search-global input:not(:focus) { width: 160px; }
+}
+
+@media (max-width: 700px) {
+  :root { --sidebar-w: 56px; }
+
+  /* No usar display:none acá: saca el texto del árbol de accesibilidad y
+     el link/botón queda sin nombre para lectores de pantalla (el ícono
+     SVG tiene aria-hidden). Mismo truco que .sr-only: lo oculta
+     visualmente sin sacarlo de la accesibilidad. */
+  .sidebar-link span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .sidebar-section-title { display: none; }
+
+  .sidebar-link {
+    justify-content: center;
+    padding: 10px 0;
+    border-radius: var(--radius-sm);
+  }
+  .sidebar-link svg { width: 18px; height: 18px; }
+  .sidebar-group-chevron { display: none; }
+  .sidebar-group.has-active .sidebar-group-trigger { padding-left: 0; }
+
+  .col-2, .col-3, .col-4, .col-6, .col-8 { grid-column: 1 / -1; }
+  .toggle-grid, .checks ul { grid-template-columns: 1fr; }
+
+  .db-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .db-mod--featured { grid-column: 1 / -1; }
+  .stats-row { gap: 6px; }
+  .stat-card { min-width: 46%; }
+
+  .card, .panel { border-radius: var(--radius-lg); padding: 16px; }
+  .card > .table-wrapper { margin: 12px -16px -16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+  .page-title { font-size: 18px; }
+  main.container { padding: 16px 16px 34px; }
+
+  .toast-stack { bottom: 12px; right: 12px; left: 12px; }
+  .toast { max-width: 100%; font-size: 12.5px; }
+
+  /* Barras de filtros de listados: cada control en su propio ancho natural,
+     apilado prolijo en vez de un select angosto perdido en una fila larga. */
+  .page-actions, .page-header form { flex-wrap: wrap; }
+  .page-actions select, .page-header form select,
+  .page-actions input.search, .page-header form input { flex: 1 1 140px; }
+
+  .bar-row { grid-template-columns: 64px 1fr 34px; gap: 6px; }
+
+  .servicio-hero { gap: 10px; }
+  .tabs-wrap .tabs { gap: 0; }
+}
+
+@media (max-width: 480px) {
+  .db-stats { grid-template-columns: 1fr; }
+
+  /* El buscador global tiene ancho fijo (160px incluso en el breakpoint
+     de 900px) y no se achica solo — a este ancho, sumado a la marca y
+     al bloque de usuario, desborda el titlebar sí o sí. */
+  .search-global input:not(:focus) { width: 92px; }
+  .search-global input:focus { width: 150px; }
+}
+
+@media (max-width: 360px) {
+  /* Pantallas muy angostas (ej: iPhone SE 1ª gen, 320px): el acceso directo
+     a Admin del titlebar ya está en el sidebar → Administración, así que
+     no se pierde nada al ocultarlo acá y ganar espacio para el buscador. */
+  .user-admin-link { display: none; }
+  .search-global input:not(:focus) { width: 60px; }
+  .search-global input:focus { width: 120px; }
 }
