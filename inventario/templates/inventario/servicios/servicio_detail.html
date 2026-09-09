@@ -92,7 +92,7 @@
         {% if pedidos %}
           <div style="display:flex;flex-direction:column;gap:4px">
             {% for p in pedidos|slice:":4" %}
-              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'pedido_detail' p.pk %}">
+              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'pedido_detail' p.pk %}?next={% url 'servicio_detail' servicio.pk %}">
                 <span><strong>{{ p.numero }}</strong></span>
                 <span class="chip" style="font-size:10.5px">{{ p.get_estado_display }}</span>
               </a>
@@ -111,7 +111,7 @@
         {% if notas %}
           <div style="display:flex;flex-direction:column;gap:4px">
             {% for n in notas|slice:":4" %}
-              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'nota_detail' n.pk %}">
+              <a class="row space-between" style="gap:8px;padding:6px 4px" href="{% url 'nota_detail' n.pk %}?next={% url 'servicio_detail' servicio.pk %}">
                 <span><strong>{{ n.numero|default:"—" }}</strong></span>
                 <span class="chip" style="font-size:10.5px">{{ n.get_estado_display }}</span>
               </a>
@@ -332,7 +332,7 @@
             <thead><tr><th>Número</th><th>Estado</th><th style="width:120px">Creado</th></tr></thead>
             <tbody>
               {% for p in pedidos %}
-                <tr style="cursor:pointer" data-href="{% url 'pedido_detail' p.pk %}">
+                <tr style="cursor:pointer" data-href="{% url 'pedido_detail' p.pk %}?next={% url 'servicio_detail' servicio.pk %}%23documentacion">
                   <td><strong>{{ p.numero }}</strong></td>
                   <td><span class="chip">{{ p.get_estado_display }}</span></td>
                   <td class="muted mono">{{ p.creado|date:"d/m/Y" }}</td>
@@ -357,7 +357,7 @@
             <thead><tr><th>Número</th><th>Estado</th><th style="width:120px">Fecha</th></tr></thead>
             <tbody>
               {% for n in notas %}
-                <tr style="cursor:pointer" data-href="{% url 'nota_detail' n.pk %}">
+                <tr style="cursor:pointer" data-href="{% url 'nota_detail' n.pk %}?next={% url 'servicio_detail' servicio.pk %}%23documentacion">
                   <td><strong>{{ n.numero|default:"—" }}</strong></td>
                   <td><span class="chip">{{ n.get_estado_display }}</span></td>
                   <td class="muted mono">{{ n.fecha|date:"d/m/Y" }}</td>

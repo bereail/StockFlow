@@ -121,6 +121,7 @@ def nota_detail(request, pk):
         "pendientes":      pendientes,
         "pendiente_form":  pendiente_form,
         "today":           timezone.localdate(),
+        "next":            request.GET.get("next") or "",
     })
 
 

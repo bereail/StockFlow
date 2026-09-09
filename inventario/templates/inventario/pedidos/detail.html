@@ -10,7 +10,7 @@
   </div>
   <div style="display:flex;gap:8px">
     <button class="btn js-toggle-edit" onclick="toggleEdit()">✎ Editar</button>
-    <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">← Volver</a>
+    <a class="btn btn-ghost" href="{% if next %}{{ next }}{% else %}{% url 'pedidos_list' %}{% endif %}">← Volver</a>
   </div>
 </div>
 

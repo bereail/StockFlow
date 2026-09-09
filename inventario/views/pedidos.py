@@ -173,6 +173,7 @@ def pedido_detail(request, pk):
         "pendiente_form":  pendiente_form,
         "today":           timezone.localdate(),
         "nota_detalles":   nota_detalles,
+        "next":            request.GET.get("next") or "",
     })
 
 
@@ -185,12 +186,15 @@ def pedido_avanzar(request, pk):
         pedido.estado = siguiente
         hoy = timezone.localdate()
         campos = ["estado", "actualizado"]
-        if siguiente == "APROBADO"  and not pedido.fecha_aprobado:
-            pedido.fecha_aprobado = hoy;  campos.append("fecha_aprobado")
-        if siguiente == "RECIBIDO"  and not pedido.fecha_recibido:
-            pedido.fecha_recibido = hoy;  campos.append("fecha_recibido")
+        if siguiente == "APROBADO" and not pedido.fecha_aprobado:
+            pedido.fecha_aprobado = hoy
+            campos.append("fecha_aprobado")
+        if siguiente == "RECIBIDO" and not pedido.fecha_recibido:
+            pedido.fecha_recibido = hoy
+            campos.append("fecha_recibido")
         if siguiente == "ENTREGADO" and not pedido.fecha_entregado:
-            pedido.fecha_entregado = hoy; campos.append("fecha_entregado")
+            pedido.fecha_entregado = hoy
+            campos.append("fecha_entregado")
         pedido.save(update_fields=campos)
         messages.success(request, f"Pedido avanzado a {pedido.get_estado_display()}.")
     return redirect("pedido_detail", pk=pedido.pk)
