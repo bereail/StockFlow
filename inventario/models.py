@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db.models import Q, F
@@ -227,10 +228,19 @@ class Impresora(models.Model):
             if duplicada.exists():
                 raise ValidationError({"patrimonio": f"Ya existe otra impresora con el patrimonio {self.patrimonio}."})
 
-    @property
+    @cached_property
     def asignacion_activa(self):
-        # Requiere related_name="asignaciones" en AsignacionImpresora
-        return self.asignaciones.filter(fecha_hasta__isnull=True).order_by("-fecha_desde").first()
+        # Requiere related_name="asignaciones" en AsignacionImpresora.
+        # OJO: self.asignaciones.filter(...) descarta el cache de un
+        # prefetch_related("asignaciones") — cualquier .filter()/.exclude()
+        # sobre el manager relacionado dispara una query nueva en vez de
+        # reusar lo ya traído. Iterar self.asignaciones.all() en Python sí
+        # reusa el cache (si lo hay) y da el mismo resultado, siempre que el
+        # Prefetch ya venga ordenado por -fecha_desde (como acá).
+        for a in self.asignaciones.all():
+            if a.fecha_hasta is None:
+                return a
+        return None
 
     @property
     def servicio_actual(self):

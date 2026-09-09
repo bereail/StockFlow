@@ -1318,3 +1318,54 @@ class BuscarTextoEnListadosTest(TestCase):
         )
         r = self.client.get("/patrimonios/?q=quirofano")
         self.assertContains(r, "PAT-QUIROFANO-01")
+
+
+# ============================================================
+# N+1: la cantidad de queries no debe escalar con la cantidad de filas
+# ============================================================
+
+class SinNMasUnoTest(TestCase):
+    """Regresión para dos N+1 reales encontrados con CaptureQueriesContext:
+    Impresora.asignacion_activa (bypaseaba el prefetch) y el combo de
+    Nota en PendienteForm (Nota.__str__ toca servicio_solicitante sin
+    select_related). En ambos, la cantidad de queries para la página no
+    tiene que crecer según cuántas filas haya."""
+
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin12", "admin12@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def _queries_para(self, url):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(url)
+        return len(ctx.captured_queries)
+
+    def test_impresoras_page_no_escala_con_la_cantidad_de_impresoras(self):
+        servicio = Servicio.objects.create(nombre="Guardia")
+        for i in range(2):
+            imp = Impresora.objects.create(marca="HP", modelo=f"M{i}")
+            AsignacionImpresora.objects.create(impresora=imp, servicio=servicio)
+        pocas = self._queries_para("/impresoras/")
+
+        for i in range(2, 8):
+            imp = Impresora.objects.create(marca="HP", modelo=f"M{i}")
+            AsignacionImpresora.objects.create(impresora=imp, servicio=servicio)
+        muchas = self._queries_para("/impresoras/")
+
+        self.assertEqual(pocas, muchas)
+
+    def test_pendientes_page_no_escala_con_la_cantidad_de_notas(self):
+        servicio = Servicio.objects.create(nombre="Guardia")
+        for i in range(2):
+            Nota.objects.create(servicio_solicitante=servicio, numero=f"N-{i}")
+        pocas = self._queries_para("/pendientes/")
+
+        for i in range(2, 8):
+            Nota.objects.create(servicio_solicitante=servicio, numero=f"N-{i}")
+        muchas = self._queries_para("/pendientes/")
+
+        self.assertEqual(pocas, muchas)

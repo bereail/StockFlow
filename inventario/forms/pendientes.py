@@ -20,6 +20,10 @@ class PendienteForm(forms.ModelForm):
         self.fields["pedido"].queryset = self.fields["pedido"].queryset.order_by("-creado")
         self.fields["pedido"].empty_label = "Sin pedido vinculado"
         self.fields["pedido"].required = False
-        self.fields["nota"].queryset = self.fields["nota"].queryset.order_by("-fecha", "-creado")
+        self.fields["nota"].queryset = (
+            self.fields["nota"].queryset
+            .select_related("servicio_solicitante")
+            .order_by("-fecha", "-creado")
+        )
         self.fields["nota"].empty_label = "Sin nota vinculada"
         self.fields["nota"].required = False
