@@ -9,6 +9,7 @@ from ..models import (
     AsignacionImpresora, Intercambio, MovimientoDetalle, Servicio,
 )
 from ..forms.servicios import ServicioForm
+from ..services.busqueda import buscar_texto
 from ..services.listados import ordenar
 from ..services.servicios import historial_de_servicio
 
@@ -17,12 +18,7 @@ from ..services.servicios import historial_de_servicio
 def servicios_page(request):
     q = (request.GET.get("q") or "").strip()
 
-    servicios = Servicio.objects.all()
-    if q:
-        servicios = servicios.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q)
-        )
+    servicios = buscar_texto(Servicio.objects.all(), q, "nombre", "descripcion")
 
     servicios, sort_actual, dir_actual = ordenar(
         request, servicios,

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from ..models import (
@@ -17,6 +17,7 @@ from ..models import (
     Prestamo,
     Intercambio,
 )
+from ..services.busqueda import buscar_texto
 from ..services.stock import toners_con_stock_critico
 
 
@@ -99,26 +100,24 @@ def busqueda_global(request):
     if not q:
         return redirect("dashboard")
 
-    toners = Toner.objects.filter(
-        Q(nombre__icontains=q) | Q(marca__icontains=q) | Q(modelo_impresora__icontains=q)
+    toners = buscar_texto(
+        Toner.objects.all(), q, "nombre", "marca", "modelo_impresora"
     ).order_by("marca", "nombre")[:12]
 
-    articulos = Articulo.objects.filter(
-        Q(nombre__icontains=q) | Q(marca__icontains=q) | Q(descripcion__icontains=q)
+    articulos = buscar_texto(
+        Articulo.objects.all(), q, "nombre", "marca", "descripcion"
     ).order_by("nombre")[:12]
 
-    pcs = ActivoPC.objects.select_related("servicio").filter(
-        Q(nombre_pc__icontains=q) | Q(ip__icontains=q) |
-        Q(patrimonio__icontains=q) | Q(serie__icontains=q)
+    pcs = buscar_texto(
+        ActivoPC.objects.select_related("servicio"), q, "nombre_pc", "ip", "patrimonio", "serie"
     ).order_by("nombre_pc")[:12]
 
-    impresoras = Impresora.objects.filter(
-        Q(marca__icontains=q) | Q(modelo__icontains=q) |
-        Q(patrimonio__icontains=q) | Q(ip__icontains=q)
+    impresoras = buscar_texto(
+        Impresora.objects.all(), q, "marca", "modelo", "patrimonio", "ip"
     ).order_by("marca", "modelo")[:12]
 
-    servicios = Servicio.objects.filter(
-        Q(nombre__icontains=q) | Q(descripcion__icontains=q)
+    servicios = buscar_texto(
+        Servicio.objects.all(), q, "nombre", "descripcion"
     ).order_by("nombre")[:12]
 
     total = toners.count() + articulos.count() + pcs.count() + impresoras.count() + servicios.count()
