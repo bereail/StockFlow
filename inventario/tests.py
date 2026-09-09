@@ -1369,3 +1369,129 @@ class SinNMasUnoTest(TestCase):
         muchas = self._queries_para("/pendientes/")
 
         self.assertEqual(pocas, muchas)
+
+
+# ============================================================
+# generar_ficha_desde_articulo() — sin ningún test hasta ahora
+# ============================================================
+
+class GenerarFichaDesdeArticuloTest(TestCase):
+    """Auto-genera la ficha completa (Impresora/ActivoPC) de una unidad
+    patrimonial cuando el artículo de catálogo lo tiene configurado.
+    Cero cobertura antes de este test a pesar de tener idempotencia
+    documentada en el docstring y nunca verificada."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin13", "admin13@test.com", "pw1234")
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+
+    def _unidad(self, **extra):
+        defaults = dict(numero_patrimonio="PAT-100", asignado_por=self.user)
+        defaults.update(extra)
+        return PatrimonioUnidad(**defaults)
+
+    def test_no_hace_nada_si_el_articulo_no_genera_ficha(self):
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="Mouse", genera_ficha="")
+        unidad = self._unidad()
+        generar_ficha_desde_articulo(unidad, articulo)
+        self.assertFalse(Impresora.objects.exists())
+        self.assertFalse(ActivoPC.objects.exists())
+
+    def test_genera_impresora_con_servicio_asignado(self):
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="Impresora HP", marca="HP", genera_ficha="IMPRESORA")
+        unidad = self._unidad(
+            numero_patrimonio="PAT-200", ip="192.168.1.50",
+            servicio_asignado=self.servicio, usuario_asignado="Juan",
+        )
+        generar_ficha_desde_articulo(unidad, articulo)
+
+        impresora = Impresora.objects.get(patrimonio="PAT-200")
+        self.assertEqual(impresora.marca, "HP")
+        self.assertEqual(impresora.conexion, "IP")
+        self.assertEqual(impresora.ip, "192.168.1.50")
+        self.assertEqual(impresora.servicio_actual, self.servicio)
+        self.assertEqual(impresora.responsable_actual, "Juan")
+
+    def test_genera_impresora_es_idempotente(self):
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="Impresora HP", marca="HP", genera_ficha="IMPRESORA")
+        unidad = self._unidad(numero_patrimonio="PAT-300")
+        generar_ficha_desde_articulo(unidad, articulo)
+        generar_ficha_desde_articulo(unidad, articulo)
+        self.assertEqual(Impresora.objects.filter(patrimonio="PAT-300").count(), 1)
+
+    def test_ip_invalida_no_rompe_y_usa_usb(self):
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="Impresora HP", marca="HP", genera_ficha="IMPRESORA")
+        unidad = self._unidad(numero_patrimonio="PAT-400", ip="no-es-una-ip")
+        generar_ficha_desde_articulo(unidad, articulo)
+
+        impresora = Impresora.objects.get(patrimonio="PAT-400")
+        self.assertEqual(impresora.conexion, "USB")
+        self.assertIsNone(impresora.ip)
+
+    def test_genera_activo_pc(self):
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="PC de escritorio", genera_ficha="ACTIVO_PC")
+        unidad = self._unidad(
+            numero_patrimonio="PAT-500", nombre_pc="PC-GUARDIA-01",
+            serial="SN123", servicio_asignado=self.servicio,
+        )
+        generar_ficha_desde_articulo(unidad, articulo)
+
+        pc = ActivoPC.objects.get(patrimonio="PAT-500")
+        self.assertEqual(pc.nombre_pc, "PC-GUARDIA-01")
+        self.assertEqual(pc.serie, "SN123")
+        self.assertEqual(pc.servicio, self.servicio)
+
+
+# ============================================================
+# asignar_impresora_a_servicio() — "única fuente de verdad" sin tests directos
+# ============================================================
+
+class AsignarImpresoraAServicioTest(TestCase):
+    def setUp(self):
+        self.a = Servicio.objects.create(nombre="Guardia")
+        self.b = Servicio.objects.create(nombre="Farmacia")
+        self.impresora = Impresora.objects.create(marca="HP", modelo="X")
+
+    def test_primera_asignacion(self):
+        from inventario.services.impresoras import asignar_impresora_a_servicio
+        asignar_impresora_a_servicio(self.impresora, self.a, responsable="Ana")
+        self.assertEqual(self.impresora.servicio_actual, self.a)
+        self.assertEqual(AsignacionImpresora.objects.count(), 1)
+
+    def test_reasignar_a_otro_servicio_cierra_la_anterior(self):
+        from inventario.services.impresoras import asignar_impresora_a_servicio
+        asignar_impresora_a_servicio(self.impresora, self.a)
+        primera = AsignacionImpresora.objects.get(servicio=self.a)
+
+        # misma instancia para las dos llamadas: asignacion_activa es
+        # @cached_property, así que esto también prueba que la función
+        # invalida su propio cache tras el UPDATE por queryset (si no,
+        # el segundo self.impresora.servicio_actual de abajo devolvería
+        # el valor viejo cacheado por la primera llamada).
+        asignar_impresora_a_servicio(self.impresora, self.b)
+
+        primera.refresh_from_db()
+        self.assertIsNotNone(primera.fecha_hasta)
+        self.assertEqual(self.impresora.servicio_actual, self.b)
+        self.assertEqual(AsignacionImpresora.objects.count(), 2)
+
+    def test_asignar_al_mismo_servicio_no_hace_nada(self):
+        from inventario.services.impresoras import asignar_impresora_a_servicio
+        asignar_impresora_a_servicio(self.impresora, self.a)
+        resultado = asignar_impresora_a_servicio(self.impresora, self.a)
+        self.assertIsNone(resultado)
+        self.assertEqual(AsignacionImpresora.objects.count(), 1)
+
+    def test_desasignar_cierra_sin_abrir_una_nueva(self):
+        from inventario.services.impresoras import asignar_impresora_a_servicio
+        asignar_impresora_a_servicio(self.impresora, self.a)
+        asignar_impresora_a_servicio(self.impresora, None)
+
+        self.assertIsNone(self.impresora.servicio_actual)
+        self.assertEqual(AsignacionImpresora.objects.filter(fecha_hasta__isnull=True).count(), 0)

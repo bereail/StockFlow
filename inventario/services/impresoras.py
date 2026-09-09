@@ -19,6 +19,14 @@ def asignar_impresora_a_servicio(impresora, servicio, *, fecha=None, responsable
         impresora=impresora, fecha_hasta__isnull=True
     ).update(fecha_hasta=fecha)
 
+    # asignacion_activa es @cached_property: el .update() de arriba es un
+    # UPDATE por queryset (no pasa por el ORM del objeto), así que el cache
+    # de esta instancia quedó desactualizado. Sin esto, cualquier código que
+    # siga usando este mismo `impresora` después de llamar a esta función
+    # (ej. un mensaje de éxito con impresora.servicio_actual) vería el
+    # servicio viejo.
+    impresora.__dict__.pop("asignacion_activa", None)
+
     if not servicio:
         return None
 
