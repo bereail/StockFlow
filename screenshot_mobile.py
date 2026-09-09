@@ -3,7 +3,8 @@
 Requiere un superusuario ya creado (`manage.py createsuperuser`) y sus
 credenciales en las variables de entorno STOCKTONER_USER / STOCKTONER_PASSWORD.
 """
-import os, time
+import os
+import time
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8765"

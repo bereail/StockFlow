@@ -19,10 +19,8 @@ from django.utils import timezone
 from inventario.models import (
     ActivoPC,
     Articulo,
-    AsignacionImpresora,
     Impresora,
     Intercambio,
-    Item,
     Movimiento,
     MovimientoDetalle,
     Nota,

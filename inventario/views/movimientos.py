@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from ..models import Toner, Servicio, Item, Movimiento, MovimientoDetalle
+from ..models import Toner, Servicio, Movimiento, MovimientoDetalle
 from ..forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
 from ..services.items import item_de_toner, item_de_articulo
 from ..services.stock import verificar_stock_suficiente

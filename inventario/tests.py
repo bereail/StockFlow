@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from inventario.models import (
     Toner, Articulo, ActivoPC, Impresora, Servicio,
-    Item, Movimiento, MovimientoDetalle,
+    Movimiento, MovimientoDetalle,
     AsignacionImpresora, Nota, Pendiente, Reparacion,
     Prestamo, PrestamoDetalle, Pedido, PedidoDetalle, PatrimonioUnidad, Intercambio,
 )
@@ -537,7 +537,7 @@ class VistasCrudTest(TestCase):
 
     def test_prestamo_devuelto_libera_el_item_para_prestar_de_nuevo(self):
         item = self._crear_item_prestable()
-        r1 = self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
+        self.client.post("/mas/prestamos/nuevo/", self._formset_data(item.pk))
         prestamo1 = Prestamo.objects.get(detalles__item=item)
 
         self.client.post(f"/prestamos/{prestamo1.pk}/devolver/")
@@ -1064,7 +1064,7 @@ class EntidadDetailTest(TestCase):
 
 class ListadosOrdenServicioTest(TestCase):
     def test_ordenar_por_defecto_ascendente(self):
-        s = Servicio.objects.create(nombre="Zeta")
+        Servicio.objects.create(nombre="Zeta")
         Toner.objects.create(nombre="Z", marca="Marca Z")
         Toner.objects.create(nombre="A", marca="Marca A")
         qs, clave, direccion = ordenar(
@@ -1130,8 +1130,99 @@ class ListadosFiltrosVistaTest(TestCase):
 
     def test_prestamos_orden_por_defecto_es_mas_reciente_primero(self):
         s = Servicio.objects.create(nombre="Quirófano")
-        vieja = Prestamo.objects.create(servicio=s, entregado_a="Viejo", fecha_retiro=timezone.now() - timezone.timedelta(days=10))
-        nueva = Prestamo.objects.create(servicio=s, entregado_a="Nuevo", fecha_retiro=timezone.now())
+        Prestamo.objects.create(servicio=s, entregado_a="Viejo", fecha_retiro=timezone.now() - timezone.timedelta(days=10))
+        Prestamo.objects.create(servicio=s, entregado_a="Nuevo", fecha_retiro=timezone.now())
         r = self.client.get("/prestamos/")
         contenido = r.content.decode("utf-8")
         self.assertLess(contenido.index("Nuevo"), contenido.index("Viejo"))
+
+
+# ============================================================
+# BÚSQUEDA INSENSIBLE A ACENTOS (server-side)
+# ============================================================
+
+class BuscarTextoTest(TestCase):
+    """buscar_texto() — usado por servicios_page y busqueda_global."""
+
+    def test_encuentra_ignorando_acentos_y_mayusculas(self):
+        from inventario.services.busqueda import buscar_texto
+        Servicio.objects.create(nombre="Clínica Médica")
+        r = buscar_texto(Servicio.objects.all(), "clinica medica", "nombre")
+        self.assertEqual(list(r.values_list("nombre", flat=True)), ["Clínica Médica"])
+
+    def test_termino_vacio_no_filtra(self):
+        from inventario.services.busqueda import buscar_texto
+        Servicio.objects.create(nombre="Guardia")
+        r = buscar_texto(Servicio.objects.all(), "", "nombre")
+        self.assertEqual(r.count(), 1)
+
+
+class ServiciosPageBusquedaTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin7", "admin7@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_busqueda_de_servicios_ignora_acentos(self):
+        Servicio.objects.create(nombre="Enfermería")
+        r = self.client.get("/servicios/?q=enfermeria")
+        self.assertContains(r, "Enfermería")
+
+
+class BusquedaGlobalIgnoraAcentosTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin8", "admin8@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_encuentra_servicio_sin_tildes(self):
+        Servicio.objects.create(nombre="Clínica")
+        r = self.client.get("/buscar/?q=clinica")
+        self.assertContains(r, "Clínica")
+
+
+# ============================================================
+# "VOLVER" DESDE UN PEDIDO/NOTA VUELVE AL SERVICIO (no siempre al listado)
+# ============================================================
+
+class PedidoDetailVolverTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin9", "admin9@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.pedido = Pedido.objects.create(numero="PED-TEST-01")
+        self.pedido.servicios.add(self.servicio)
+
+    def test_sin_next_vuelve_al_listado(self):
+        r = self.client.get(f"/pedidos/{self.pedido.pk}/")
+        self.assertContains(r, 'href="/pedidos/"')
+
+    def test_con_next_vuelve_ahi(self):
+        # el # va con %23 en la URL de la request (si no, el navegador/test
+        # client lo toma como fragmento propio y nunca llega al server)
+        next_url = f"/servicios/{self.servicio.pk}/#documentacion"
+        r = self.client.get(f"/pedidos/{self.pedido.pk}/?next=/servicios/{self.servicio.pk}/%23documentacion")
+        self.assertContains(r, f'href="{next_url}"')
+
+
+class NotaDetailVolverTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin10", "admin10@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.nota = Nota.objects.create(servicio_solicitante=self.servicio)
+
+    def test_sin_next_vuelve_al_listado(self):
+        r = self.client.get(f"/notas/{self.nota.pk}/")
+        self.assertContains(r, 'href="/notas/"')
+
+    def test_con_next_vuelve_ahi(self):
+        next_url = f"/servicios/{self.servicio.pk}/#documentacion"
+        r = self.client.get(f"/notas/{self.nota.pk}/?next=/servicios/{self.servicio.pk}/%23documentacion")
+        self.assertContains(r, f'href="{next_url}"')

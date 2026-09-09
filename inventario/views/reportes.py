@@ -190,8 +190,8 @@ def _rpt_open(title: str, periodo: str, now: str) -> str:
 
 def _rpt_summary(*items) -> str:
     parts = "".join(
-        f'<div class="sum"><div class="sum-val">{v}</div><div class="sum-lbl">{l}</div></div>'
-        for v, l in items
+        f'<div class="sum"><div class="sum-val">{v}</div><div class="sum-lbl">{label}</div></div>'
+        for v, label in items
     )
     return f'<div class="rpt-summary">{parts}</div>'
 
@@ -428,8 +428,10 @@ def reporte_pedidos_html(request):
         ])
 
     partes = []
-    if mes_str:     partes.append(f"Mes: {mes_str}")
-    if estado:      partes.append(f"Estado: {estado}")
+    if mes_str:
+        partes.append(f"Mes: {mes_str}")
+    if estado:
+        partes.append(f"Estado: {estado}")
     filters_text = " · ".join(partes) if partes else ""
 
     periodo, now = _periodo_now(mes_str)

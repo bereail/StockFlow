@@ -1,0 +1,16 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["*/migrations/*"]
+
+[lint]
+select = ["E", "F"]
+
+[lint.per-file-ignores]
+# forms/__init__.py y views/__init__.py son barrels: re-exportan todo con
+# `import *` a propósito para que el resto de la app use `forms.XForm` /
+# `views.x_view` sin conocer el submódulo interno.
+"inventario/forms/__init__.py" = ["F401", "F403"]
+"inventario/views/__init__.py" = ["F401", "F403"]
+# desktop_app.py necesita fijar la variable de entorno PYWEBVIEW_GUI antes
+# de importar webview — el import fuera del top del archivo es a propósito.
+"desktop_app.py" = ["E402"]
