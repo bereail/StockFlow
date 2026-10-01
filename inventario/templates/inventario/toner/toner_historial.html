@@ -2,29 +2,28 @@
 {% block title %}Historial de entregas — Tóner{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">Historial de entregas</h1>
-    <div class="page-subtitle muted">Todos los egresos de tóner registrados</div>
-  </div>
-  <div class="page-actions">
-    <a class="btn" href="{% url 'toner_reporte_servicios' %}">Reporte por servicio</a>
-    <button class="btn primary" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
-            title="Descargar CSV completo (compatible con Excel)">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      Descargar CSV
-    </button>
-  </div>
-</div>
+<div class="view">
 
-<!-- Filtros -->
-<div class="card" style="margin-bottom:14px">
-  <form method="get">
-    <div class="filter-bar-inner">
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Historial de entregas</h1>
+      <div class="view-subtitle">Todos los egresos de tóner registrados</div>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}">Reporte por servicio</a>
+      <button class="btn" type="button" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')" title="Descargar CSV completo">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <form method="get" class="filter-bar-inner" style="width:100%">
       <div class="field" style="flex:2;min-width:200px">
-        <label class="label" for="id_q">Buscar (texto libre)</label>
+        <label class="label" for="id_q">Buscar</label>
         <input type="search" name="q" id="id_q" value="{{ q }}" placeholder="Nombre, marca, modelo, observaciones…">
       </div>
       <div class="field" style="flex:1;min-width:160px">
@@ -59,17 +58,14 @@
           <a class="btn btn-ghost" href="{% url 'toner_historial' %}">Limpiar</a>
         </div>
       </div>
-    </div>
-  </form>
-</div>
-
-<!-- Tabla -->
-<div class="card">
-  <div class="card-header">
-    <span class="card-label">Entregas</span>
-    <span class="chip">{{ page_obj.paginator.count }} resultado{% if page_obj.paginator.count != 1 %}s{% endif %}</span>
+    </form>
   </div>
-  <div class="table-wrapper" style="margin:0 -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+
+  <div class="section-head">
+    <span class="section-title">Entregas</span>
+    <span class="section-count">{{ page_obj.paginator.count }} resultado{{ page_obj.paginator.count|pluralize }}</span>
+  </div>
+  <div class="table-wrapper">
     <table>
       <thead>
         <tr>
@@ -86,8 +82,12 @@
         {% for d in detalles %}
         <tr>
           <td class="muted mono" style="font-size:12px;white-space:nowrap">
-            {{ d.movimiento.fecha|date:"d/m/Y" }}<br>
-            <span style="opacity:.6">{{ d.movimiento.fecha|date:"H:i" }}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px">
+              {{ d.movimiento.fecha|date:"d/m/y" }}
+              <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="hora-entrega-{{ d.id }}"
+                      style="width:16px;height:16px;font-size:11px" title="Ver hora">+</button>
+            </span>
+            <span id="hora-entrega-{{ d.id }}" hidden style="opacity:.6;display:block">{{ d.movimiento.fecha|date:"H:i" }}</span>
           </td>
           <td>
             {% if d.movimiento.servicio %}
@@ -99,7 +99,7 @@
           <td><strong>{{ d.item.toner.nombre|default:"—" }}</strong></td>
           <td class="muted">{{ d.item.toner.marca|default:"—" }}</td>
           <td style="text-align:right">
-            <strong style="font-size:15px;color:var(--primary)">{{ d.cantidad }}</strong>
+            <strong style="font-size:14px;color:var(--accent)">{{ d.cantidad }}</strong>
           </td>
           <td class="muted" style="font-size:12px">{{ d.movimiento.documento|default:"—" }}</td>
           <td class="muted" style="font-size:12px;max-width:200px">
@@ -119,17 +119,8 @@
         {% endfor %}
       </tbody>
     </table>
-
-    {% include "inventario/_pagination.html" %}
   </div>
-</div>
+  {% include "inventario/_pagination.html" %}
 
-<style>
-.filter-bar-inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-start;
-}
-</style>
+</div>
 {% endblock %}

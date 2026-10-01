@@ -27,7 +27,7 @@
   <!-- NUEVA TAREA -->
   <div class="card">
     <div class="card-header">
-      <h2>Nueva tarea</h2>
+      <span class="section-title">Nueva tarea</span>
     </div>
     <form method="post" style="padding:0 16px 16px">
       {% csrf_token %}
@@ -82,7 +82,7 @@
             </form>
           {% endwith %}
         {% elif p.estado == "EN_PROGRESO" %}
-          {% with ac="var(--primary)" acrgb="var(--primary-rgb)" %}
+          {% with ac="var(--accent)" acrgb="var(--accent-rgb)" %}
           <div class="pendiente-card" style="--ac:{{ ac }}">
             <form method="post" action="{% url 'pendiente_toggle' p.id %}" style="margin:0">
               {% csrf_token %}
@@ -141,13 +141,13 @@
                 </span>
               {% endif %}
               {% if p.pedido %}
-                <a href="{% url 'pedido_detail' p.pedido_id %}" class="row" style="gap:4px;color:var(--primary);text-decoration:none">
+                <a href="{% url 'pedido_detail' p.pedido_id %}" class="row" style="gap:4px;color:var(--accent);text-decoration:none">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   Pedido {{ p.pedido.numero }}
                 </a>
               {% endif %}
               {% if p.nota %}
-                <a href="{% url 'nota_detail' p.nota_id %}" class="row" style="gap:4px;color:var(--primary);text-decoration:none">
+                <a href="{% url 'nota_detail' p.nota_id %}" class="row" style="gap:4px;color:var(--accent);text-decoration:none">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   Nota {{ p.nota.numero|default:"s/n" }}
                 </a>

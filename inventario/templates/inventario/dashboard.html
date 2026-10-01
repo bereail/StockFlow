@@ -1,345 +1,144 @@
 {% extends "inventario/base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Inicio{% endblock %}
 {% block content %}
 
-<div class="db-wrap">
+<div class="view">
 
-  <!-- ── Header ── -->
-  <div class="db-top">
+  <div class="view-header">
     <div>
-      <h1 class="db-greeting">Buen día, <strong>{{ user.username }}</strong></h1>
-      <div class="muted" style="font-size:12px;margin-top:2px">{% now "l d \d\e F \d\e Y" %}</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <a class="btn primary" href="{% url 'toner_entrega' %}">+ Entrega tóner</a>
-      <a class="btn" href="{% url 'reportes' %}">Reportes</a>
+      <h1 class="home-greeting">Inicio</h1>
+      <div class="home-date">{% now "l d \d\e F \d\e Y" %}</div>
     </div>
   </div>
 
-  <!-- ── Stats ── -->
-  <div class="db-stats">
-
-    <a class="db-stat" href="{% url 'toner_historial' %}" style="--ac:var(--primary)">
-      <div class="db-stat-ico" style="background:rgba(79,140,255,.14)">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <div class="home-nav">
+    <a class="home-nav-btn" href="{% url 'toner_page' %}" style="--ac:var(--accent)">
+      <span class="home-nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="6" y="2" width="12" height="8" rx="1"/>
           <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
           <rect x="7" y="16" width="10" height="6" rx="1"/>
-          <circle cx="18" cy="14" r="1" fill="var(--primary)" stroke="none"/>
         </svg>
-      </div>
-      <div>
-        <div class="db-stat-num">{{ stats.entregas_mes }}</div>
-        <div class="db-stat-lbl">Tóners entregados este mes</div>
-      </div>
+      </span>
+      <span class="home-nav-text">
+        <span class="home-nav-label">Tóner</span>
+        <span class="home-nav-count">{{ stats.toners }} tipo{{ stats.toners|pluralize }}</span>
+      </span>
     </a>
-
-    <a class="db-stat {% if stats.prestamos_activos %}db-stat--on{% endif %}" href="{% url 'prestamos_list' %}" style="--ac:var(--ok)">
-      <div class="db-stat-ico" style="background:rgba(53,208,127,.14)">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-          <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
-        </svg>
-      </div>
-      <div>
-        <div class="db-stat-num">{{ stats.prestamos_activos }}</div>
-        <div class="db-stat-lbl">Préstamos activos</div>
-      </div>
-    </a>
-
-    <a class="db-stat {% if stats.pendientes_abiertos %}db-stat--warn{% endif %}" href="{% url 'pendientes_page' %}" style="--ac:var(--warn)">
-      <div class="db-stat-ico" style="background:rgba(255,204,102,.14)">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-      </div>
-      <div>
-        <div class="db-stat-num">{{ stats.pendientes_abiertos }}</div>
-        <div class="db-stat-lbl">Tareas pendientes</div>
-      </div>
-    </a>
-
-    <a class="db-stat {% if stats.reparaciones_activas %}db-stat--danger{% endif %}" href="{% url 'reparaciones_list' %}" style="--ac:var(--danger)">
-      <div class="db-stat-ico" style="background:rgba(255,91,110,.14)">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
-        </svg>
-      </div>
-      <div>
-        <div class="db-stat-num">{{ stats.reparaciones_activas }}</div>
-        <div class="db-stat-lbl">Reparaciones en curso</div>
-      </div>
-    </a>
-
-  </div>
-
-  {% if stock_critico %}
-  <!-- ── Alertas de stock crítico ── -->
-  <div class="db-section-label">
-    <span>Stock crítico</span>
-    <hr>
-  </div>
-  <div class="card" style="border-color:rgba(var(--danger-rgb),.30);background:rgba(var(--danger-rgb),.03);margin-bottom:16px">
-    <div class="table-wrapper" style="margin:0">
-      <table>
-        <thead>
-          <tr>
-            <th>Tóner</th>
-            <th style="width:90px">Mínimo</th>
-            <th style="width:90px">Stock actual</th>
-            <th style="width:100px"><span class="sr-only">Acciones</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for c in stock_critico %}
-            <tr>
-              <td>{{ c.toner }}</td>
-              <td class="mono muted">{{ c.toner.stock_minimo }}</td>
-              <td class="mono"><span class="chip danger">{{ c.stock }}</span></td>
-              <td><a class="btn" href="{% url 'toner_entrega' %}">Reponer</a></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── Actividad reciente ── -->
-  <div class="db-section-label">
-    <span>Actividad reciente</span>
-    <hr>
-  </div>
-  <div class="card" style="margin-bottom:16px">
-    {% if movimientos_recientes %}
-      <div class="table-wrapper" style="margin:0">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:140px">Fecha</th>
-              <th style="width:90px">Tipo</th>
-              <th>Servicio</th>
-              <th>Detalle</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for m in movimientos_recientes %}
-              <tr style="cursor:pointer" data-href="{% url 'movimiento_edit' m.pk %}">
-                <td class="muted mono">{{ m.fecha|date:"d/m/Y H:i" }}</td>
-                <td>
-                  {% if m.tipo == "INGRESO" %}
-                    <span class="chip ok">Ingreso</span>
-                  {% elif m.tipo == "EGRESO" %}
-                    <span class="chip danger">Egreso</span>
-                  {% else %}
-                    <span class="chip warn">Ajuste</span>
-                  {% endif %}
-                </td>
-                <td>{{ m.servicio.nombre|default:"—" }}</td>
-                <td class="muted" style="font-size:12px">
-                  {% for d in m.detalles.all %}
-                    {% if d.item.toner %}{{ d.item.toner.marca|default:"" }} {{ d.item.toner.nombre }}
-                    {% elif d.item.articulo %}{{ d.item.articulo.nombre }}
-                    {% elif d.item.activo_pc %}PC: {{ d.item.activo_pc.nombre_pc }}
-                    {% elif d.item.impresora %}{{ d.item.impresora.marca }} {{ d.item.impresora.modelo }}
-                    {% endif %}
-                    <span class="muted">×{{ d.cantidad }}</span>{% if not forloop.last %} · {% endif %}
-                  {% empty %}—{% endfor %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top:10px;text-align:right">
-        <a class="btn" href="{% url 'movimientos_list' %}">Ver todos los movimientos →</a>
-      </div>
-    {% else %}
-      <div class="empty-state">
-        <div class="empty-state-title">Todavía no hay movimientos</div>
-        <div class="empty-state-sub">Los ingresos, egresos y ajustes de stock van a aparecer acá.</div>
-      </div>
-    {% endif %}
-  </div>
-
-  <!-- ── Sección Inventario ── -->
-  <div class="db-section-label">
-    <span>Inventario</span>
-    <hr>
-  </div>
-  <div class="db-modules">
-
-    <!-- Tóner — destacado -->
-    <div class="db-mod db-mod--featured" onclick="location.href='{% url 'toner_page' %}'">
-      <div class="db-mod-ico" style="color:var(--primary)">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="6" y="2" width="12" height="8" rx="1"/>
-          <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/>
-          <rect x="7" y="16" width="10" height="6" rx="1"/>
-          <circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Tóner</div>
-      <div class="db-mod-count">{{ stats.toners }} tipos activos</div>
-      <div class="db-mod-actions" onclick="event.stopPropagation()">
-        <a class="btn primary" href="{% url 'toner_entrega' %}">+ Entrega</a>
-        <a class="btn" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
-      </div>
-    </div>
-
-    <a class="db-mod" href="{% url 'pcs_page' %}">
-      <div class="db-mod-ico" style="color:var(--primary)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <a class="home-nav-btn" href="{% url 'pcs_page' %}" style="--ac:var(--ok)">
+      <span class="home-nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
           <line x1="8" y1="21" x2="16" y2="21"/>
           <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
-      </div>
-      <div class="db-mod-name">PCs</div>
-      <div class="db-mod-count">{{ stats.pcs }} equipos activos</div>
+      </span>
+      <span class="home-nav-text">
+        <span class="home-nav-label">PC</span>
+        <span class="home-nav-count">{{ stats.pcs }} activa{{ stats.pcs|pluralize }}</span>
+      </span>
     </a>
-
-    <a class="db-mod" href="{% url 'articulos_page' %}">
-      <div class="db-mod-ico" style="color:var(--primary)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-          <line x1="12" y1="22.08" x2="12" y2="12"/>
+    <a class="home-nav-btn" href="{% url 'servicios_page' %}" style="--ac:var(--warn)">
+      <span class="home-nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
-      </div>
-      <div class="db-mod-name">Artículos</div>
-      <div class="db-mod-count">{{ stats.articulos }} activos</div>
+      </span>
+      <span class="home-nav-text">
+        <span class="home-nav-label">Servicios</span>
+        <span class="home-nav-count">{{ stats.servicios }}</span>
+      </span>
     </a>
-
-    <a class="db-mod" href="{% url 'impresoras_page' %}">
-      <div class="db-mod-ico" style="color:var(--primary)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <a class="home-nav-btn" href="{% url 'pedidos_list' %}" style="--ac:var(--danger)">
+      <span class="home-nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+      </span>
+      <span class="home-nav-text">
+        <span class="home-nav-label">Pedidos</span>
+        <span class="home-nav-count">{{ stats.pedidos_activos }} activo{{ stats.pedidos_activos|pluralize }}</span>
+      </span>
+    </a>
+    <a class="home-nav-btn" href="{% url 'impresoras_page' %}" style="--ac:var(--accent)">
+      <span class="home-nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <polyline points="6 9 6 2 18 2 18 9"/>
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
           <rect x="6" y="14" width="12" height="8"/>
         </svg>
-      </div>
-      <div class="db-mod-name">Impresoras</div>
-      <div class="db-mod-count">{{ stats.impresoras }} activas</div>
+      </span>
+      <span class="home-nav-text">
+        <span class="home-nav-label">Impresoras</span>
+        <span class="home-nav-count">{{ stats.impresoras }} activa{{ stats.impresoras|pluralize }}</span>
+      </span>
     </a>
-
-    <a class="db-mod" href="{% url 'servicios_page' %}">
-      <div class="db-mod-ico" style="color:var(--primary)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Servicios</div>
-      <div class="db-mod-count">{{ stats.servicios }} sectores</div>
-    </a>
-
-    <a class="db-mod" href="{% url 'movimientos_list' %}">
-      <div class="db-mod-ico" style="color:var(--muted)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Movimientos</div>
-    </a>
-
   </div>
 
-  <!-- ── Sección Gestión ── -->
-  <div class="db-section-label">
-    <span>Gestión</span>
-    <hr>
+  {% if stock_critico or stats.pendientes_abiertos or stats.reparaciones_activas or stats.intercambios_pendientes %}
+  <div class="section-head">
+    <span class="section-title">Requiere atención</span>
   </div>
-  <div class="db-modules">
+  <ul class="attention-list">
+    {% if stock_critico %}
+      <li class="attention-row">
+        <a href="{% url 'toner_entrega' %}" class="attention-row-label">
+          <span class="attention-dot" style="--ac:var(--danger)"></span>
+          Stock crítico de tóner
+        </a>
+        <span class="attention-row-count">{{ stock_critico|length }} tipo{{ stock_critico|length|pluralize }}</span>
+      </li>
+    {% endif %}
+    {% if stats.pendientes_abiertos %}
+      <li class="attention-row">
+        <a href="{% url 'pendientes_page' %}" class="attention-row-label">
+          <span class="attention-dot" style="--ac:var(--warn)"></span>
+          Tareas pendientes
+        </a>
+        <span class="attention-row-count">{{ stats.pendientes_abiertos }}</span>
+      </li>
+    {% endif %}
+    {% if stats.reparaciones_activas %}
+      <li class="attention-row">
+        <a href="{% url 'reparaciones_list' %}" class="attention-row-label">
+          <span class="attention-dot" style="--ac:var(--danger)"></span>
+          Reparaciones en curso
+        </a>
+        <span class="attention-row-count">{{ stats.reparaciones_activas }}</span>
+      </li>
+    {% endif %}
+    {% if stats.intercambios_pendientes %}
+      <li class="attention-row">
+        <a href="{% url 'intercambios_list' %}" class="attention-row-label">
+          <span class="attention-dot" style="--ac:var(--warn)"></span>
+          Intercambios pendientes
+        </a>
+        <span class="attention-row-count">{{ stats.intercambios_pendientes }}</span>
+      </li>
+    {% endif %}
+  </ul>
+  {% endif %}
 
-    <a class="db-mod {% if stats.prestamos_activos %}db-mod--alert{% endif %}" href="{% url 'prestamos_list' %}">
-      <div class="db-mod-ico" style="color:var(--ok)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-          <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Préstamos</div>
-      {% if stats.prestamos_activos %}
-        <span class="chip ok">{{ stats.prestamos_activos }} activo{% if stats.prestamos_activos != 1 %}s{% endif %}</span>
-      {% endif %}
-    </a>
-
-    <a class="db-mod {% if stats.intercambios_pendientes %}db-mod--alert{% endif %}" href="{% url 'intercambios_list' %}">
-      <div class="db-mod-ico" style="color:var(--warn)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="17 1 21 5 17 9"/>
-          <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-          <polyline points="7 23 3 19 7 15"/>
-          <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Intercambios</div>
-      {% if stats.intercambios_pendientes %}
-        <span class="chip warn">{{ stats.intercambios_pendientes }} pendiente{% if stats.intercambios_pendientes != 1 %}s{% endif %}</span>
-      {% endif %}
-    </a>
-
-    <a class="db-mod {% if stats.reparaciones_activas %}db-mod--alert{% endif %}" href="{% url 'reparaciones_list' %}">
-      <div class="db-mod-ico" style="color:var(--danger)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Reparaciones</div>
-      {% if stats.reparaciones_activas %}
-        <span class="chip danger">{{ stats.reparaciones_activas }} en curso</span>
-      {% endif %}
-    </a>
-
-    <a class="db-mod" href="{% url 'pedidos_list' %}">
-      <div class="db-mod-ico" style="color:var(--warn)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Pedidos</div>
-    </a>
-
-    <a class="db-mod" href="{% url 'patrimonios_list' %}">
-      <div class="db-mod-ico" style="color:var(--warn)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-          <line x1="12" y1="12" x2="12" y2="16"/>
-          <line x1="10" y1="14" x2="14" y2="14"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Patrimonios</div>
-    </a>
-
-    <a class="db-mod" href="{% url 'notas_list' %}">
-      <div class="db-mod-ico" style="color:var(--muted)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Notas</div>
-    </a>
-
-    <a class="db-mod {% if stats.pendientes_abiertos %}db-mod--alert{% endif %}" href="{% url 'pendientes_page' %}">
-      <div class="db-mod-ico" style="color:var(--warn)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-      </div>
-      <div class="db-mod-name">Pendientes</div>
-      {% if stats.pendientes_abiertos %}
-        <span class="chip warn">{{ stats.pendientes_abiertos }}</span>
-      {% endif %}
-    </a>
-
+  <div class="section-head" style="margin-top:22px">
+    <span class="section-title">Actividad reciente</span>
+    <a href="{% url 'movimientos_list' %}" class="muted" style="font-size:12px">Ver todo →</a>
   </div>
+  {% if movimientos_recientes %}
+    <ul class="attention-list">
+      {% for m in movimientos_recientes %}
+        <li class="attention-row">
+          <a href="{% url 'movimiento_edit' m.id %}" class="attention-row-label">
+            <span class="attention-dot" style="--ac:{% if m.tipo == 'INGRESO' %}var(--ok){% elif m.tipo == 'EGRESO' %}var(--danger){% else %}var(--warn){% endif %}"></span>
+            {{ m.get_tipo_display }}{% if m.servicio %} · {{ m.servicio.nombre }}{% endif %}
+          </a>
+          <span class="attention-row-count">{{ m.fecha|date:"d/m H:i" }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted" style="font-size:12.5px;padding:8px 2px">Sin movimientos registrados todavía.</p>
+  {% endif %}
 
 </div>
 

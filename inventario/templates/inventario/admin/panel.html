@@ -1,73 +1,51 @@
 {% extends "inventario/base.html" %}
 {% block title %}Panel de administración{% endblock %}
 {% block content %}
-<section>
-  <div class="page-header">
+
+<div class="view">
+
+  <div class="view-header">
     <div>
-      <h1 class="page-title">Panel de administración</h1>
-      <div class="page-subtitle">Gestión de usuarios y roles del sistema</div>
+      <h1 class="view-title">Administración</h1>
+      <div class="view-subtitle">Usuarios y roles del sistema</div>
     </div>
   </div>
 
-  <div class="admin-stats-grid">
-    <div class="admin-stat-card">
-      <div class="admin-stat-icon" style="background:rgba(var(--primary-rgb),.12);color:var(--primary-light);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      </div>
-      <div class="admin-stat-info">
-        <div class="admin-stat-value">{{ total_usuarios }}</div>
-        <div class="admin-stat-label">Usuarios totales</div>
-      </div>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">{{ total_usuarios }}</div>
+      <div class="stat-label">Usuarios totales</div>
     </div>
-    <div class="admin-stat-card">
-      <div class="admin-stat-icon" style="background:rgba(var(--ok-rgb),.10);color:var(--ok-light);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-      </div>
-      <div class="admin-stat-info">
-        <div class="admin-stat-value" style="color:var(--ok-light);">{{ total_activos }}</div>
-        <div class="admin-stat-label">Usuarios activos</div>
-      </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ total_activos }}</div>
+      <div class="stat-label">Usuarios activos</div>
     </div>
-    <div class="admin-stat-card">
-      <div class="admin-stat-icon" style="background:rgba(var(--warn-rgb),.10);color:var(--warn-light);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div class="admin-stat-info">
-        <div class="admin-stat-value" style="color:var(--warn-light);">{{ total_roles }}</div>
-        <div class="admin-stat-label">Roles definidos</div>
-      </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ total_roles }}</div>
+      <div class="stat-label">Roles definidos</div>
     </div>
   </div>
 
-  <div class="admin-menu-grid">
-    <a class="admin-menu-card" href="{% url 'admin_usuarios' %}">
-      <div class="admin-menu-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      </div>
-      <div class="admin-menu-label">Usuarios</div>
-      <div class="admin-menu-sub">Crear, editar y gestionar usuarios del sistema</div>
-      <div class="admin-menu-arrow">→</div>
+  <div class="section-head">
+    <span class="section-title">Secciones</span>
+  </div>
+  <div>
+    <a class="admin-link-row" href="{% url 'admin_usuarios' %}">
+      <span>
+        <strong>Usuarios</strong>
+        <div class="muted" style="font-size:12px">Crear, editar y gestionar usuarios del sistema</div>
+      </span>
+      <span class="muted">→</span>
     </a>
-    <a class="admin-menu-card" href="{% url 'admin_roles' %}">
-      <div class="admin-menu-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div class="admin-menu-label">Roles</div>
-      <div class="admin-menu-sub">Definir roles y grupos de permisos</div>
-      <div class="admin-menu-arrow">→</div>
+    <a class="admin-link-row" href="{% url 'admin_roles' %}">
+      <span>
+        <strong>Roles</strong>
+        <div class="muted" style="font-size:12px">Definir roles y grupos de permisos</div>
+      </span>
+      <span class="muted">→</span>
     </a>
   </div>
-</section>
+
+</div>
+
 {% endblock %}

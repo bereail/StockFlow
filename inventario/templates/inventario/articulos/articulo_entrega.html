@@ -1,12 +1,11 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="page-header">
+<div class="view-header">
   <div>
-    <h1 class="page-title">Entrega rápida</h1>
-    <div class="page-subtitle muted">Egreso de artículos a un servicio</div>
+    <h1 class="view-title">Entrega rápida</h1>
+    <div class="view-subtitle">Egreso de artículos a un servicio</div>
   </div>
-  <a class="btn" href="{% url 'articulos_page' %}">← Volver</a>
 </div>
 
 <div class="card panel--narrow">
@@ -40,7 +39,7 @@
 
     <div class="form-actions col-12">
       <button class="btn primary" type="submit">Registrar</button>
-      <a class="btn" href="{% url 'articulos_page' %}">Cancelar</a>
+      <a class="btn btn-ghost" href="{% url 'articulos_page' %}">Cancelar</a>
     </div>
   </form>
 </div>

@@ -25,11 +25,11 @@
           font-size:.78rem;font-weight:700;flex-shrink:0;
           {% if pedido.estado == 'CANCELADO' and idx <= paso_actual %}background:rgba(var(--danger-rgb),.15);border:2px solid var(--danger);color:var(--danger);
           {% elif idx < paso_actual %}background:rgba(var(--ok-rgb),.12);border:2px solid var(--ok);color:var(--ok);
-          {% elif idx == paso_actual %}background:rgba(var(--primary-rgb),.15);border:2px solid var(--primary);color:var(--primary);box-shadow:0 0 0 4px rgba(var(--primary-rgb),.15);
-          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border-color);color:var(--muted);{% endif %}
+          {% elif idx == paso_actual %}background:rgba(var(--accent-rgb),.15);border:2px solid var(--accent);color:var(--accent);box-shadow:0 0 0 4px rgba(var(--accent-rgb),.15);
+          {% else %}background:rgba(255,255,255,.04);border:2px solid var(--border);color:var(--muted);{% endif %}
         ">{% if idx < paso_actual %}✓{% else %}{{ forloop.counter }}{% endif %}</div>
         <div style="font-size:.72rem;margin-top:6px;text-align:center;white-space:nowrap;
-          {% if idx == paso_actual %}color:var(--primary);font-weight:700;
+          {% if idx == paso_actual %}color:var(--accent);font-weight:700;
           {% elif idx < paso_actual %}color:var(--ok);
           {% else %}color:var(--muted);{% endif %}">{{ label }}</div>
         <!-- Fecha del estado -->
@@ -42,7 +42,7 @@
         </div>
       </div>
       {% if not forloop.last %}
-        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:var(--ok);{% else %}background:var(--border-color);{% endif %}"></div>
+        <div style="flex:1;height:2px;margin-top:17px;{% if idx < paso_actual %}background:var(--ok);{% else %}background:var(--border);{% endif %}"></div>
       {% endif %}
       {% endwith %}
     {% endfor %}

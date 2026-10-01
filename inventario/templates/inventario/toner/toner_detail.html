@@ -76,7 +76,7 @@
   {% if impresoras_compatibles %}
     <div style="display:flex;flex-direction:column;gap:6px">
       {% for imp in impresoras_compatibles %}
-        <a class="row space-between" style="padding:8px 4px;border-bottom:1px solid var(--border-color)" href="{% url 'impresora_detail' imp.pk %}">
+        <a class="row space-between" style="padding:8px 4px;border-bottom:1px solid var(--border)" href="{% url 'impresora_detail' imp.pk %}">
           <span>{{ imp.marca }} {{ imp.modelo }}</span>
           <span class="chip {% if imp.estado == 'ACTIVA' %}ok{% else %}off{% endif %}">{{ imp.estado }}</span>
         </a>

@@ -6,7 +6,6 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Pedidos</h1>
-    <div class="page-subtitle muted">Control de pedidos de insumos y equipos</div>
   </div>
   <a class="btn primary" href="{% url 'pedido_create' %}">+ Nuevo pedido</a>
 </div>
@@ -59,17 +58,21 @@
     <table>
       <thead>
         <tr>
+          <th style="width:34px"><span class="sr-only">Más info</span></th>
           <th>Número</th>
           <th>Servicio</th>
           <th style="width:120px">Estado</th>
           <th>Nota</th>
-          <th>Para qué</th>
-          <th style="width:130px">Creado</th>
         </tr>
       </thead>
       <tbody>
         {% for p in pedidos %}
           <tr style="cursor:pointer" data-href="{% url 'pedido_detail' p.pk %}">
+            <td>
+              <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="pedido-detalle-{{ p.pk }}"
+                      title="Ver más info" aria-label="Ver más información del pedido {{ p.numero }}"
+                      onclick="event.stopPropagation()">+</button>
+            </td>
             <td><strong>{{ p.numero }}</strong></td>
             <td>{{ p.servicios.all|join:", "|default:"—" }}</td>
             <td>
@@ -86,12 +89,18 @@
               {% endif %}
             </td>
             <td class="muted">{{ p.nota.numero|default:"—" }}</td>
-            <td class="muted">{{ p.para_que|default:"—"|truncatechars:60 }}</td>
-            <td class="muted mono" style="font-size:12px">{{ p.creado|date:"d/m/Y H:i" }}</td>
+          </tr>
+          <tr class="row-detail" id="pedido-detalle-{{ p.pk }}" hidden>
+            <td colspan="5">
+              <div class="row-detail-grid">
+                <div class="field"><span class="label">Para qué</span><span>{{ p.para_que|default:"—"|truncatechars:80 }}</span></div>
+                <div class="field"><span class="label">Creado</span><span class="mono">{{ p.creado|date:"d/m/Y H:i" }}</span></div>
+              </div>
+            </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" class="muted" style="padding:20px;text-align:center">No hay pedidos con esos filtros.</td>
+            <td colspan="5" class="muted" style="padding:20px;text-align:center">No hay pedidos con esos filtros.</td>
           </tr>
         {% endfor %}
       </tbody>

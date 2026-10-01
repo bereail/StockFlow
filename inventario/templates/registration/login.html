@@ -4,14 +4,11 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Iniciar sesión — StockFlow</title>
+  <title>Iniciar sesión — Inventario</title>
   {% now "U" as cachebust %}
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
 </head>
 <body class="app login-page">
-
-  <div class="login-bg-glow login-glow-1"></div>
-  <div class="login-bg-glow login-glow-2"></div>
 
   <div class="login-wrapper">
     <div class="login-card">
@@ -24,7 +21,7 @@
         </div>
       </div>
 
-      <h1 class="login-title">StockFlow</h1>
+      <h1 class="login-title">Inventario</h1>
       <p class="login-subtitle">Ingresá tus credenciales para continuar</p>
 
       {% if error %}
@@ -70,7 +67,7 @@
         <!-- RECORDARME -->
         <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:4px">
           <input type="checkbox" name="remember_me" id="remember-me"
-                 style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer">
+                 style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
           Recordarme en este equipo
         </label>
 

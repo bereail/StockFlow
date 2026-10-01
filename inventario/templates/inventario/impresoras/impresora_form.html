@@ -6,7 +6,6 @@
     <h1 class="page-title">
       {% if mode == "edit" %}Editar impresora{% else %}Nueva impresora{% endif %}
     </h1>
-    <div class="page-subtitle">Completar datos y guardar</div>
   </div>
 
   <div class="page-actions">
@@ -84,29 +83,47 @@
       </div>
 
       <div class="field col-6">
-        <label class="label" for="id_submascara">Máscara de subred</label>        {{ form.submascara }}
-        {% for e in form.submascara.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+        <label class="label" for="id_mac">Dirección MAC</label>
+        {{ form.mac }}
+        {% for e in form.mac.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
-      <div class="field col-6">
-        <label class="label" for="id_dns">DNS</label>        {{ form.dns }}
-        {% for e in form.dns.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      <div class="col-12 card-collapsible">
+      <div class="form-subsection-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0">
+        <span>⚙️ Avanzado</span>
+        <button type="button" class="collapse-chevron" aria-expanded="false" aria-label="Mostrar u ocultar campos avanzados">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
       </div>
+      <div class="card-collapse-body" style="display:grid;grid-template-columns:repeat(12,1fr);gap:14px 12px">
+        <div class="field col-6">
+          <label class="label" for="id_submascara">Máscara de subred</label>
+          {{ form.submascara }}
+          {% for e in form.submascara.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+        </div>
 
-      <div class="form-subsection-title">🧴 Consumibles y detalle</div>
+        <div class="field col-6">
+          <label class="label" for="id_dns">DNS</label>
+          {{ form.dns }}
+          {% for e in form.dns.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+        </div>
 
-      <div class="field col-6">
-        <label class="label" for="id_toner">Toner</label>        {{ form.toner }}
+        <div class="field col-6">
+          <label class="label" for="id_toner">Toner</label>
+          {{ form.toner }}
+        </div>
+      </div>
       </div>
 
       <div class="field col-12">
-        <label class="label" for="id_observaciones">Observaciones</label>        {{ form.observaciones }}
+        <label class="label" for="id_observaciones">Observaciones</label>
+        {{ form.observaciones }}
       </div>
     </div>
 
     <div class="row" style="gap:10px; margin-top:14px">
       <button class="btn primary" type="submit">Guardar</button>
-      <a class="btn" href="{% url 'impresoras_page' %}">Cancelar</a>
+      <a class="btn btn-ghost" href="{% url 'impresoras_page' %}">Cancelar</a>
     </div>
   </form>
 </div>

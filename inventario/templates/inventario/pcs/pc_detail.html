@@ -21,7 +21,16 @@
 <div class="card" style="margin-bottom:14px">
   <div class="card-label" style="margin-bottom:10px">Información</div>
   <div class="formgrid">
-    <div class="field col-3"><span class="label">IP</span><span class="mono">{{ pc.ip|default:"—" }}</span></div>
+    <div class="field col-3">
+      <span class="label">IP</span>
+      {% if pc.ip %}
+        <span class="ping-widget" data-ping-url="{% url 'pc_ping' pc.id %}">
+          <span class="mono">{{ pc.ip }}</span>
+          <button type="button" class="btn-ping" title="Verificar conexión" aria-label="Verificar conexión con {{ pc.ip }}">📶</button>
+          <span class="ping-status" aria-live="polite"></span>
+        </span>
+      {% else %}<span class="mono">—</span>{% endif %}
+    </div>
     <div class="field col-3"><span class="label">Usuario</span><span>{{ pc.usuario|default:"—" }}</span></div>
     <div class="field col-3"><span class="label">Switch</span><span>{{ pc.switch|default:"—" }}</span></div>
     <div class="field col-3"><span class="label">Servicio</span><span>{{ pc.servicio.nombre|default:"—" }}</span></div>

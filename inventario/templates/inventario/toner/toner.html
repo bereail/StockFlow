@@ -3,133 +3,131 @@
 {% block title %}Tóner{% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <div>
-    <h1 class="page-title">Registro de Tóner</h1>
-    <div class="page-subtitle muted">Gestión y entregas</div>
-  </div>
-  <div class="page-actions">
-    <form method="get" style="display:contents">
-      <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)" aria-label="Buscar tóners">
-      <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
-        <option value="">Todos los estados</option>
-        <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
-        <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Desactivados</option>
-      </select>
-      <button class="btn primary" type="submit">Buscar</button>
-    </form>
-    <a class="btn" href="{% url 'toner_historial' %}">Historial</a>
-    <a class="btn" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
-    <button class="btn" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')"
-            title="Descargar CSV de entregas (compatible con Excel)">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      CSV
-    </button>
-    <a class="btn primary" href="{% url 'toner_entrega' %}">+ Nueva Entrega</a>
-  </div>
-</div>
+<div class="view">
 
-<!-- Card: Últimas entregas -->
-<div class="card" style="margin-bottom:12px">
-  <div class="card-header">
-    <span class="card-label">Últimas entregas</span>
-    {% if mostrar_ver_todo %}
-      <a class="btn" href="{% url 'toner_historial' %}">Ver todo</a>
-    {% endif %}
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Tóner</h1>
+      <div class="view-subtitle">Catálogo y entregas a servicios</div>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}">Reporte</a>
+      <button class="btn btn-ghost" type="button" onclick="downloadCsv('{% url 'backup_entregas_csv' %}', 'entregas_toner.csv')" title="Descargar CSV de entregas">CSV</button>
+      <a class="btn primary" href="{% url 'toner_entrega' %}">+ Nueva entrega</a>
+    </div>
   </div>
-  <div>
-    <div class="table-wrapper" style="margin-top:10px">
-      <table>
-        <thead>
+
+  <div class="section-head">
+    <span class="section-title">Últimas entregas</span>
+    {% if mostrar_ver_todo %}<a class="btn btn-ghost" href="{% url 'toner_historial' %}">Ver todo</a>{% endif %}
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th style="width:34px"><span class="sr-only">Más info</span></th><th>Fecha</th><th>Toner</th><th>Destino</th></tr>
+      </thead>
+      <tbody>
+        {% for d in movimientos %}
           <tr>
-            <th>Fecha</th><th>Toner</th><th>Cantidad</th><th>Destino</th>
+            <td>
+              <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="entrega-detalle-{{ d.id }}"
+                      title="Ver más info" aria-label="Ver cantidad entregada">+</button>
+            </td>
+            <td class="muted mono" style="font-size:12px">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
+            <td>{{ d.item.toner.marca|default_if_none:"" }} {{ d.item.toner.nombre|default_if_none:"" }}</td>
+            <td class="muted">{{ d.movimiento.servicio|default:"-" }}</td>
           </tr>
-        </thead>
-        <tbody>
-          {% for d in movimientos %}
+          <tr class="row-detail" id="entrega-detalle-{{ d.id }}" hidden>
+            <td colspan="4">
+              <div class="row-detail-grid">
+                <div class="field"><span class="label">Cantidad</span><span class="chip">{{ d.cantidad }}</span></div>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">
+            <div class="empty-state">
+              <div class="empty-state-title">Sin movimientos</div>
+              <div class="empty-state-sub">No se registraron entregas todavía.</div>
+            </div>
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card card-collapsible">
+    <div class="card-header">
+      <div class="row" style="gap:8px;align-items:center">
+        <span class="section-title">Catálogo</span>
+        <span class="chip">{{ page_obj.paginator.count }}</span>
+        <button type="button" class="collapse-chevron" aria-expanded="false" aria-label="Mostrar u ocultar catálogo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      <a class="btn" href="{% url 'toner_create' %}">+ Nuevo tóner</a>
+    </div>
+    <div class="card-collapse-body">
+      <div class="toolbar">
+        <form method="get" style="display:contents">
+          <input class="search" name="q" value="{{ q }}" placeholder="Buscar por marca, nombre o impresora" aria-label="Buscar tóners">
+          <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
+            <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Desactivados</option>
+          </select>
+          <button class="btn" type="submit">Buscar</button>
+        </form>
+        <div class="toolbar-spacer"></div>
+        <a class="btn btn-ghost" href="{% url 'toner_historial' %}">Historial completo</a>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
             <tr>
-              <td class="muted mono" style="font-size:12px">{{ d.movimiento.fecha|date:"d/m/Y H:i" }}</td>
-              <td>{{ d.item.toner.marca|default_if_none:"" }} {{ d.item.toner.nombre|default_if_none:"" }}</td>
-              <td><span class="chip">{{ d.cantidad }}</span></td>
-              <td class="muted">{{ d.movimiento.servicio|default:"-" }}</td>
+              <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
+              <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
+              <th>{% sort_th "modelo_impresora" "Modelo impresora" sort_actual dir_actual %}</th>
+              <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
+              <th style="width:200px">Acciones</th>
             </tr>
-          {% empty %}
-            <tr><td colspan="4">
-              <div class="empty-state">
-                <div class="empty-state-title">Sin movimientos</div>
-                <div class="empty-state-sub">No se registraron entregas todavía.</div>
-              </div>
-            </td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for t in toners %}
+              <tr style="cursor:pointer" data-href="{% url 'toner_detail' t.id %}">
+                <td>{{ t.marca|default:"-" }}</td>
+                <td><strong>{{ t.nombre }}</strong></td>
+                <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
+                <td>
+                  {% if t.activo %}<span class="chip ok">Activo</span>
+                  {% else %}<span class="chip">Desactivado</span>{% endif %}
+                </td>
+                <td>
+                  <a class="btn" href="{% url 'toner_edit' t.id %}" onclick="event.stopPropagation()">Editar</a>
+                  <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline" onclick="event.stopPropagation()">
+                    {% csrf_token %}
+                    <button class="btn btn-ghost" type="submit">
+                      {% if t.activo %}Desactivar{% else %}Activar{% endif %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">
+                <div class="empty-state">
+                  <div class="empty-state-title">No hay toners cargados</div>
+                  <div class="empty-state-sub">Agregá el primero para empezar.</div>
+                  <a class="btn primary" href="{% url 'toner_create' %}">+ Nuevo toner</a>
+                </div>
+              </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "inventario/_pagination.html" %}
     </div>
   </div>
-</div>
 
-<!-- Card: Listado de toners (colapsable) -->
-<div class="card card-collapsible">
-  <div class="card-header">
-    <div class="row collapse-trigger" tabindex="0" role="button" aria-expanded="true" style="gap:8px;align-items:center">
-      <span class="card-label">Toners</span>
-      <span class="chip">{{ page_obj.paginator.count }}</span>
-      <span class="collapse-chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
-    </div>
-    <div class="row" style="gap:8px">
-      <a class="btn" href="{% url 'toner_create' %}">Nuevo</a>
-      <a class="btn" href="{% url 'toner_historial' %}">Historial</a>
-    </div>
-  </div>
-  <div class="card-collapse-body">
-    <div class="table-wrapper" style="margin:-0px -16px 0;border-radius:0 0 var(--radius) var(--radius)">
-      <table>
-        <thead>
-          <tr>
-            <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
-            <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
-            <th>{% sort_th "modelo_impresora" "Modelo impresora" sort_actual dir_actual %}</th>
-            <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
-            <th style="width:200px">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for t in toners %}
-            <tr style="cursor:pointer" data-href="{% url 'toner_detail' t.id %}">
-              <td>{{ t.marca|default:"-" }}</td>
-              <td><strong>{{ t.nombre }}</strong></td>
-              <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
-              <td>
-                {% if t.activo %}<span class="chip ok">Activo</span>
-                {% else %}<span class="chip">Desactivado</span>{% endif %}
-              </td>
-              <td>
-                <a class="btn" href="{% url 'toner_edit' t.id %}" onclick="event.stopPropagation()">Editar</a>
-                <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline" onclick="event.stopPropagation()">
-                  {% csrf_token %}
-                  <button class="btn btn-ghost" type="submit">
-                    {% if t.activo %}Desactivar{% else %}Activar{% endif %}
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="5">
-              <div class="empty-state">
-                <div class="empty-state-title">No hay toners cargados</div>
-                <div class="empty-state-sub">Agregá el primero para empezar.</div>
-                <a class="btn primary" href="{% url 'toner_create' %}">+ Nuevo toner</a>
-              </div>
-            </td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% include "inventario/_pagination.html" %}
-  </div>
 </div>
 
 {% endblock %}

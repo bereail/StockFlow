@@ -1,4 +1,5 @@
 {% extends "inventario/base.html" %}
+{% load ordenamiento %}
 {% block title %}Servicios{% endblock %}
 {% block content %}
 
@@ -8,38 +9,45 @@
     <div class="page-subtitle muted">Alta, listado y edición</div>
   </div>
   <div class="page-actions">
-    <form method="get" style="display:contents">
-      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o descripción" aria-label="Buscar servicios">
-      <button class="btn primary" type="submit">Buscar</button>
-    </form>
+    <a class="btn primary" href="{% url 'servicio_create' %}">+ Nuevo servicio</a>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header">
-    <div class="row" style="gap:8px;align-items:center">
-      <span class="card-label">Servicios</span>
-      <span class="chip">{{ page_obj.paginator.count }}</span>
-    </div>
-    <a class="btn" href="{% url 'servicio_create' %}">+ Nuevo</a>
-  </div>
-  <div>
-    <div class="table-wrapper table-wrapper--flush">
+<div class="toolbar">
+  <form method="get" style="display:contents">
+    <input class="search" name="q" value="{{ q }}" placeholder="Buscar por nombre" aria-label="Buscar servicios">
+    <button class="btn" type="submit">Buscar</button>
+  </form>
+</div>
+
+<div class="section-head">
+  <span class="section-title">Servicios</span>
+  <span class="section-count">{{ page_obj.paginator.count }}</span>
+</div>
+<div class="table-wrapper">
       <table>
         <thead>
           <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th style="width:200px">Acciones</th>
+            <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
+            <th style="width:150px">{% sort_th "actualizado" "Última actualización" sort_actual dir_actual %}</th>
+            <th style="width:220px">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for s in servicios %}
             <tr style="cursor:pointer" data-href="{% url 'servicio_detail' s.id %}">
               <td><strong>{{ s.nombre }}</strong></td>
-              <td class="muted">{{ s.descripcion|default:"-" }}</td>
+              <td class="muted mono" style="font-size:.82rem">{{ s.actualizado|date:"d/m/Y H:i" }}</td>
               <td>
                 <a class="btn" href="{% url 'servicio_edit' s.id %}" onclick="event.stopPropagation()">Editar</a>
+                {% if s.puede_eliminarse %}
+                  <form method="post" action="{% url 'servicio_delete' s.id %}"
+                        data-confirm="¿Eliminar el servicio «{{ s.nombre }}»? Esta acción no se puede deshacer."
+                        style="display:inline" onclick="event.stopPropagation()">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost" style="color:var(--danger);opacity:.7" title="Eliminar servicio">Eliminar</button>
+                  </form>
+                {% endif %}
               </td>
             </tr>
           {% empty %}
@@ -55,9 +63,7 @@
           {% endfor %}
         </tbody>
       </table>
-    </div>
-    {% include "inventario/_pagination.html" %}
-  </div>
 </div>
+{% include "inventario/_pagination.html" %}
 
 {% endblock %}

@@ -14,9 +14,9 @@
     {% if impresora.servicio_actual %}<div class="page-subtitle muted">Asignada a {{ impresora.servicio_actual.nombre }}</div>{% endif %}
   </div>
   <div class="page-actions">
-    <a class="btn" href="{% url 'impresora_edit' impresora.id %}">Editar</a>
-    <a class="btn" href="{% url 'asignar_impresora' impresora.id %}">Cambiar servicio</a>
-    <a class="btn" href="{% url 'reparacion_create' %}">Registrar reparación</a>
+    <a class="btn btn-ghost" href="{% url 'impresora_edit' impresora.id %}">Editar</a>
+    <a class="btn btn-ghost" href="{% url 'reparacion_create' %}">Registrar reparación</a>
+    <a class="btn primary" href="{% url 'asignar_impresora' impresora.id %}">Cambiar servicio</a>
     <form method="post" action="{% url 'impresora_toggle' impresora.id %}" style="display:inline">
       {% csrf_token %}
       <button class="btn btn-ghost" type="submit">
@@ -30,7 +30,16 @@
   <div class="card-label" style="margin-bottom:10px">Información</div>
   <div class="formgrid">
     <div class="field col-3"><span class="label">Patrimonio</span><span>{{ impresora.patrimonio|default:"—" }}</span></div>
-    <div class="field col-3"><span class="label">IP</span><span class="mono">{{ impresora.ip|default:"—" }}</span></div>
+    <div class="field col-3">
+      <span class="label">IP</span>
+      {% if impresora.ip %}
+        <span class="ping-widget" data-ping-url="{% url 'impresora_ping' impresora.id %}">
+          <span class="mono">{{ impresora.ip }}</span>
+          <button type="button" class="btn-ping" title="Verificar conexión" aria-label="Verificar conexión con {{ impresora.ip }}">📶</button>
+          <span class="ping-status" aria-live="polite"></span>
+        </span>
+      {% else %}<span class="mono">—</span>{% endif %}
+    </div>
     <div class="field col-3"><span class="label">Conexión</span><span>{{ impresora.get_conexion_display }}</span></div>
     <div class="field col-3"><span class="label">Tipo</span><span>{{ impresora.tipo|default:"—" }}</span></div>
     <div class="field col-4">
@@ -41,6 +50,7 @@
     <div class="field col-4"><span class="label">Ubicación</span><span>{{ impresora.ubicacion_actual|default:"—" }}</span></div>
     <div class="field col-4"><span class="label">Responsable</span><span>{{ impresora.responsable_actual|default:"—" }}</span></div>
     {% if impresora.conexion == "IP" %}
+      <div class="field col-4"><span class="label">MAC</span><span class="mono">{{ impresora.mac|default:"—" }}</span></div>
       <div class="field col-4"><span class="label">Máscara de subred</span><span class="mono">{{ impresora.submascara|default:"—" }}</span></div>
       <div class="field col-4"><span class="label">Puerta de enlace</span><span class="mono">{{ impresora.puerta_enlace|default:"—" }}</span></div>
     {% endif %}
@@ -111,7 +121,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:6px">
     {% for pc in pcs_asociadas %}
-      <a class="row space-between" style="padding:8px 4px;border-bottom:1px solid var(--border-color)" href="{% url 'pc_detail' pc.pk %}">
+      <a class="row space-between" style="padding:8px 4px;border-bottom:1px solid var(--border)" href="{% url 'pc_detail' pc.pk %}">
         <span>{{ pc.nombre_pc }}</span>
         <span class="muted">{{ pc.servicio.nombre|default:"—" }}</span>
       </a>

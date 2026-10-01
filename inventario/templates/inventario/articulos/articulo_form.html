@@ -51,9 +51,16 @@
     </div>
 
     <div class="field col-12" id="campo-genera-ficha">
-      <label class="label" for="id_genera_ficha">Genera ficha de</label>      {{ form.genera_ficha }}
+      <label class="label">Genera ficha de</label>
+      <div class="segmented" id="genera-ficha-segmented" role="group" aria-label="Genera ficha de">
+        {% for value, label in form.genera_ficha.field.choices %}
+          <button type="button" class="segmented-btn{% if form.genera_ficha.value|default:"" == value %} active{% endif %}"
+                  data-value="{{ value }}" aria-pressed="{% if form.genera_ficha.value|default:"" == value %}true{% else %}false{% endif %}">{{ label }}</button>
+        {% endfor %}
+      </div>
+      {{ form.genera_ficha }}
       <div class="field-hint">
-        Al cargar el N° de patrimonio de una unidad, crea automáticamente su ficha completa (impresora / equipo), en vez de darla de alta a mano.
+        Al cargar el N° de patrimonio de una unidad, crea automáticamente su ficha completa (impresora / equipo), en vez de darla de alta a mano. Marcá “Impresora” para que esta unidad aparezca al elegir el artículo de catálogo de una impresora.
       </div>
     </div>
 
@@ -65,7 +72,7 @@
 
     <div class="form-actions col-12">
       <button class="btn primary" type="submit">Guardar</button>
-      <a class="btn" href="{% url 'articulos_page' %}">Cancelar</a>
+      <a class="btn btn-ghost" href="{% url 'articulos_page' %}">Cancelar</a>
     </div>
   </form>
 </div>
@@ -81,6 +88,24 @@
     }
     checkPatrimonial.addEventListener('change', sync);
     sync();
+  })();
+
+  (function () {
+    var select = document.getElementById('id_genera_ficha');
+    var grupo  = document.getElementById('genera-ficha-segmented');
+    if (!select || !grupo) return;
+
+    select.hidden = true;
+    var botones = grupo.querySelectorAll('.segmented-btn');
+    botones.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        select.value = btn.dataset.value;
+        botones.forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+      });
+    });
   })();
 </script>
 

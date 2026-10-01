@@ -6,7 +6,6 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Patrimonios</h1>
-    <div class="page-subtitle muted">Registro de artículos con número de patrimonio</div>
   </div>
   <div class="page-actions">
     <a class="btn primary" href="{% url 'patrimonio_standalone_create' %}">
@@ -15,8 +14,8 @@
       </svg>
       Nuevo patrimonio
     </a>
-    <a class="btn" href="{% url 'donaciones_list' %}">Donaciones</a>
-    <a class="btn" href="{% url 'movimientos_list' %}">Ver movimientos</a>
+    <a class="btn btn-ghost" href="{% url 'donaciones_list' %}">Donaciones</a>
+    <a class="btn btn-ghost" href="{% url 'movimientos_list' %}">Ver movimientos</a>
   </div>
 </div>
 
@@ -54,12 +53,9 @@
       <table>
         <thead>
           <tr>
+            <th style="width:34px"><span class="sr-only">Más info</span></th>
             <th style="width:130px">Nº Patrimonio</th>
-            <th>Artículo</th>
             <th>Detalle</th>
-            <th>Nombre equipo</th>
-            <th>IP</th>
-            <th>Usuario</th>
             <th>Servicio asignado</th>
             <th>Pedido</th>
             <th style="width:70px"><span class="sr-only">Acciones</span></th>
@@ -73,22 +69,13 @@
             {% url 'patrimonio_standalone_edit' pat.pk as editar_url %}
           {% endif %}
           <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' pat.pk %}">
-            <td><strong class="mono">{{ pat.numero_patrimonio }}</strong>{% if pat.es_donacion %} <span class="chip" title="Donación{% if pat.donante %} de {{ pat.donante }}{% endif %}">Donación</span>{% endif %}</td>
             <td>
-              {% if pat.articulo %}{{ pat.articulo.nombre }}
-              {% else %}
-                {% with it=pat.pedido_detalle.item %}
-                  {% if it.toner %}{{ it.toner.marca }} {{ it.toner.nombre }}
-                  {% elif it.activo_pc %}{{ it.activo_pc.nombre_pc }}
-                  {% elif it.impresora %}{{ it.impresora.marca }} {{ it.impresora.modelo }}
-                  {% else %}{{ it|default:"—" }}{% endif %}
-                {% endwith %}
-              {% endif %}
+              <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="pat-list-detalle-{{ pat.pk }}"
+                      title="Ver más info" aria-label="Ver más información del patrimonio {{ pat.numero_patrimonio }}"
+                      onclick="event.stopPropagation()">+</button>
             </td>
+            <td><strong class="mono">{{ pat.numero_patrimonio }}</strong>{% if pat.es_donacion %} <span class="chip" title="Donación{% if pat.donante %} de {{ pat.donante }}{% endif %}">Donación</span>{% endif %}</td>
             <td class="muted" style="font-size:.82rem">{{ pat.detalle_item|default:"—" }}</td>
-            <td>{{ pat.nombre_pc|default:"—" }}</td>
-            <td class="mono" style="font-size:.82rem">{{ pat.ip|default:"—" }}</td>
-            <td>{{ pat.usuario_asignado|default:"—" }}</td>
             <td>{{ pat.servicio_asignado|default:"—" }}</td>
             <td class="muted" style="font-size:.78rem">
               {% if pat.pedido_detalle %}
@@ -103,11 +90,45 @@
               <a class="btn" href="{{ editar_url }}?next={% url 'patrimonios_list' %}" onclick="event.stopPropagation()">Editar</a>
             </td>
           </tr>
+          <tr class="row-detail" id="pat-list-detalle-{{ pat.pk }}" hidden>
+            <td colspan="6">
+              <div class="row-detail-grid">
+                <div class="field">
+                  <span class="label">Artículo</span>
+                  <span>
+                    {% if pat.articulo %}{{ pat.articulo.nombre }}
+                    {% else %}
+                      {% with it=pat.pedido_detalle.item %}
+                        {% if it.toner %}{{ it.toner.marca }} {{ it.toner.nombre }}
+                        {% elif it.activo_pc %}{{ it.activo_pc.nombre_pc }}
+                        {% elif it.impresora %}{{ it.impresora.marca }} {{ it.impresora.modelo }}
+                        {% else %}{{ it|default:"—" }}{% endif %}
+                      {% endwith %}
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="field"><span class="label">Nombre equipo</span><span>{{ pat.nombre_pc|default:"—" }}</span></div>
+                <div class="field">
+                  <span class="label">IP</span>
+                  <span class="mono">
+                    {% if pat.ip %}
+                      <span class="ping-widget" data-ping-url="{% url 'patrimonio_ping' pat.pk %}">
+                        {{ pat.ip }}
+                        <button type="button" class="btn-ping" title="Verificar conexión" aria-label="Verificar conexión con {{ pat.ip }}">📶</button>
+                        <span class="ping-status" aria-live="polite"></span>
+                      </span>
+                    {% else %}—{% endif %}
+                  </span>
+                </div>
+                <div class="field"><span class="label">Usuario</span><span>{{ pat.usuario_asignado|default:"—" }}</span></div>
+              </div>
+            </td>
+          </tr>
           {% empty %}
           {% if q or tipo %}
-            {% include "inventario/_empty_row.html" with colspan=9 title="Sin resultados" sub="No hay patrimonios con esos filtros." %}
+            {% include "inventario/_empty_row.html" with colspan=6 title="Sin resultados" sub="No hay patrimonios con esos filtros." %}
           {% else %}
-            {% include "inventario/_empty_row.html" with colspan=9 title="No hay patrimonios cargados" sub="Registrá el primero al recibir un equipo o artículo con N° de patrimonio." cta_url="patrimonio_standalone_create" cta_label="+ Nuevo patrimonio" %}
+            {% include "inventario/_empty_row.html" with colspan=6 title="No hay patrimonios cargados" sub="Registrá el primero al recibir un equipo o artículo con N° de patrimonio." cta_url="patrimonio_standalone_create" cta_label="+ Nuevo patrimonio" %}
           {% endif %}
           {% endfor %}
         </tbody>

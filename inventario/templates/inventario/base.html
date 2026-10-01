@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{% block title %}StockFlow{% endblock %}</title>
+  <title>{% block title %}Inventario{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b8def' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect fill='%23060f1e' width='24' height='24' rx='5'/><rect x='6' y='2' width='12' height='8' rx='1'/><path d='M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z'/><rect x='7' y='16' width='10' height='6' rx='1'/><circle cx='18' cy='14' r='1' fill='%235b8def' stroke='none'/></svg>">
   {% now "U" as cachebust %}
   <link rel="stylesheet" href="{% static 'inventario/ui.css' %}?v={{ cachebust }}">
@@ -13,7 +13,7 @@
 
 {% with name=request.resolver_match.url_name %}
 
-<!-- ===== TITLEBAR ===== -->
+<!-- ===== TOPBAR ===== -->
 <header class="titlebar">
 
   <a class="brand" href="{% url 'dashboard' %}">
@@ -23,12 +23,11 @@
       <rect x="7" y="16" width="10" height="6" rx="1"/>
       <circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/>
     </svg>
-    StockFlow
+    Inventario
   </a>
 
   <div class="titlebar-spacer"></div>
 
-  <!-- Búsqueda global -->
   <form class="search-global" method="get" action="{% url 'busqueda_global' %}">
     <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
       <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
@@ -37,7 +36,6 @@
            value="{% if name == 'busqueda_global' %}{{ request.GET.q }}{% endif %}">
   </form>
 
-  <!-- Usuario / sesión -->
   {% if user.is_authenticated %}
   <div class="user-bar">
     {% if user.is_superuser %}
@@ -52,7 +50,7 @@
     <span class="username">{{ user.username }}</span>
     <form method="post" action="{% url 'logout' %}" style="margin:0">
       {% csrf_token %}
-      <button type="submit" class="btn" style="padding:6px 12px;font-size:12.5px;">Salir</button>
+      <button type="submit" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;">Salir</button>
     </form>
   </div>
   {% endif %}
@@ -73,7 +71,37 @@
 
     <span class="sidebar-section-title">Inventario</span>
 
-    <a class="sidebar-link {% if name in 'toner_page toner_list toner_create toner_edit toner_detail toner_entrega toner_historial' %}active{% endif %}"
+    <a class="sidebar-link {% if name in 'articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial' %}active{% endif %}"
+       href="{% url 'articulos_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      <span>Artículos</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
+       href="{% url 'impresoras_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      <span>Impresoras</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'pcs_page pcs_create pcs_edit pc_detail' %}active{% endif %}"
+       href="{% url 'pcs_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span>PCs</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'toner_page toner_list toner_create toner_edit toner_detail toner_entrega toner_historial toner_reporte_servicios toner_reporte_csv' %}active{% endif %}"
        href="{% url 'toner_page' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="6" y="2" width="12" height="8" rx="1"/>
@@ -81,6 +109,61 @@
         <rect x="7" y="16" width="10" height="6" rx="1"/>
       </svg>
       <span>Tóner</span>
+    </a>
+
+    <span class="sidebar-section-title">Gestión</span>
+
+    <a class="sidebar-link {% if name in 'intercambios_list intercambio_create intercambio_detail intercambio_resolver intercambio_cancelar' %}active{% endif %}"
+       href="{% url 'intercambios_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="17 1 21 5 17 9"/>
+        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+        <polyline points="7 23 3 19 7 15"/>
+        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </svg>
+      <span>Intercambios</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'movimientos_list movimiento_create movimiento_edit movimiento_anular' %}active{% endif %}"
+       href="{% url 'movimientos_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+      </svg>
+      <span>Movimientos</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit pedido_avanzar pedido_cancelar' %}active{% endif %}"
+       href="{% url 'pedidos_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+      </svg>
+      <span>Pedidos</span>
+    </a>
+
+    <a class="sidebar-link {% if name == 'pendientes_page' %}active{% endif %}"
+       href="{% url 'pendientes_page' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>Pendientes</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
+       href="{% url 'prestamos_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
+        <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
+      </svg>
+      <span>Préstamos</span>
+    </a>
+
+    <a class="sidebar-link {% if name in 'reparaciones_list reparacion_create reparacion_edit reparacion_detail reparacion_avanzar' %}active{% endif %}"
+       href="{% url 'reparaciones_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
+      </svg>
+      <span>Reparaciones</span>
     </a>
 
     <a class="sidebar-link {% if name in 'servicios_page servicio_create servicio_edit servicio_detail' %}active{% endif %}"
@@ -92,33 +175,9 @@
       <span>Servicios</span>
     </a>
 
-    <a class="sidebar-link {% if name in 'pedidos_list pedido_create pedido_detail pedido_edit' %}active{% endif %}"
-       href="{% url 'pedidos_list' %}">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-      </svg>
-      <span>Pedidos</span>
-    </a>
+    <span class="sidebar-section-title">Otros</span>
 
-    <a class="sidebar-link {% if name in 'pcs_page pcs_create pcs_edit pc_detail' %}active{% endif %}"
-       href="{% url 'pcs_page' %}">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-        <line x1="8" y1="21" x2="16" y2="21"/>
-        <line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-      <span>PC</span>
-    </a>
-
-    <a class="sidebar-link {% if name in 'movimientos_list movimiento_create' %}active{% endif %}"
-       href="{% url 'movimientos_list' %}">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
-      </svg>
-      <span>Movimientos</span>
-    </a>
-
-    <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete' %}active{% endif %}"
+    <a class="sidebar-link {% if name in 'notas_list nota_create nota_detail nota_edit nota_delete nota_avanzar' %}active{% endif %}"
        href="{% url 'notas_list' %}">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -129,130 +188,27 @@
       <span>Notas</span>
     </a>
 
-    <span class="sidebar-section-title">Más</span>
+    <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_detail patrimonio_edit patrimonio_create patrimonio_standalone_create patrimonio_standalone_edit donaciones_list donacion_create' %}active{% endif %}"
+       href="{% url 'patrimonios_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="16"/>
+        <line x1="10" y1="14" x2="14" y2="14"/>
+      </svg>
+      <span>Patrimonios</span>
+    </a>
 
-    {% with mas_names='articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora intercambios_list intercambio_create intercambio_detail prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver pendientes_page reparaciones_list reparacion_create reparacion_edit patrimonios_list patrimonio_edit patrimonio_create reportes diagrama_bd' %}
-    <div class="sidebar-group {% if name in mas_names %}has-active{% endif %}">
-      <button type="button" class="sidebar-link sidebar-group-trigger" aria-haspopup="true" aria-expanded="false">
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-utility">
+      <a class="sidebar-link {% if name == 'reportes' %}active{% endif %}" href="{% url 'reportes' %}">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
-        <span>Más</span>
-        <svg class="sidebar-group-chevron" viewBox="0 0 24 24" aria-hidden="true">
-          <polyline points="9 6 15 12 9 18"/>
-        </svg>
-      </button>
-
-      <div class="sidebar-group-panel" role="menu" aria-label="Más módulos">
-
-        <span class="sidebar-group-label">Inventario</span>
-
-        <a class="sidebar-link {% if name in 'articulos_page articulo_create articulo_edit articulo_detail articulo_entrega articulos_historial' %}active{% endif %}"
-           href="{% url 'articulos_page' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-            <line x1="12" y1="22.08" x2="12" y2="12"/>
-          </svg>
-          <span>Artículos</span>
-        </a>
-
-        <a class="sidebar-link {% if name in 'impresoras_page impresora_create impresora_edit impresora_detail impresora_entrega impresora_historial asignar_impresora' %}active{% endif %}"
-           href="{% url 'impresoras_page' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <polyline points="6 9 6 2 18 2 18 9"/>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-            <rect x="6" y="14" width="12" height="8"/>
-          </svg>
-          <span>Impresoras</span>
-        </a>
-
-        <div class="sidebar-group-divider" role="separator"></div>
-
-        <span class="sidebar-group-label">Operaciones</span>
-
-        <a class="sidebar-link {% if name in 'prestamos_list prestamo_detail prestamo_create prestamo_edit prestamo_devolver' %}active{% endif %}"
-           href="{% url 'prestamos_list' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-            <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
-          </svg>
-          <span>Préstamos</span>
-        </a>
-
-        <a class="sidebar-link {% if name in 'intercambios_list intercambio_create intercambio_detail' %}active{% endif %}"
-           href="{% url 'intercambios_list' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <polyline points="17 1 21 5 17 9"/>
-            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-            <polyline points="7 23 3 19 7 15"/>
-            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-          </svg>
-          <span>Intercambios</span>
-        </a>
-
-        <a class="sidebar-link {% if name in 'reparaciones_list reparacion_create reparacion_edit' %}active{% endif %}"
-           href="{% url 'reparaciones_list' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a5.8 5.8 0 0 1-7.4 7.4L5.7 21.4a2 2 0 0 1-2.8-2.8L11 10.7a5.8 5.8 0 0 1 7.4-7.4L14.7 6.3z"/>
-          </svg>
-          <span>Reparaciones</span>
-        </a>
-
-        <a class="sidebar-link {% if name == 'pendientes_page' %}active{% endif %}"
-           href="{% url 'pendientes_page' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span>Pendientes</span>
-        </a>
-
-        <div class="sidebar-group-divider" role="separator"></div>
-
-        <span class="sidebar-group-label">Organización</span>
-
-        <a class="sidebar-link {% if name in 'patrimonios_list patrimonio_detail patrimonio_edit patrimonio_create patrimonio_standalone_create patrimonio_standalone_edit donaciones_list donacion_create' %}active{% endif %}"
-           href="{% url 'patrimonios_list' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-            <line x1="12" y1="12" x2="12" y2="16"/>
-            <line x1="10" y1="14" x2="14" y2="14"/>
-          </svg>
-          <span>Patrimonios</span>
-        </a>
-
-        <div class="sidebar-group-divider" role="separator"></div>
-
-        <span class="sidebar-group-label">Reportes</span>
-
-        <a class="sidebar-link {% if name == 'reportes' %}active{% endif %}"
-           href="{% url 'reportes' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <span>Reportes</span>
-        </a>
-
-        <a class="sidebar-link {% if name == 'diagrama_bd' %}active{% endif %}"
-           href="{% url 'diagrama_bd' %}" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="2" y="3" width="6" height="4" rx="1"/>
-            <rect x="9" y="10" width="6" height="4" rx="1"/>
-            <rect x="16" y="3" width="6" height="4" rx="1"/>
-            <rect x="2" y="17" width="6" height="4" rx="1"/>
-            <line x1="5" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="5" y2="17"/><line x1="19" y1="7" x2="12" y2="10"/>
-          </svg>
-          <span>Diagrama BD</span>
-        </a>
-
-      </div>
+        <span>Reportes</span>
+      </a>
     </div>
-    {% endwith %}
 
     {% if user.is_superuser %}
     <span class="sidebar-section-title">Administración</span>
@@ -297,18 +253,17 @@
   document.querySelectorAll('.toast').forEach(function (t) {
     var delay = 4200;
     setTimeout(function () {
-      t.style.transition = 'opacity .35s ease, transform .35s ease';
+      t.style.transition = 'opacity .3s ease, transform .3s ease';
       t.style.opacity    = '0';
-      t.style.transform  = 'translateX(18px)';
-      setTimeout(function () { t.remove(); }, 380);
+      t.style.transform  = 'translateY(6px)';
+      setTimeout(function () { t.remove(); }, 320);
     }, delay);
     t.addEventListener('click', function () { t.remove(); });
-    t.style.cursor = 'pointer';
   });
 
-  /* ── Cards colapsables ── */
+  /* ── Cards colapsables: solo la flecha abre/cierra, nunca el resto del header ── */
   function initCollapsible(card) {
-    var trigger = card.querySelector('.collapse-trigger');
+    var trigger = card.querySelector('.collapse-chevron');
     var body    = card.querySelector('.card-collapse-body');
     if (!trigger || !body) return;
 
@@ -323,7 +278,6 @@
     }
 
     trigger.addEventListener('click', function (e) {
-      if (e.target.closest('a[href], button:not(.collapse-trigger), form')) return;
       e.stopPropagation();
       var isOpen = card.classList.contains('open');
       if (isOpen) {
@@ -343,10 +297,6 @@
         });
       }
     });
-
-    trigger.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
-    });
   }
 
   document.querySelectorAll('.card-collapsible').forEach(initCollapsible);
@@ -360,87 +310,12 @@
   });
 })();
 
-/* ── Sidebar: grupo "Gestión" tipo card flotante (hover + clic) ── */
-(function () {
-  document.querySelectorAll('.sidebar-group').forEach(function (group) {
-    var trigger = group.querySelector('.sidebar-group-trigger');
-    var panel   = group.querySelector('.sidebar-group-panel');
-    if (!trigger || !panel) return;
-
-    var openTimer, closeTimer, pinned = false;
-
-    function place() {
-      var r = trigger.getBoundingClientRect();
-      var top = Math.min(r.top, window.innerHeight - panel.offsetHeight - 10);
-      panel.style.top  = Math.max(8, top) + 'px';
-      panel.style.left = (r.right + 8) + 'px';
-    }
-
-    function openPanel() {
-      clearTimeout(closeTimer);
-      group.classList.add('open');
-      trigger.setAttribute('aria-expanded', 'true');
-      place();
-    }
-    function closePanel() {
-      if (pinned) return;
-      group.classList.remove('open');
-      trigger.setAttribute('aria-expanded', 'false');
-    }
-    function scheduleOpen() {
-      clearTimeout(closeTimer);
-      clearTimeout(openTimer);
-      openTimer = setTimeout(openPanel, 110);
-    }
-    function scheduleClose() {
-      clearTimeout(openTimer);
-      clearTimeout(closeTimer);
-      closeTimer = setTimeout(closePanel, 220);
-    }
-
-    group.addEventListener('mouseenter', scheduleOpen);
-    group.addEventListener('mouseleave', scheduleClose);
-
-    trigger.addEventListener('click', function () {
-      pinned = !pinned;
-      if (pinned) openPanel(); else closePanel();
-    });
-    trigger.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        pinned = true;
-        openPanel();
-        var first = panel.querySelector('a');
-        if (first) first.focus();
-      }
-    });
-
-    document.addEventListener('mousedown', function (e) {
-      if (group.classList.contains('open') && !group.contains(e.target) && !panel.contains(e.target)) {
-        pinned = false;
-        closePanel();
-      }
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && group.classList.contains('open')) {
-        pinned = false;
-        closePanel();
-        trigger.focus();
-      }
-    });
-    window.addEventListener('resize', function () {
-      if (group.classList.contains('open')) place();
-    });
-  });
-})();
-
 /* ── Descarga CSV: diálogo nativo en pywebview, blob en browser ── */
 function downloadCsv(url, filename) {
   fetch(url, { credentials: 'same-origin' })
     .then(function(r) { return r.arrayBuffer(); })
     .then(function(buf) {
       if (window.pywebview && window.pywebview.api && window.pywebview.api.save_csv) {
-        /* Convertir a base64 en chunks para no explotar el stack */
         var bytes = new Uint8Array(buf);
         var binary = '';
         for (var i = 0; i < bytes.length; i += 8192) {
@@ -453,7 +328,6 @@ function downloadCsv(url, filename) {
           }
         });
       } else {
-        /* Fallback para browser estándar */
         var blob = new Blob([buf]);
         var o = URL.createObjectURL(blob);
         var a = document.createElement('a');
@@ -465,6 +339,44 @@ function downloadCsv(url, filename) {
     })
     .catch(function(e) { console.error('CSV error:', e); });
 }
+
+/* ── Ping de red: verifica si una PC/impresora con IP responde ── */
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('.btn-ping');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  var wrap = btn.closest('.ping-widget');
+  var url = wrap.dataset.pingUrl;
+  var status = wrap.querySelector('.ping-status');
+  if (!url || wrap.classList.contains('is-loading')) return;
+
+  wrap.classList.add('is-loading');
+  btn.disabled = true;
+  status.className = 'ping-status';
+  status.textContent = '';
+
+  fetch(url, { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.error) {
+        status.className = 'ping-status chip';
+        status.textContent = data.error;
+        return;
+      }
+      status.className = 'ping-status chip ' + (data.online ? 'ok' : 'danger');
+      status.textContent = data.online ? '● En línea' : '● Sin respuesta';
+    })
+    .catch(function () {
+      status.className = 'ping-status chip danger';
+      status.textContent = 'Error al verificar';
+    })
+    .finally(function () {
+      wrap.classList.remove('is-loading');
+      btn.disabled = false;
+    });
+});
 
 /* ── Confirmación in-app para acciones destructivas ── */
 /* Reemplaza confirm() nativo: un <form data-confirm="mensaje"> se intercepta
@@ -542,6 +454,20 @@ function _showConfirmPopover(anchor, message, onConfirm) {
   });
 })();
 
+/* ── Filas de tabla expandibles ("+" con info secundaria) ── */
+(function () {
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.row-expand-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    var detalle = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!detalle) return;
+    var abierto = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+    detalle.hidden = abierto;
+  });
+})();
+
 /* ── Tabs (ej: expediente de servicio) ── */
 (function () {
   document.querySelectorAll('.tabs-wrap').forEach(function (wrap) {
@@ -613,13 +539,12 @@ function _csvToast(msg, type) {
   var t = document.createElement('div');
   t.className = 'toast ' + (type || 'success');
   t.style.pointerEvents = 'auto';
-  t.style.cursor = 'pointer';
   t.textContent = msg;
   stack.appendChild(t);
   setTimeout(function() {
-    t.style.transition = 'opacity .35s ease, transform .35s ease';
-    t.style.opacity = '0'; t.style.transform = 'translateX(14px)';
-    setTimeout(function() { t.remove(); }, 380);
+    t.style.transition = 'opacity .3s ease, transform .3s ease';
+    t.style.opacity = '0'; t.style.transform = 'translateY(6px)';
+    setTimeout(function() { t.remove(); }, 320);
   }, 4500);
   t.addEventListener('click', function() { t.remove(); });
 }

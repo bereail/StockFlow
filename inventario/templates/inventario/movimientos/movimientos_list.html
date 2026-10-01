@@ -9,12 +9,12 @@
     <div class="page-subtitle muted">Ingresos, egresos y ajustes de stock</div>
   </div>
   <div class="page-actions">
-    <a class="btn" href="{% url 'movimientos_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
-    <a class="btn primary" href="{% url 'movimiento_create' %}">+ Nuevo</a>
+    <a class="btn btn-ghost" href="{% url 'movimientos_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
+    <a class="btn primary" href="{% url 'movimiento_create' %}">+ Nuevo movimiento</a>
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px">
+<div class="toolbar" style="margin-bottom:18px">
   <form method="get" class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
     <div style="flex:1;min-width:160px">
       <label class="label" style="margin-bottom:4px" for="id_tipo">Tipo</label>
@@ -51,13 +51,13 @@
 </div>
 
 <div class="card card-collapsible">
-  <div class="card-header collapse-trigger" tabindex="0" role="button">
+  <div class="card-header">
     <div class="row" style="gap:8px;align-items:center">
       <span class="card-label">Movimientos</span>
     </div>
-    <span class="collapse-chevron" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </span>
+    <button type="button" class="collapse-chevron" aria-expanded="false" aria-label="Mostrar u ocultar movimientos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
   </div>
   <div class="card-collapse-body">
     <div class="table-wrapper" style="margin:8px -16px 0;border-radius:0">

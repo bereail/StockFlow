@@ -3,93 +3,94 @@
 {% block title %}Artículos{% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <div>
-    <h1 class="page-title">Artículos</h1>
-    <div class="page-subtitle muted">Catálogo y acciones</div>
-  </div>
-  <form method="get" class="page-actions">
-    <input class="search" name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / descripción)" aria-label="Buscar artículos">
-    <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
-      <option value="">Todos los estados</option>
-      <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
-      <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
-    </select>
-    <button class="btn primary" type="submit">Buscar</button>
-  </form>
-</div>
+<div class="view">
 
-<div class="card">
-  <div class="card-header">
-    <div class="row" style="gap:8px;align-items:center">
-      <span class="card-label">Artículos</span>
-      <span class="chip">{{ page_obj.paginator.count }}</span>
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Artículos</h1>
+      <div class="view-subtitle">Catálogo de insumos varios</div>
     </div>
-    <div class="row" style="gap:8px">
-      <a class="btn" href="{% url 'articulo_create' %}">Nuevo</a>
-      <a class="btn" href="{% url 'articulo_entrega' %}">Entrega</a>
-      <a class="btn" href="{% url 'articulos_historial' %}">Historial</a>
+    <div class="page-actions">
+      <a class="btn btn-ghost" href="{% url 'articulos_historial' %}">Historial</a>
+      <a class="btn btn-ghost" href="{% url 'articulo_entrega' %}">Entrega</a>
+      <a class="btn primary" href="{% url 'articulo_create' %}">+ Nuevo</a>
     </div>
   </div>
-  <div>
-    <div class="table-wrapper table-wrapper--flush">
-      <table>
-        <thead>
-          <tr>
-            <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
-            <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
-            <th>Descripción</th>
-            <th>Patrimonial</th>
-            <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
-            <th style="width:240px">Acciones</th>
+
+  <div class="toolbar">
+    <form method="get" style="display:contents">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por marca, nombre o descripción" aria-label="Buscar artículos">
+      <select name="estado" style="width:auto;max-width:200px" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
+        <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+      </select>
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+  </div>
+
+  <div class="section-head">
+    <span class="section-title">Artículos</span>
+    <span class="section-count">{{ page_obj.paginator.count }}</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>{% sort_th "marca" "Marca" sort_actual dir_actual %}</th>
+          <th>{% sort_th "nombre" "Nombre" sort_actual dir_actual %}</th>
+          <th>Descripción</th>
+          <th>Patrimonial</th>
+          <th>{% sort_th "estado" "Estado" sort_actual dir_actual %}</th>
+          <th style="width:220px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in articulos %}
+          <tr style="cursor:pointer" data-href="{% url 'articulo_detail' a.id %}">
+            <td>{{ a.marca|default:"-" }}</td>
+            <td><strong>{{ a.nombre }}</strong></td>
+            <td class="muted">{{ a.descripcion|default:"-" }}</td>
+            <td>
+              {% if a.es_patrimonial %}
+                <span class="chip ok" title="Cada unidad cargada en un pedido tiene su propio N° de patrimonio">Sí</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.activo %}
+                <span class="chip ok">Activo</span>
+              {% else %}
+                <span class="chip">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn" href="{% url 'articulo_edit' a.id %}" onclick="event.stopPropagation()">Editar</a>
+              <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline" onclick="event.stopPropagation()">
+                {% csrf_token %}
+                <button class="btn btn-ghost" type="submit">
+                  {% if a.activo %}Desactivar{% else %}Activar{% endif %}
+                </button>
+              </form>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for a in articulos %}
-            <tr style="cursor:pointer" data-href="{% url 'articulo_detail' a.id %}">
-              <td>{{ a.marca|default:"-" }}</td>
-              <td><strong>{{ a.nombre }}</strong></td>
-              <td class="muted">{{ a.descripcion|default:"-" }}</td>
-              <td>
-                {% if a.es_patrimonial %}
-                  <span class="chip ok" title="Cada unidad cargada en un pedido tiene su propio N° de patrimonio">🔖 Sí</span>
-                {% else %}
-                  <span class="muted">—</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if a.activo %}
-                  <span class="chip ok">Activo</span>
-                {% else %}
-                  <span class="chip">Inactivo</span>
-                {% endif %}
-              </td>
-              <td>
-                <a class="btn" href="{% url 'articulo_edit' a.id %}" onclick="event.stopPropagation()">Editar</a>
-                <form method="post" action="{% url 'articulo_toggle' a.id %}" style="display:inline" onclick="event.stopPropagation()">
-                  {% csrf_token %}
-                  <button class="btn btn-ghost" type="submit">
-                    {% if a.activo %}Desactivar{% else %}Activar{% endif %}
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="6">
-                <div class="empty-state">
-                  <div class="empty-state-title">No hay artículos cargados</div>
-                  <div class="empty-state-sub">Creá el primer artículo para comenzar.</div>
-                  <a class="btn primary" href="{% url 'articulo_create' %}">+ Nuevo artículo</a>
-                </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% include "inventario/_pagination.html" %}
+        {% empty %}
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay artículos cargados</div>
+                <div class="empty-state-sub">Creá el primer artículo para comenzar.</div>
+                <a class="btn primary" href="{% url 'articulo_create' %}">+ Nuevo artículo</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+  {% include "inventario/_pagination.html" %}
+
 </div>
 
 {% endblock %}

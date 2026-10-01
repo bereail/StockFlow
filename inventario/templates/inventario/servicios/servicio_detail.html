@@ -8,7 +8,6 @@
       <a href="{% url 'servicios_page' %}">Servicios</a> / {{ servicio.nombre }}
     </div>
     <h1 class="servicio-hero-title">{{ servicio.nombre }}</h1>
-    {% if servicio.descripcion %}<div class="servicio-hero-sub">{{ servicio.descripcion }}</div>{% endif %}
   </div>
   <div class="page-actions">
     <a class="btn" href="{% url 'servicio_edit' servicio.id %}">Editar</a>

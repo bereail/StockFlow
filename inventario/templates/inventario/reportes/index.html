@@ -2,145 +2,139 @@
 {% block title %}Reportes{% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <div>
-    <h1 class="page-title">Reportes</h1>
-    <div class="page-subtitle muted">Generá reportes HTML listos para imprimir o guardar como PDF</div>
+<div class="view">
+
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Reportes</h1>
+      <div class="view-subtitle">Reportes HTML listos para imprimir o guardar como PDF</div>
+    </div>
   </div>
-</div>
 
-<!-- Filtro global de mes -->
-<div class="card" style="margin-bottom:10px">
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <span style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Filtrar por mes</span>
-    <input type="month" id="mes-global" style="width:160px;flex-shrink:0"
-           title="Dejalo vacío para incluir todos los períodos">
-    <span class="muted" style="font-size:11px">— Vacío = todos los períodos</span>
-    <button class="btn btn-ghost" style="margin-left:auto" onclick="document.getElementById('mes-global').value=''">Limpiar</button>
+  <div class="toolbar">
+    <span class="section-title" style="white-space:nowrap">Filtrar por mes</span>
+    <input type="month" id="mes-global" style="width:150px;flex:0" title="Dejalo vacío para incluir todos los períodos">
+    <span class="muted" style="font-size:11.5px">vacío = todos los períodos</span>
+    <div class="toolbar-spacer"></div>
+    <button class="btn btn-ghost" onclick="document.getElementById('mes-global').value=''">Limpiar</button>
   </div>
-</div>
 
-<!-- Grid de reportes -->
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
-
-  <!-- ── Tóner ── -->
+  <!-- Tóner -->
   <div class="card">
     <div class="card-header">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:30px;height:30px;border-radius:7px;background:rgba(79,140,255,.15);border:1px solid rgba(79,140,255,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="6" y="2" width="12" height="8" rx="1"/><path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/><rect x="7" y="16" width="10" height="6" rx="1"/>
-          </svg>
-        </div>
-        <span class="card-label">Entregas de tóner</span>
+      <span class="section-title">Entregas de tóner</span>
+      <div class="row" style="gap:6px">
+        <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}">Ver reporte</a>
+        <button class="btn btn-ghost" onclick="descargar('{% url "reporte_toner_html" %}', 'toner')">HTML</button>
+        <button class="btn" onclick="descargar('{% url "reporte_toner_excel" %}', 'toner')">
+          {% include "inventario/_icon_download.html" %} Excel
+        </button>
       </div>
     </div>
-    <div style="font-size:26px;font-weight:900;color:var(--primary);line-height:1;margin:4px 0 2px">{{ total_entregas_toner }}</div>
-    <div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">unidades entregadas (total)</div>
-    <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn" href="{% url 'toner_reporte_servicios' %}" style="flex:1;justify-content:center">Ver reporte</a>
-      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargar('{% url "reporte_toner_html" %}', 'toner')">
-        {% include "inventario/_icon_download.html" %} Descargar
-      </button>
+    <div class="stats-row" style="border-bottom:none;padding-bottom:0">
+      <div class="stat-card">
+        <div class="stat-value">{{ total_entregas_toner }}</div>
+        <div class="stat-label">Unidades entregadas (total)</div>
+      </div>
     </div>
   </div>
 
-  <!-- ── Equipos / Patrimonios ── -->
+  <!-- Equipos / Patrimonios -->
   <div class="card">
     <div class="card-header">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:30px;height:30px;border-radius:7px;background:rgba(53,208,127,.13);border:1px solid rgba(53,208,127,.28);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-        </div>
-        <span class="card-label">Equipos y patrimonios</span>
+      <span class="section-title">Equipos y patrimonios</span>
+      <div class="row" style="gap:6px">
+        <a class="btn btn-ghost" href="{% url 'patrimonios_list' %}">Ver lista</a>
+        <button class="btn btn-ghost" onclick="descargar('{% url "reporte_pcs_html" %}', 'pcs')">HTML</button>
+        <button class="btn" onclick="descargar('{% url "reporte_pcs_excel" %}', 'pcs')">
+          {% include "inventario/_icon_download.html" %} Excel
+        </button>
       </div>
     </div>
-    <div style="display:flex;gap:16px;margin:4px 0 10px">
-      <div>
-        <div style="font-size:22px;font-weight:900;color:var(--ok);line-height:1">{{ pcs_count }}</div>
-        <div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.4px">PCs activos</div>
+    <div class="stats-row" style="border-bottom:none;padding-bottom:0">
+      <div class="stat-card">
+        <div class="stat-value">{{ pcs_count }}</div>
+        <div class="stat-label">PCs activos</div>
       </div>
-      <div>
-        <div style="font-size:22px;font-weight:900;color:var(--ok);line-height:1">{{ patrimonios_count }}</div>
-        <div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.4px">patrimonios</div>
+      <div class="stat-card">
+        <div class="stat-value">{{ patrimonios_count }}</div>
+        <div class="stat-label">Patrimonios</div>
       </div>
-    </div>
-    <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn" href="{% url 'patrimonios_list' %}" style="flex:1;justify-content:center">Ver lista</a>
-      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargar('{% url "reporte_pcs_html" %}', 'pcs')">
-        {% include "inventario/_icon_download.html" %} Descargar
-      </button>
     </div>
   </div>
 
-  <!-- ── Pedidos ── -->
+  <!-- Impresoras -->
   <div class="card">
     <div class="card-header">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:30px;height:30px;border-radius:7px;background:rgba(255,204,102,.13);border:1px solid rgba(255,204,102,.28);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
-        </div>
-        <span class="card-label">Pedidos</span>
+      <span class="section-title">Impresoras</span>
+      <div class="row" style="gap:6px">
+        <a class="btn btn-ghost" href="{% url 'impresoras_page' %}">Ver lista</a>
+        <button class="btn btn-ghost" onclick="descargar('{% url "reporte_impresoras_html" %}', 'impresoras')">HTML</button>
+        <button class="btn" onclick="descargar('{% url "reporte_impresoras_excel" %}', 'impresoras')">
+          {% include "inventario/_icon_download.html" %} Excel
+        </button>
       </div>
     </div>
-    <div style="font-size:22px;font-weight:900;color:var(--warn);line-height:1;margin:4px 0 2px">{{ pedidos_pendientes }}</div>
-    <div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">en curso</div>
-    <!-- Filtros extra de pedidos -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-      <select id="ped-estado" style="flex:1;min-width:100px">
+    <div class="muted" style="font-size:12px">
+      Excel con servicio, IP, MAC y modelo de cada impresora.
+    </div>
+  </div>
+
+  <!-- Pedidos -->
+  <div class="card">
+    <div class="card-header">
+      <span class="section-title">Pedidos</span>
+      <div class="row" style="gap:6px">
+        <a class="btn btn-ghost" href="{% url 'pedidos_list' %}">Ver lista</a>
+        <button class="btn btn-ghost" onclick="descargarPedidos('html')">HTML</button>
+        <button class="btn" onclick="descargarPedidos('xlsx')">
+          {% include "inventario/_icon_download.html" %} Excel
+        </button>
+      </div>
+    </div>
+    <div class="stats-row" style="border-bottom:none;padding-bottom:10px">
+      <div class="stat-card">
+        <div class="stat-value">{{ pedidos_pendientes }}</div>
+        <div class="stat-label">En curso</div>
+      </div>
+    </div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <select id="ped-estado" style="flex:1;min-width:140px">
         <option value="">Todos los estados</option>
         {% for val, lbl in pedidos_estados %}
           <option value="{{ val }}">{{ lbl }}</option>
         {% endfor %}
       </select>
-      <select id="ped-servicio" style="flex:2;min-width:130px">
+      <select id="ped-servicio" style="flex:2;min-width:160px">
         <option value="">Todos los servicios</option>
         {% for s in servicios %}
           <option value="{{ s.id }}">{{ s.nombre }}</option>
         {% endfor %}
       </select>
-    </div>
-    <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn" href="{% url 'pedidos_list' %}" style="flex:1;justify-content:center">Ver lista</a>
-      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargarPedidos()">
-        {% include "inventario/_icon_download.html" %} Descargar
-      </button>
     </div>
   </div>
 
-  <!-- ── Movimientos ── -->
+  <!-- Movimientos -->
   <div class="card">
     <div class="card-header">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:30px;height:30px;border-radius:7px;background:rgba(143,176,216,.12);border:1px solid rgba(143,176,216,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
-          </svg>
-        </div>
-        <span class="card-label">Movimientos de stock</span>
+      <span class="section-title">Movimientos de stock</span>
+      <div class="row" style="gap:6px">
+        <a class="btn btn-ghost" href="{% url 'movimientos_list' %}">Ver lista</a>
+        <button class="btn btn-ghost" onclick="descargarMovimientos('html')">HTML</button>
+        <button class="btn" onclick="descargarMovimientos('xlsx')">
+          {% include "inventario/_icon_download.html" %} Excel
+        </button>
       </div>
     </div>
-    <div class="muted" style="font-size:11.5px;margin:4px 0 10px;line-height:1.4">
+    <div class="muted" style="font-size:12px;margin-bottom:10px">
       Ingresos, egresos y ajustes de stock con fecha, tipo, servicio y detalle de ítems.
     </div>
-    <div style="margin-bottom:8px">
-      <select id="mov-servicio" style="width:100%">
-        <option value="">Todos los servicios</option>
-        {% for s in servicios %}
-          <option value="{{ s.id }}">{{ s.nombre }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div style="display:flex;gap:6px;margin-top:auto">
-      <a class="btn" href="{% url 'movimientos_list' %}" style="flex:1;justify-content:center">Ver lista</a>
-      <button class="btn primary" style="flex:1;justify-content:center" onclick="descargarMovimientos()">
-        {% include "inventario/_icon_download.html" %} Descargar
-      </button>
-    </div>
+    <select id="mov-servicio" style="max-width:320px">
+      <option value="">Todos los servicios</option>
+      {% for s in servicios %}
+        <option value="{{ s.id }}">{{ s.nombre }}</option>
+      {% endfor %}
+    </select>
   </div>
 
 </div>
@@ -153,11 +147,12 @@ function getMes() {
 function descargar(baseUrl, tipo) {
   var mes = getMes();
   var url = baseUrl + (mes ? '?mes=' + encodeURIComponent(mes) : '');
-  var sufijo = mes ? mes.replace('-', '-') : 'total';
-  downloadCsv(url, tipo + '_' + sufijo + '.html');
+  var ext = baseUrl.split('.').pop();
+  var sufijo = mes || 'total';
+  downloadCsv(url, tipo + '_' + sufijo + '.' + ext);
 }
 
-function descargarPedidos() {
+function descargarPedidos(formato) {
   var mes      = getMes();
   var estado   = document.getElementById('ped-estado').value;
   var servicio = document.getElementById('ped-servicio').value;
@@ -166,21 +161,23 @@ function descargarPedidos() {
   if (estado)   params.set('estado', estado);
   if (servicio) params.set('servicio', servicio);
   var query    = params.toString();
-  var url      = '{% url "reporte_pedidos_html" %}' + (query ? '?' + query : '');
+  var base     = formato === 'xlsx' ? '{% url "reporte_pedidos_excel" %}' : '{% url "reporte_pedidos_html" %}';
+  var url      = base + (query ? '?' + query : '');
   var sufijo   = mes || 'total';
-  downloadCsv(url, 'pedidos_' + sufijo + '.html');
+  downloadCsv(url, 'pedidos_' + sufijo + '.' + formato);
 }
 
-function descargarMovimientos() {
+function descargarMovimientos(formato) {
   var mes      = getMes();
   var servicio = document.getElementById('mov-servicio').value;
   var params   = new URLSearchParams();
   if (mes)      params.set('mes', mes);
   if (servicio) params.set('servicio', servicio);
   var query    = params.toString();
-  var url      = '{% url "reporte_movimientos_html" %}' + (query ? '?' + query : '');
+  var base     = formato === 'xlsx' ? '{% url "reporte_movimientos_excel" %}' : '{% url "reporte_movimientos_html" %}';
+  var url      = base + (query ? '?' + query : '');
   var sufijo   = mes || 'total';
-  downloadCsv(url, 'movimientos_' + sufijo + '.html');
+  downloadCsv(url, 'movimientos_' + sufijo + '.' + formato);
 }
 </script>
 

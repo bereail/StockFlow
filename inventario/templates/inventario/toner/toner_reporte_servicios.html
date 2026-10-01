@@ -2,28 +2,28 @@
 {% block title %}Reporte de tóner por servicio{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">Tóner por servicio</h1>
-    <div class="page-subtitle muted">Consumo agrupado · {{ total_global }} unidades entregadas en total</div>
-  </div>
-  <div class="page-actions">
-    <a class="btn" href="{% url 'toner_historial' %}">Historial detallado</a>
-    <button class="btn primary"
-            onclick="downloadCsv('{% url 'toner_reporte_csv' %}?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}', 'toner_por_servicio.csv')"
-            title="Descargar CSV (abre bien en Excel)">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      Descargar CSV
-    </button>
-  </div>
-</div>
+<div class="view">
 
-<!-- Filtros -->
-<div class="card" style="margin-bottom:14px">
-  <form method="get">
-    <div class="filter-bar-inner">
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Tóner por servicio</h1>
+      <div class="view-subtitle">Consumo agrupado · {{ total_global }} unidades entregadas en total</div>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn-ghost" href="{% url 'toner_historial' %}">Historial detallado</a>
+      <button class="btn" type="button"
+              onclick="downloadCsv('{% url 'toner_reporte_csv' %}?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}', 'toner_por_servicio.csv')"
+              title="Descargar CSV">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <form method="get" class="filter-bar-inner" style="width:100%">
       <div class="field" style="min-width:180px;flex:1">
         <label class="label" for="id_servicio">Servicio</label>
         <select name="servicio" id="id_servicio">
@@ -50,7 +50,6 @@
         <label class="label" for="id_fecha_hasta">Hasta</label>
         <input type="date" name="fecha_hasta" id="id_fecha_hasta" value="{{ fecha_hasta }}">
       </div>
-      <!-- campo oculto para preservar la vista activa -->
       <input type="hidden" name="vista" value="{{ vista }}">
       <div class="field" style="justify-content:flex-end;padding-top:18px">
         <div style="display:flex;gap:8px">
@@ -58,50 +57,43 @@
           <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}">Limpiar</a>
         </div>
       </div>
+    </form>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">{{ total_global }}</div>
+      <div class="stat-label">Unidades entregadas</div>
     </div>
-  </form>
-</div>
-
-<!-- Stat cards -->
-<div class="stats-row" style="margin-bottom:14px">
-  <div class="stat-card">
-    <div class="stat-value">{{ total_global }}</div>
-    <div class="stat-label">unidades entregadas</div>
+    <div class="stat-card">
+      <div class="stat-value">{{ total_entregas }}</div>
+      <div class="stat-label">Movimientos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ resumen_count }}</div>
+      <div class="stat-label">Combinaciones serv./tóner</div>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-value">{{ total_entregas }}</div>
-    <div class="stat-label">movimientos</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-value">{{ resumen|length }}</div>
-    <div class="stat-label">combinaciones serv./tóner</div>
-  </div>
-</div>
 
-<!-- Tabs de vista -->
-<div style="display:flex;gap:6px;margin-bottom:12px">
-  <a class="btn {% if vista == 'servicio' %}primary{% endif %}"
-     href="?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&vista=servicio">
-    Por servicio
-  </a>
-  <a class="btn {% if vista == 'mensual' %}primary{% endif %}"
-     href="?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&vista=mensual">
-    Por mes
-  </a>
-</div>
+  <div class="tabs" style="margin-top:18px">
+    <a class="tab-btn {% if vista == 'servicio' %}active{% endif %}"
+       href="?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&vista=servicio">
+      Por servicio
+    </a>
+    <a class="tab-btn {% if vista == 'mensual' %}active{% endif %}"
+       href="?servicio={{ servicio_id }}&toner={{ toner_id }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}&vista=mensual">
+      Por mes
+    </a>
+  </div>
 
-<!-- ════════ VISTA POR SERVICIO ════════ -->
-{% if vista == 'servicio' %}
-<div class="card">
-  <div class="card-header">
-    <span class="card-label">Detalle por servicio</span>
+  {% if vista == 'servicio' %}
+  <div class="section-head">
+    <span class="section-title">Detalle por servicio</span>
     {% if fecha_desde or fecha_hasta %}
-      <span class="chip">
-        {% if fecha_desde %}Desde {{ fecha_desde }}{% endif %}{% if fecha_hasta %} hasta {{ fecha_hasta }}{% endif %}
-      </span>
+      <span class="section-count">{% if fecha_desde %}Desde {{ fecha_desde }}{% endif %}{% if fecha_hasta %} hasta {{ fecha_hasta }}{% endif %}</span>
     {% endif %}
   </div>
-  <div class="table-wrapper" style="margin:-0 -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+  <div class="table-wrapper">
     <table>
       <thead>
         <tr>
@@ -121,7 +113,7 @@
           <td class="muted">{{ fila.item__toner__marca|default:"—" }}</td>
           <td class="muted">{{ fila.item__toner__modelo_impresora|default:"—" }}</td>
           <td style="text-align:right"><span class="chip">{{ fila.entregas }}</span></td>
-          <td style="text-align:right"><strong style="font-size:15px;color:var(--primary)">{{ fila.total }}</strong></td>
+          <td style="text-align:right"><strong style="font-size:14px;color:var(--accent)">{{ fila.total }}</strong></td>
         </tr>
         {% empty %}
         <tr><td colspan="6">
@@ -135,32 +127,25 @@
       </tbody>
       {% if resumen %}
       <tfoot>
-        <tr style="background:rgba(79,140,255,.06)">
-          <td colspan="4" style="font-weight:800;padding:11px 10px">Total general</td>
-          <td style="text-align:right;font-weight:800">{{ total_entregas }}</td>
-          <td style="text-align:right;font-weight:900;font-size:16px;color:var(--primary)">{{ total_global }}</td>
+        <tr>
+          <td colspan="4" style="font-weight:700;padding:11px 10px">Total general</td>
+          <td style="text-align:right;font-weight:700">{{ total_entregas }}</td>
+          <td style="text-align:right;font-weight:700;font-size:14px;color:var(--accent)">{{ total_global }}</td>
         </tr>
       </tfoot>
       {% endif %}
     </table>
   </div>
-</div>
+  {% include "inventario/_pagination.html" %}
 
-<!-- ════════ VISTA POR MES ════════ -->
-{% else %}
-{% if meses %}
-  {% for grupo in meses %}
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-header" style="background:rgba(79,140,255,.07);border-radius:var(--radius) var(--radius) 0 0;margin:-16px -16px 0">
-      <div>
-        <span class="card-label">{{ grupo.mes|date:"F Y" }}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="muted" style="font-size:12px">{{ grupo.entregas_mes }} movimiento{% if grupo.entregas_mes != 1 %}s{% endif %}</span>
-        <span style="font-size:18px;font-weight:900;color:var(--primary)">{{ grupo.total_mes }} ud.</span>
-      </div>
+  {% else %}
+  {% if meses %}
+    {% for grupo in meses %}
+    <div class="section-head">
+      <span class="section-title">{{ grupo.mes|date:"F Y" }}</span>
+      <span class="section-count">{{ grupo.entregas_mes }} movimiento{{ grupo.entregas_mes|pluralize }} · <strong style="color:var(--text)">{{ grupo.total_mes }}</strong> ud.</span>
     </div>
-    <div class="table-wrapper" style="margin:0 -16px -16px;border-radius:0 0 var(--radius) var(--radius)">
+    <div class="table-wrapper" style="margin-bottom:8px">
       <table>
         <thead>
           <tr>
@@ -178,29 +163,26 @@
             <td>{{ fila.item__toner__nombre|default:"—" }}</td>
             <td class="muted">{{ fila.item__toner__marca|default:"—" }}</td>
             <td style="text-align:right"><span class="chip">{{ fila.entregas }}</span></td>
-            <td style="text-align:right"><strong style="color:var(--primary)">{{ fila.total }}</strong></td>
+            <td style="text-align:right"><strong style="color:var(--accent)">{{ fila.total }}</strong></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
-  {% endfor %}
+    {% endfor %}
 
-  <!-- Total general al pie de la vista mensual -->
-  <div style="text-align:right;padding:4px 2px;color:var(--muted);font-size:12px;font-weight:700">
-    Total general: <span style="font-size:18px;font-weight:900;color:var(--primary)">{{ total_global }}</span> unidades
-  </div>
+    <div style="text-align:right;padding:8px 2px;color:var(--muted);font-size:12px;font-weight:600">
+      Total general: <span style="font-size:14px;font-weight:700;color:var(--accent)">{{ total_global }}</span> unidades
+    </div>
 
-{% else %}
-  <div class="card">
+  {% else %}
     <div class="empty-state">
       <div class="empty-state-title">Sin datos para los filtros seleccionados</div>
       <div class="empty-state-sub">Probá cambiando el rango de fechas o quitando filtros.</div>
       <a class="btn btn-ghost" href="{% url 'toner_reporte_servicios' %}?vista=mensual">Ver todo</a>
     </div>
-  </div>
-{% endif %}
-{% endif %}
+  {% endif %}
+  {% endif %}
 
+</div>
 {% endblock %}

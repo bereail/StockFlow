@@ -1,65 +1,70 @@
 {% extends "inventario/base.html" %}
 {% block content %}
 
-<div class="row space-between" style="margin-bottom:12px">
-  <div>
-    <h1 class="page-title">{{ title }}</h1>
-    <div class="page-subtitle">Listado completo + acciones</div>
+<div class="view">
+
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">{{ title }}</h1>
+      <div class="view-subtitle">Listado completo</div>
+    </div>
+    <div class="page-actions">
+      <a class="btn primary" href="{% url 'toner_create' %}">+ Nuevo</a>
+    </div>
   </div>
 
-  <form method="get" class="page-actions">
-    <input name="q" value="{{ q }}" placeholder="Buscar (marca / nombre / impresora)" style="width:320px">
-    <button class="btn" type="submit">Buscar</button>
-    <a class="btn" href="{% url 'toner_create' %}">+ Nuevo</a>
-  </form>
-</div>
+  <div class="toolbar">
+    <form method="get" style="display:contents">
+      <input class="search" name="q" value="{{ q }}" placeholder="Buscar por marca, nombre o impresora" aria-label="Buscar tóners">
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+  </div>
 
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Marca</th>
-        <th>Nombre</th>
-        <th>Modelo impresora</th>
-        <th>Estado</th>
-        <th style="width:240px">Acciones</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for t in toners %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
         <tr>
-          <td>{{ t.marca|default:"-" }}</td>
-          <td><strong>{{ t.nombre }}</strong></td>
-          <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
-
-          <td>
-            {% if t.activo %}
-              <span class="chip ok"><span class="mi">check</span> Activo</span>
-            {% else %}
-              <span class="chip"><span class="mi">pause</span> Inactivo</span>
-            {% endif %}
-          </td>
-
-          <td>
-            <a class="btn" href="{% url 'toner_edit' t.id %}">Editar</a>
-
-            <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
-              {% csrf_token %}
-              <button class="btn btn-ghost" type="submit">
-                {% if t.activo %}Desactivar{% else %}Activar{% endif %}
-              </button>
-            </form>
-          </td>
+          <th>Marca</th>
+          <th>Nombre</th>
+          <th>Modelo impresora</th>
+          <th>Estado</th>
+          <th style="width:200px">Acciones</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5" class="muted">No hay toners cargados.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for t in toners %}
+          <tr>
+            <td>{{ t.marca|default:"-" }}</td>
+            <td><strong>{{ t.nombre }}</strong></td>
+            <td class="muted">{{ t.modelo_impresora|default:"-" }}</td>
+            <td>
+              {% if t.activo %}<span class="chip ok">Activo</span>
+              {% else %}<span class="chip">Inactivo</span>{% endif %}
+            </td>
+            <td>
+              <a class="btn" href="{% url 'toner_edit' t.id %}">Editar</a>
+              <form method="post" action="{% url 'toner_toggle' t.id %}" style="display:inline">
+                {% csrf_token %}
+                <button class="btn btn-ghost" type="submit">
+                  {% if t.activo %}Desactivar{% else %}Activar{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-title">No hay toners cargados</div>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% include "inventario/_pagination.html" %}
+
 </div>
 
 {% endblock %}
