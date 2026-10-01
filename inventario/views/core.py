@@ -100,12 +100,14 @@ def busqueda_global(request):
     ).order_by("nombre")[:12]
 
     pcs = buscar_texto(
-        ActivoPC.objects.select_related("servicio"), q, "nombre_pc", "ip", "patrimonio", "serie"
+        ActivoPC.objects.select_related("servicio"), q,
+        "nombre_pc", "ip", "patrimonio", "serie", "servicio__nombre",
     ).order_by("nombre_pc")[:12]
 
     impresoras = buscar_texto(
-        Impresora.objects.all(), q, "marca", "modelo", "patrimonio", "ip"
-    ).order_by("marca", "modelo")[:12]
+        Impresora.objects.all(), q,
+        "marca", "modelo", "patrimonio", "ip", "asignaciones__servicio__nombre",
+    ).distinct().order_by("marca", "modelo")[:12]
 
     servicios = buscar_texto(
         Servicio.objects.all(), q, "nombre"

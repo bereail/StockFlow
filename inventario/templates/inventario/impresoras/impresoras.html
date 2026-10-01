@@ -46,9 +46,9 @@
         <thead>
           <tr>
             <th style="width:34px"><span class="sr-only">Más info</span></th>
-            <th>{% sort_th "marca" "Impresora" sort_actual dir_actual %}</th>
             <th>Servicio</th>
             <th>{% sort_th "ip" "IP" sort_actual dir_actual %}</th>
+            <th>{% sort_th "marca" "Impresora" sort_actual dir_actual %}</th>
             <th style="width:110px"><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
@@ -57,12 +57,7 @@
             <tr style="cursor:pointer" data-href="{% url 'impresora_detail' i.id %}">
               <td>
                 <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="imp-detalle-{{ i.id }}"
-                        title="Ver más info" aria-label="Ver más información de {{ i.marca }} {{ i.modelo }}"
-                        onclick="event.stopPropagation()">+</button>
-              </td>
-              <td>
-                <strong>{{ i.marca }} {{ i.modelo }}</strong>
-                {% if i.articulo %}<div class="muted" style="font-size:.7rem">🔖 {{ i.articulo.nombre }}</div>{% endif %}
+                        title="Ver más info" aria-label="Ver más información de {{ i.marca }} {{ i.modelo }}">+</button>
               </td>
               <td class="muted">
                 {% if i.servicio_actual %}{{ i.servicio_actual.nombre }}{% else %}-{% endif %}
@@ -78,6 +73,10 @@
                     {% endif %}
                   </span>
                 {% else %}-{% endif %}
+              </td>
+              <td>
+                <strong>{{ i.marca }} {{ i.modelo }}</strong>
+                {% if i.articulo %}<div class="muted" style="font-size:.7rem">🔖 {{ i.articulo.nombre }}</div>{% endif %}
               </td>
               <td>
                 <div class="row" style="gap:4px" onclick="event.stopPropagation()">
@@ -101,6 +100,12 @@
             <tr class="row-detail" id="imp-detalle-{{ i.id }}" hidden>
               <td colspan="5">
                 <div class="row-detail-grid">
+                  <div class="field"><span class="label">IP</span><span class="mono">{{ i.ip|default:"—" }}</span></div>
+                  <div class="field"><span class="label">Servicio</span><span>{% if i.servicio_actual %}{{ i.servicio_actual.nombre }}{% else %}—{% endif %}</span></div>
+                </div>
+                <button type="button" class="row-expand-btn" style="margin-top:10px" aria-expanded="false"
+                        aria-controls="imp-mas-{{ i.id }}" title="Ver más datos" aria-label="Ver más datos de {{ i.marca }} {{ i.modelo }}">+</button>
+                <div class="row-detail-grid" id="imp-mas-{{ i.id }}" hidden style="margin-top:10px">
                   <div class="field"><span class="label">Marca</span><span>{{ i.marca }}</span></div>
                   <div class="field"><span class="label">Modelo</span><span>{{ i.modelo }}</span></div>
                   <div class="field"><span class="label">Tipo</span><span>{{ i.tipo|default:"—" }}</span></div>

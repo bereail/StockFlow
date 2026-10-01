@@ -71,8 +71,7 @@
           <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' pat.pk %}">
             <td>
               <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="pat-list-detalle-{{ pat.pk }}"
-                      title="Ver más info" aria-label="Ver más información del patrimonio {{ pat.numero_patrimonio }}"
-                      onclick="event.stopPropagation()">+</button>
+                      title="Ver más info" aria-label="Ver más información del patrimonio {{ pat.numero_patrimonio }}">+</button>
             </td>
             <td><strong class="mono">{{ pat.numero_patrimonio }}</strong>{% if pat.es_donacion %} <span class="chip" title="Donación{% if pat.donante %} de {{ pat.donante }}{% endif %}">Donación</span>{% endif %}</td>
             <td class="muted" style="font-size:.82rem">{{ pat.detalle_item|default:"—" }}</td>

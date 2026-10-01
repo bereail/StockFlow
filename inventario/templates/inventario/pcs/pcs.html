@@ -47,8 +47,7 @@
             <tr style="cursor:pointer" data-href="{% url 'pc_detail' pc.id %}">
               <td>
                 <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="pc-detalle-{{ pc.id }}"
-                        title="Ver más info" aria-label="Ver más información de {{ pc.nombre_pc }}"
-                        onclick="event.stopPropagation()">+</button>
+                        title="Ver más info" aria-label="Ver más información de {{ pc.nombre_pc }}">+</button>
               </td>
               <td>
                 <strong>{{ pc.nombre_pc }}</strong>
@@ -131,8 +130,7 @@
           <tr style="cursor:pointer" data-href="{% url 'patrimonio_detail' pat.pk %}">
             <td>
               <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="pat-detalle-{{ pat.pk }}"
-                      title="Ver más info" aria-label="Ver más información de {{ pat.nombre_pc|default:pat.numero_patrimonio }}"
-                      onclick="event.stopPropagation()">+</button>
+                      title="Ver más info" aria-label="Ver más información de {{ pat.nombre_pc|default:pat.numero_patrimonio }}">+</button>
             </td>
             <td>{{ pat.nombre_pc|default:"—" }}</td>
             <td class="mono" style="font-size:.82rem">

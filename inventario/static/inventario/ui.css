@@ -51,6 +51,11 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; padding: 0; }
 
+/* El atributo [hidden] tiene que ganar siempre, aunque el elemento tenga
+   una clase con display:flex/grid/etc (los estilos de autor le ganan al
+   default del user-agent por especificidad/orden, no por semántica). */
+[hidden] { display: none !important; }
+
 body.app {
   background: var(--bg);
   color: var(--text);

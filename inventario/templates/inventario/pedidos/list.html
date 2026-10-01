@@ -70,8 +70,7 @@
           <tr style="cursor:pointer" data-href="{% url 'pedido_detail' p.pk %}">
             <td>
               <button type="button" class="row-expand-btn" aria-expanded="false" aria-controls="pedido-detalle-{{ p.pk }}"
-                      title="Ver más info" aria-label="Ver más información del pedido {{ p.numero }}"
-                      onclick="event.stopPropagation()">+</button>
+                      title="Ver más info" aria-label="Ver más información del pedido {{ p.numero }}">+</button>
             </td>
             <td><strong>{{ p.numero }}</strong></td>
             <td>{{ p.servicios.all|join:", "|default:"—" }}</td>

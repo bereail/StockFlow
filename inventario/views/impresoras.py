@@ -40,7 +40,9 @@ def impresoras_page(request):
         )
     )
 
-    impresoras = buscar_texto(impresoras, q, "marca", "modelo", "patrimonio", "ip")
+    impresoras = buscar_texto(impresoras, q, "marca", "modelo", "patrimonio", "ip", "asignaciones__servicio__nombre")
+    if q:
+        impresoras = impresoras.distinct()
     if estado:
         impresoras = impresoras.filter(estado=estado)
 
