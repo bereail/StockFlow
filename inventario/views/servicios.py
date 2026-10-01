@@ -5,29 +5,33 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from ..models import (
     AsignacionImpresora, Intercambio, MovimientoDetalle, Servicio,
 )
 from ..forms.servicios import ServicioForm
 from ..services.busqueda import buscar_texto
 from ..services.listados import ordenar
-from ..services.servicios import historial_de_servicio
+from ..services.servicios import historial_de_servicio, tiene_asociaciones
 
 
 @login_required
 def servicios_page(request):
     q = (request.GET.get("q") or "").strip()
 
-    servicios = buscar_texto(Servicio.objects.all(), q, "nombre", "descripcion")
+    servicios = buscar_texto(Servicio.objects.all(), q, "nombre")
 
     servicios, sort_actual, dir_actual = ordenar(
         request, servicios,
-        campos={"nombre": "nombre"},
+        campos={"nombre": "nombre", "actualizado": "actualizado"},
         default="nombre",
     )
 
     paginator = Paginator(servicios, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
+    for s in page_obj:
+        s.puede_eliminarse = not tiene_asociaciones(s)
+
     return render(request, "inventario/servicios/servicios.html", {
         "q": q, "servicios": page_obj, "page_obj": page_obj,
         "sort_actual": sort_actual, "dir_actual": dir_actual,
@@ -68,6 +72,23 @@ def servicio_edit(request, pk: int):
         "mode": "edit",
         "servicio": servicio
     })
+
+
+@login_required
+@require_POST
+def servicio_delete(request, pk: int):
+    servicio = get_object_or_404(Servicio, pk=pk)
+    if tiene_asociaciones(servicio):
+        messages.error(
+            request,
+            f"No se puede eliminar «{servicio.nombre}»: tiene PCs, movimientos, pedidos u otros "
+            "registros asociados. Desvinculalos antes de borrar el servicio.",
+        )
+    else:
+        nombre = servicio.nombre
+        servicio.delete()
+        messages.success(request, f"Servicio «{nombre}» eliminado.")
+    return redirect("servicios_page")
 
 
 @login_required

@@ -1,12 +1,14 @@
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from ..models import ActivoPC, PatrimonioUnidad, Reparacion, Servicio
 from ..forms.pcs import ActivoPCForm
 from ..services.busqueda import buscar_texto
 from ..services.items import item_de_pc
 from ..services.listados import ordenar
+from ..services.red import hacer_ping
 
 
 @login_required
@@ -23,8 +25,12 @@ def pcs_page(request):
 
     pcs, sort_actual, dir_actual = ordenar(
         request, pcs,
-        campos={"nombre": "nombre_pc", "ip": "ip", "servicio": "servicio__nombre", "estado": "activo"},
-        default="nombre",
+        campos={
+            "nombre": "nombre_pc", "ip": "ip", "servicio": "servicio__nombre",
+            "estado": "activo", "actualizado": "actualizado",
+        },
+        default="actualizado",
+        direccion_default="desc",
     )
 
     # PCs registradas desde pedidos (patrimonios con nombre de equipo o tipo PC/articulo)
@@ -74,6 +80,14 @@ def pc_detail(request, pk):
         "pc": pc,
         "reparaciones": reparaciones,
     })
+
+
+@login_required
+def pc_ping(request, pk):
+    pc = get_object_or_404(ActivoPC, pk=pk)
+    if not pc.ip:
+        return JsonResponse({"online": False, "error": "Esta PC no tiene IP cargada."}, status=400)
+    return JsonResponse({"online": hacer_ping(pc.ip)})
 
 
 @login_required

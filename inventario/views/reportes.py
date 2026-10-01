@@ -3,12 +3,15 @@ import io
 from collections import OrderedDict
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.db.models import Prefetch, Sum
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.html import escape as esc
-from ..models import Toner, Servicio, ActivoPC, MovimientoDetalle, Pedido, PatrimonioUnidad
+from ..models import (
+    Toner, Servicio, ActivoPC, MovimientoDetalle, Pedido, PatrimonioUnidad,
+    Impresora, AsignacionImpresora,
+)
 
 
 @login_required
@@ -244,6 +247,30 @@ def _html_report_response(body: str, prefix: str, mes_str: str) -> HttpResponse:
     return response
 
 
+def _xlsx_response(headers: list, rows: list, prefix: str) -> HttpResponse:
+    """Arma un .xlsx simple (una hoja, encabezado + filas planas) y lo devuelve como descarga."""
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = prefix[:31]
+    ws.append(headers)
+    for fila in rows:
+        ws.append(list(fila))
+    for i, _ in enumerate(headers):
+        ws.column_dimensions[chr(65 + i)].width = 20
+
+    nombre = f"{prefix}_{timezone.now():%Y%m%d}.xlsx"
+    buf = io.BytesIO()
+    wb.save(buf)
+    response = HttpResponse(
+        buf.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return response
+
+
 def _nombre_item_patrimonio(item) -> str:
     if not item:
         return ""
@@ -295,30 +322,27 @@ def reporte_toner_html(request):
                     "<tr>"
                     f"<td>{timezone.localtime(m.fecha).strftime('%d/%m/%Y')}</td>"
                     f"<td><b>{esc(t.nombre) if t else '—'}</b></td>"
-                    f"<td>{esc(t.marca) if t else '—'}</td>"
-                    f"<td>{esc(t.modelo_impresora) if t else '—'}</td>"
                     f"<td style='text-align:right;font-weight:700;font-size:15px'>{d.cantidad}</td>"
-                    f"<td style='color:#7a9ab8;font-size:12px'>{esc((m.observaciones or '').replace(chr(10),' ').strip()) or '—'}</td>"
                     "</tr>"
                 )
             rows_html += (
                 f"<tr class='subtotal'>"
-                f"<td colspan='4'><b>Subtotal — {esc(svc_nombre)}</b></td>"
-                f"<td style='text-align:right'>{sub}</td><td></td></tr>"
+                f"<td colspan='2'><b>Subtotal — {esc(svc_nombre)}</b></td>"
+                f"<td style='text-align:right'>{sub}</td></tr>"
             )
             body += (
                 f'<div class="rpt-group">'
                 f'<div class="rpt-group-hdr"><span>{esc(svc_nombre)}</span>'
                 f'<span class="grp-badge">{sub} ud.</span></div>'
                 f'<table><thead><tr>'
-                f'<th>Fecha</th><th>Tóner</th><th>Marca</th><th>Modelo impresora</th>'
-                f'<th style="text-align:right">Cant.</th><th>Observaciones</th>'
+                f'<th>Fecha</th><th>Tóner</th>'
+                f'<th style="text-align:right">Cant.</th>'
                 f'</tr></thead><tbody>{rows_html}</tbody></table></div>'
             )
         body += (
             f'<table style="margin-top:10px;border-radius:7px;overflow:hidden">'
             f'<tbody><tr class="grand-total">'
-            f'<td colspan="5"><b>TOTAL GENERAL</b></td>'
+            f'<td colspan="2"><b>TOTAL GENERAL</b></td>'
             f'<td style="text-align:right;font-size:18px;letter-spacing:.5px">{total_ud} ud.</td>'
             f'</tr></tbody></table>'
         )
@@ -327,6 +351,32 @@ def reporte_toner_html(request):
 
     body += _rpt_close(now)
     return _html_report_response(body, "toner", mes_str)
+
+
+@login_required
+def reporte_toner_excel(request):
+    mes_str = (request.GET.get("mes") or "").strip()
+    year, month = _parse_mes(mes_str)
+
+    qs = (
+        MovimientoDetalle.objects
+        .select_related("movimiento__servicio", "item__toner")
+        .filter(movimiento__tipo="EGRESO", item__tipo="TONER", movimiento__anulado=False)
+        .order_by("movimiento__servicio__nombre", "-movimiento__fecha")
+    )
+    if year and month:
+        qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
+
+    filas = [
+        (
+            timezone.localtime(d.movimiento.fecha).strftime("%d/%m/%Y"),
+            d.movimiento.servicio.nombre if d.movimiento.servicio else "Sin servicio",
+            d.item.toner.nombre if d.item.toner else "—",
+            d.cantidad,
+        )
+        for d in qs
+    ]
+    return _xlsx_response(["Fecha", "Servicio", "Tóner", "Cantidad"], filas, "toner")
 
 
 @login_required
@@ -395,6 +445,43 @@ def reporte_pcs_html(request):
 
 
 @login_required
+def reporte_pcs_excel(request):
+    mes_str = (request.GET.get("mes") or "").strip()
+    year, month = _parse_mes(mes_str)
+
+    qs = (
+        PatrimonioUnidad.objects
+        .select_related(
+            "pedido_detalle__item__activo_pc",
+            "pedido_detalle__item__articulo",
+            "pedido_detalle__item__toner",
+            "pedido_detalle__pedido",
+            "servicio_asignado",
+        )
+        .order_by("servicio_asignado__nombre", "nombre_pc")
+    )
+    if year and month:
+        qs = qs.filter(fecha__year=year, fecha__month=month)
+
+    filas = []
+    for p in qs:
+        item = p.pedido_detalle.item if p.pedido_detalle else None
+        filas.append((
+            p.numero_patrimonio or "",
+            _nombre_item_patrimonio(item),
+            p.servicio_asignado.nombre if p.servicio_asignado else "Sin servicio asignado",
+            p.nombre_pc or "",
+            p.ip or "",
+            p.usuario_asignado or "",
+            p.serial or "",
+            p.pedido_detalle.pedido.numero if p.pedido_detalle else "",
+            timezone.localtime(p.fecha).strftime("%d/%m/%Y") if p.fecha else "",
+        ))
+    headers = ["Nº Patrimonio", "Artículo", "Servicio", "Nombre equipo", "IP", "Usuario", "Serial", "Nº Pedido", "Fecha alta"]
+    return _xlsx_response(headers, filas, "pcs")
+
+
+@login_required
 def reporte_pedidos_html(request):
     mes_str     = (request.GET.get("mes") or "").strip()
     estado      = (request.GET.get("estado") or "").strip()
@@ -450,6 +537,42 @@ def reporte_pedidos_html(request):
 
 
 @login_required
+def reporte_pedidos_excel(request):
+    mes_str     = (request.GET.get("mes") or "").strip()
+    estado      = (request.GET.get("estado") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    year, month = _parse_mes(mes_str)
+
+    qs = Pedido.objects.prefetch_related("servicios").select_related("proveedor").order_by("-creado")
+    if year and month:
+        qs = qs.filter(creado__year=year, creado__month=month)
+    if estado:
+        qs = qs.filter(estado=estado)
+    if servicio_id:
+        try:
+            qs = qs.filter(servicios__id=int(servicio_id)).distinct()
+        except ValueError:
+            pass
+
+    filas = []
+    for p in qs:
+        filas.append((
+            p.numero,
+            p.get_estado_display(),
+            ", ".join(s.nombre for s in p.servicios.all()),
+            p.proveedor.nombre if p.proveedor else "",
+            (p.para_que or "").replace("\n", " "),
+            timezone.localtime(p.creado).strftime("%d/%m/%Y") if p.creado else "",
+            p.fecha_aprobado.strftime("%d/%m/%Y") if p.fecha_aprobado else "",
+            p.fecha_recibido.strftime("%d/%m/%Y") if p.fecha_recibido else "",
+            p.fecha_entregado.strftime("%d/%m/%Y") if p.fecha_entregado else "",
+        ))
+    headers = ["Número", "Estado", "Servicio solicitante", "Proveedor", "Para qué",
+               "Creado", "Aprobado", "Recibido", "Entregado"]
+    return _xlsx_response(headers, filas, "pedidos")
+
+
+@login_required
 def reporte_movimientos_html(request):
     mes_str     = (request.GET.get("mes") or "").strip()
     servicio_id = (request.GET.get("servicio") or "").strip()
@@ -495,6 +618,41 @@ def reporte_movimientos_html(request):
     )
     body += _rpt_close(now)
     return _html_report_response(body, "movimientos", mes_str)
+
+
+@login_required
+def reporte_movimientos_excel(request):
+    mes_str     = (request.GET.get("mes") or "").strip()
+    servicio_id = (request.GET.get("servicio") or "").strip()
+    year, month = _parse_mes(mes_str)
+
+    qs = (
+        MovimientoDetalle.objects
+        .select_related(
+            "movimiento", "movimiento__servicio",
+            "item", "item__toner", "item__articulo",
+            "item__activo_pc", "item__impresora",
+        )
+        .order_by("-movimiento__fecha")
+    )
+    if year and month:
+        qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
+    if servicio_id:
+        qs = qs.filter(movimiento__servicio_id=servicio_id)
+
+    filas = []
+    for d in qs:
+        m = d.movimiento
+        filas.append((
+            timezone.localtime(m.fecha).strftime("%d/%m/%Y %H:%M"),
+            m.tipo,
+            m.servicio.nombre if m.servicio else "",
+            str(d.item),
+            d.cantidad,
+            (m.observaciones or "").replace("\n", " ").strip(),
+        ))
+    headers = ["Fecha", "Tipo", "Servicio", "Ítem", "Cant.", "Observaciones"]
+    return _xlsx_response(headers, filas, "movimientos")
 
 
 @login_required
@@ -585,3 +743,52 @@ def pedidos_reporte_csv(request):
     response = HttpResponse(content, content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="reporte_pedidos_{timezone.now():%Y%m%d}.csv"'
     return response
+
+
+def _impresoras_filas():
+    impresoras = (
+        Impresora.objects
+        .prefetch_related(
+            Prefetch(
+                "asignaciones",
+                queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
+            )
+        )
+    )
+
+    def _ip_key(ip: str):
+        partes = (ip or "").split(".")
+        if len(partes) == 4 and all(p.isdigit() for p in partes):
+            return (0, tuple(int(p) for p in partes))
+        return (1, (ip or "",))
+
+    filas = []
+    for i in impresoras:
+        servicio = i.servicio_actual
+        modelo = " ".join(p for p in (i.marca, i.modelo) if p).strip()
+        filas.append((servicio.nombre if servicio else "", i.ip or "", i.mac or "", modelo))
+    filas.sort(key=lambda f: _ip_key(f[1]))
+    return filas
+
+
+@login_required
+def reporte_impresoras_excel(request):
+    """Excel con una fila por impresora: Servicio, IP, MAC y modelo —
+    mismo formato que la planilla que ya se usaba para repartir estos datos."""
+    return _xlsx_response(["SERVICIO", "IP", "MAC", "IMPRESORA"], _impresoras_filas(), "impresoras")
+
+
+@login_required
+def reporte_impresoras_html(request):
+    filas = _impresoras_filas()
+    periodo, now = _periodo_now("")
+
+    body = _rpt_open("Impresoras", periodo, now)
+    body += _rpt_summary((len(filas), "impresoras"))
+    body += _rpt_table(
+        columns  = ["Servicio", "IP", "MAC", "Impresora"],
+        rows     = [[esc(s) or "—", esc(ip) or "—", esc(mac) or "—", esc(modelo) or "—"] for s, ip, mac, modelo in filas],
+        foot_row = [f"Total: {len(filas)} impresoras", "", "", ""],
+    )
+    body += _rpt_close(now)
+    return _html_report_response(body, "impresoras", "")

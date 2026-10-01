@@ -38,6 +38,27 @@ _COLOR_POR_TIPO = {
 }
 
 
+def tiene_asociaciones(servicio) -> bool:
+    """
+    True si el servicio tiene algo vinculado (PCs, movimientos, préstamos,
+    reparaciones, pedidos, notas, patrimonios, impresoras asignadas o
+    intercambios) — no se puede borrar sin perder ese historial.
+    """
+    return (
+        servicio.activos_pc.exists()
+        or servicio.movimientos.exists()
+        or servicio.pendientes.exists()
+        or servicio.prestamos.exists()
+        or servicio.reparaciones.exists()
+        or servicio.pedidos.exists()
+        or servicio.patrimonios_asignados.exists()
+        or servicio.notas.exists()
+        or servicio.impresoras_asignadas.exists()
+        or servicio.intercambios_a_favor.exists()
+        or servicio.intercambios_recibidos.exists()
+    )
+
+
 def historial_de_servicio(servicio, limite=40):
     """
     Devuelve una lista de eventos (más reciente primero) para la timeline

@@ -16,6 +16,7 @@ class Servicio(models.Model):
     """
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
+    actualizado = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["nombre"]
@@ -131,6 +132,8 @@ class ActivoPC(models.Model):
         Servicio, on_delete=models.SET_NULL, null=True, blank=True, related_name="activos_pc"
     )
 
+    actualizado = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ["nombre_pc"]
 
@@ -162,7 +165,7 @@ class Impresora(models.Model):
     modelo = models.CharField(max_length=100)
 
     # Si esto representa "Laser / Inkjet / Multifunción", conviene choices.
-    tipo = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=100, blank=True, default="")
 
     patrimonio = models.CharField(max_length=100, blank=True)
 
@@ -171,6 +174,11 @@ class Impresora(models.Model):
 
     conexion = models.CharField(max_length=10, choices=TIPO_CONEXION)
     ip = models.GenericIPAddressField(protocol="IPv4", blank=True, null=True)
+    mac = models.CharField(
+        max_length=17, blank=True, default="",
+        verbose_name="Dirección MAC",
+        help_text="Ej: 00:1A:2B:3C:4D:5E (opcional).",
+    )
     submascara = models.GenericIPAddressField(
         protocol="IPv4", blank=True, null=True,
         verbose_name="Máscara de subred",
@@ -810,7 +818,7 @@ class Nota(models.Model):
         db_index=True,
     )
 
-    fecha = models.DateField(default=timezone.now)
+    fecha = models.DateField(default=timezone.localdate)
     detalle = models.TextField(blank=True, default="")
     estado = models.CharField(
         max_length=30,

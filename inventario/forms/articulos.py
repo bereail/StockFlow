@@ -26,8 +26,16 @@ class ArticuloForm(forms.ModelForm):
         self.fields["genera_ficha"].required = False
 
     def save(self, commit=True):
-        articulo = super().save(commit=commit)
+        articulo = super().save(commit=False)
+
+        # Si genera ficha de impresora, el nombre queda prefijado para que
+        # se reconozca de un vistazo en el selector de artículo de catálogo
+        # al dar de alta una impresora.
+        if articulo.genera_ficha == "IMPRESORA" and not articulo.nombre.strip().lower().startswith("impresora"):
+            articulo.nombre = f"Impresora {articulo.nombre}".strip()
+
         if commit:
+            articulo.save()
             # Todo artículo necesita su Item correspondiente para poder
             # elegirlo como ítem de un pedido (igual que las impresoras).
             item_de_articulo(articulo)

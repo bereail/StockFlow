@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -306,8 +308,8 @@ class ViewsSmokeTest(TestCase):
         MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=2)
 
         r = self.client.get("/")
-        self.assertContains(r, "Stock crítico")
-        self.assertContains(r, "CE285A")
+        self.assertContains(r, "Stock crítico de tóner")
+        self.assertContains(r, "1 tipo")
 
     def test_toner_page(self):
         self._get_ok("/toner/")
@@ -425,6 +427,23 @@ class VistasCrudTest(TestCase):
         r = self.client.post("/servicios/nuevo/", {"nombre": "Quirófano"})
         self.assertEqual(r.status_code, 302)
         self.assertTrue(Servicio.objects.filter(nombre="Quirófano").exists())
+
+    def test_eliminar_servicio_sin_asociaciones(self):
+        servicio = Servicio.objects.create(nombre="Sin uso")
+        r = self.client.post(f"/servicios/{servicio.pk}/eliminar/")
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(Servicio.objects.filter(pk=servicio.pk).exists())
+
+    def test_eliminar_servicio_con_asociaciones_se_bloquea(self):
+        ActivoPC.objects.create(nombre_pc="PC-01", servicio=self.servicio)
+        r = self.client.post(f"/servicios/{self.servicio.pk}/eliminar/", follow=True)
+        self.assertTrue(Servicio.objects.filter(pk=self.servicio.pk).exists())
+        self.assertContains(r, "No se puede eliminar")
+
+    def test_eliminar_servicio_requiere_post(self):
+        servicio = Servicio.objects.create(nombre="Sin uso")
+        r = self.client.get(f"/servicios/{servicio.pk}/eliminar/")
+        self.assertEqual(r.status_code, 405)
 
     def test_crear_articulo(self):
         r = self.client.post("/articulos/nuevo/", {"nombre": "Teclado USB", "activo": True})
@@ -1015,6 +1034,45 @@ class EntidadDetailTest(TestCase):
         self.assertEqual(r_post.status_code, 302)
         impresora.refresh_from_db()
         self.assertEqual(impresora.estado, "INACTIVA")
+
+    @patch("inventario.views.pcs.hacer_ping")
+    def test_pc_ping_online(self, mock_ping):
+        mock_ping.return_value = True
+        pc = ActivoPC.objects.create(nombre_pc="PC-FARM-03", ip="10.0.0.5", servicio=self.servicio)
+        r = self.client.get(f"/pcs/{pc.pk}/ping/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"online": True})
+        mock_ping.assert_called_once_with("10.0.0.5")
+
+    @patch("inventario.views.pcs.hacer_ping")
+    def test_pc_ping_offline(self, mock_ping):
+        mock_ping.return_value = False
+        pc = ActivoPC.objects.create(nombre_pc="PC-FARM-04", ip="10.0.0.6", servicio=self.servicio)
+        r = self.client.get(f"/pcs/{pc.pk}/ping/")
+        self.assertEqual(r.json(), {"online": False})
+
+    def test_pc_ping_sin_ip(self):
+        pc = ActivoPC.objects.create(nombre_pc="PC-FARM-05", servicio=self.servicio)
+        r = self.client.get(f"/pcs/{pc.pk}/ping/")
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()["online"])
+
+    @patch("inventario.views.impresoras.hacer_ping")
+    def test_impresora_ping_online(self, mock_ping):
+        mock_ping.return_value = True
+        impresora = Impresora.objects.create(
+            marca="HP", modelo="M404", tipo="Laser", conexion="IP", ip="10.0.0.20",
+        )
+        r = self.client.get(f"/impresoras/{impresora.pk}/ping/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"online": True})
+        mock_ping.assert_called_once_with("10.0.0.20")
+
+    def test_impresora_ping_sin_ip(self):
+        impresora = Impresora.objects.create(marca="HP", modelo="404", tipo="Laser", conexion="USB")
+        r = self.client.get(f"/impresoras/{impresora.pk}/ping/")
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()["online"])
 
     def test_patrimonio_detail_independiente_ok(self):
         articulo = Articulo.objects.create(nombre="Notebook", es_patrimonial=True)

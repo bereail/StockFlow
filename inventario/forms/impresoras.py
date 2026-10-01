@@ -17,6 +17,7 @@ class ImpresoraForm(forms.ModelForm):
             "estado",
             "conexion",
             "ip",
+            "mac",
             "submascara",
             "puerta_enlace",
             "dns",
@@ -26,10 +27,11 @@ class ImpresoraForm(forms.ModelForm):
         widgets = {
             "marca": forms.TextInput(attrs={"placeholder": "Ej: Ricoh / HP"}),
             "modelo": forms.TextInput(attrs={"placeholder": "Ej: MP 301"}),
-            "tipo": forms.TextInput(attrs={"placeholder": "Ej: Multifunción / Láser / Inkjet"}),
+            "tipo": forms.TextInput(attrs={"placeholder": "Ej: Multifunción / Láser / Inkjet (opcional)"}),
             "patrimonio": forms.TextInput(attrs={"placeholder": "N° patrimonio (opcional)"}),
             "estado": forms.TextInput(attrs={"placeholder": "ACTIVA / BAJA / REPARACIÓN"}),
             "ip": forms.TextInput(attrs={"placeholder": "192.168.1.20"}),
+            "mac": forms.TextInput(attrs={"placeholder": "00:1A:2B:3C:4D:5E (opcional)"}),
             "submascara": forms.TextInput(attrs={"placeholder": "255.255.255.0 (opcional)"}),
             "puerta_enlace": forms.TextInput(attrs={"placeholder": "192.168.1.1 (opcional)"}),
             "dns": forms.TextInput(attrs={"placeholder": "8.8.8.8, 8.8.4.4 (opcional)"}),
@@ -40,7 +42,7 @@ class ImpresoraForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # ✅ opcionales (sin KeyError)
-        for f in ["patrimonio", "estado", "ip", "submascara", "puerta_enlace", "dns", "toner", "observaciones", "articulo"]:
+        for f in ["patrimonio", "estado", "ip", "mac", "submascara", "puerta_enlace", "dns", "toner", "observaciones", "articulo", "tipo"]:
             if f in self.fields:
                 self.fields[f].required = False
 
@@ -54,7 +56,7 @@ class ImpresoraForm(forms.ModelForm):
         # física a su tipo de catálogo.
         if "articulo" in self.fields:
             self.fields["articulo"].queryset = (
-                Articulo.objects.filter(es_patrimonial=True).order_by("nombre")
+                Articulo.objects.filter(es_patrimonial=True, genera_ficha="IMPRESORA").order_by("nombre")
             )
             self.fields["articulo"].empty_label = "-- Sin artículo de catálogo --"
             self.fields["articulo"].label = "Artículo de catálogo (patrimonial)"

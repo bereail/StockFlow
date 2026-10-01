@@ -1,10 +1,13 @@
+import csv
+import io
 import logging
 
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.timezone import is_naive, make_aware
@@ -16,6 +19,7 @@ from ..services.items import item_de_impresora
 from ..services.impresoras import asignar_impresora_a_servicio
 from ..services.busqueda import buscar_texto
 from ..services.listados import ordenar
+from ..services.red import hacer_ping
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +52,71 @@ def impresoras_page(request):
 
     paginator = Paginator(impresoras, 5)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
+
+    # IPs repetidas entre impresoras: alerta visual (no bloquea nada,
+    # hay datos reales preexistentes con IP duplicada — ver memoria del proyecto).
+    ips_duplicadas = set(
+        Impresora.objects
+        .exclude(ip__isnull=True).exclude(ip="")
+        .values("ip")
+        .annotate(n=Count("id"))
+        .filter(n__gt=1)
+        .values_list("ip", flat=True)
+    )
+
     return render(request, "inventario/impresoras/impresoras.html", {
         "impresoras": page_obj, "page_obj": page_obj, "q": q,
         "estado": estado, "sort_actual": sort_actual, "dir_actual": dir_actual,
+        "ips_duplicadas": ips_duplicadas,
     })
+
+
+@login_required
+def impresoras_exportar_excel(request):
+    """Excel (.xlsx) con todas las impresoras: una fila por impresora con
+    "Impresora <servicio>", IP y MAC — mismo formato que la planilla que ya
+    se usa para repartir estos datos, ordenado por servicio."""
+    from openpyxl import Workbook
+
+    impresoras = (
+        Impresora.objects
+        .prefetch_related(
+            Prefetch(
+                "asignaciones",
+                queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
+            )
+        )
+    )
+
+    filas = []
+    for i in impresoras:
+        servicio = i.servicio_actual
+        etiqueta = f"Impresora {servicio.nombre}" if servicio else "Impresora (sin servicio)"
+        filas.append((etiqueta, i.ip or "", i.mac or ""))
+    filas.sort(key=lambda f: f[0])
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Impresoras"
+    for fila, (etiqueta, ip, mac) in enumerate(filas, start=1):
+        ws.cell(row=fila, column=1, value=etiqueta)
+        ws.cell(row=fila, column=2, value=ip)
+        ws.cell(row=fila, column=3, value=mac)
+
+    ws.column_dimensions["A"].width = 32
+    ws.column_dimensions["B"].width = 16
+    ws.column_dimensions["C"].width = 20
+
+    nombre = f"impresoras_{timezone.now():%Y%m%d}.xlsx"
+    buf = io.BytesIO()
+    wb.save(buf)
+
+    response = HttpResponse(
+        buf.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return response
 
 
 @login_required
@@ -80,6 +145,14 @@ def impresora_detail(request, pk):
         "reparaciones": reparaciones,
         "pcs_asociadas": pcs_asociadas,
     })
+
+
+@login_required
+def impresora_ping(request, pk):
+    impresora = get_object_or_404(Impresora, pk=pk)
+    if not impresora.ip:
+        return JsonResponse({"online": False, "error": "Esta impresora no tiene IP cargada."}, status=400)
+    return JsonResponse({"online": hacer_ping(impresora.ip)})
 
 
 @login_required

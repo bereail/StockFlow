@@ -12,6 +12,7 @@ from ..models import (
     Impresora,
     Movimiento,
     MovimientoDetalle,
+    Pedido,
     Pendiente,
     Reparacion,
     Prestamo,
@@ -53,6 +54,7 @@ def dashboard(request):
         "articulos":   Articulo.objects.filter(activo=True).count(),
         "servicios":   Servicio.objects.count(),
         "pcs":         ActivoPC.objects.filter(activo=True).count(),
+        "pedidos_activos": Pedido.objects.exclude(estado__in=["ENTREGADO", "CANCELADO"]).count(),
         "prestamos_activos": Prestamo.objects.filter(fecha_devolucion_real__isnull=True).count(),
         "pendientes_abiertos": Pendiente.objects.filter(estado__in=["PENDIENTE", "EN_PROGRESO"]).count(),
         "reparaciones_activas": Reparacion.objects.exclude(estado__in=["CERRADO", "RETIRADO"]).count(),
@@ -73,12 +75,6 @@ def dashboard(request):
         Movimiento.objects
         .filter(anulado=False)
         .select_related("servicio")
-        .prefetch_related(
-            "detalles__item__toner",
-            "detalles__item__articulo",
-            "detalles__item__activo_pc",
-            "detalles__item__impresora",
-        )
         .order_by("-fecha")[:6]
     )
 
@@ -87,11 +83,6 @@ def dashboard(request):
         "stock_critico": toners_con_stock_critico(),
         "movimientos_recientes": movimientos_recientes,
     })
-
-
-@login_required
-def diagrama_bd(request):
-    return render(request, "inventario/diagrama_bd.html")
 
 
 @login_required
@@ -117,7 +108,7 @@ def busqueda_global(request):
     ).order_by("marca", "modelo")[:12]
 
     servicios = buscar_texto(
-        Servicio.objects.all(), q, "nombre", "descripcion"
+        Servicio.objects.all(), q, "nombre"
     ).order_by("nombre")[:12]
 
     total = toners.count() + articulos.count() + pcs.count() + impresoras.count() + servicios.count()

@@ -335,8 +335,13 @@ def toner_reporte_servicios(request):
     total_global   = qs.aggregate(total=Sum("cantidad"))["total"] or 0
     total_entregas = qs.count()
 
+    paginator = Paginator(resumen, 10)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+
     return render(request, "inventario/toner/toner_reporte_servicios.html", {
-        "resumen":        resumen,
+        "resumen":        page_obj,
+        "page_obj":       page_obj,
+        "resumen_count":  len(resumen),
         "meses":          meses,
         "vista":          vista,
         "total_global":   total_global,

@@ -2,12 +2,14 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from ..models import PedidoDetalle, PatrimonioUnidad
 from ..forms.pedidos import PatrimonioUnidadForm
 from ..forms.patrimonios import PatrimonioStandaloneForm, DonacionForm
 from ..services.busqueda import buscar_texto
+from ..services.red import hacer_ping
 
 
 @login_required
@@ -69,6 +71,14 @@ def patrimonio_detail(request, pk):
         "pat": pat,
         "editar_url": editar_url,
     })
+
+
+@login_required
+def patrimonio_ping(request, pk):
+    pat = get_object_or_404(PatrimonioUnidad, pk=pk)
+    if not pat.ip:
+        return JsonResponse({"online": False, "error": "Este equipo no tiene IP cargada."}, status=400)
+    return JsonResponse({"online": hacer_ping(pat.ip)})
 
 
 @login_required

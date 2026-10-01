@@ -17,17 +17,20 @@ urlpatterns = [
     path("toner/reporte/servicios/", views.toner_reporte_servicios, name="toner_reporte_servicios"),
     path("toner/reporte/csv/", views.toner_reporte_csv, name="toner_reporte_csv"),
 
-    # DIAGRAMA BD
-    path("diagrama/", views.diagrama_bd, name="diagrama_bd"),
-
     # REPORTES
     path("reportes/", views.reportes_page, name="reportes"),
     path("reportes/pcs.csv", views.pcs_reporte_csv, name="pcs_reporte_csv"),
     path("reportes/pedidos.csv", views.pedidos_reporte_csv, name="pedidos_reporte_csv"),
     path("reportes/toner.html", views.reporte_toner_html, name="reporte_toner_html"),
+    path("reportes/toner.xlsx", views.reporte_toner_excel, name="reporte_toner_excel"),
     path("reportes/pcs.html", views.reporte_pcs_html, name="reporte_pcs_html"),
+    path("reportes/pcs.xlsx", views.reporte_pcs_excel, name="reporte_pcs_excel"),
     path("reportes/pedidos.html", views.reporte_pedidos_html, name="reporte_pedidos_html"),
+    path("reportes/pedidos.xlsx", views.reporte_pedidos_excel, name="reporte_pedidos_excel"),
     path("reportes/movimientos.html", views.reporte_movimientos_html, name="reporte_movimientos_html"),
+    path("reportes/movimientos.xlsx", views.reporte_movimientos_excel, name="reporte_movimientos_excel"),
+    path("reportes/impresoras.html", views.reporte_impresoras_html, name="reporte_impresoras_html"),
+    path("reportes/impresoras.xlsx", views.reporte_impresoras_excel, name="reporte_impresoras_excel"),
 
     # ARTICULOS
     path("articulos/", views.articulos_page, name="articulos_page"),
@@ -44,18 +47,22 @@ urlpatterns = [
     path("servicios/nuevo/", views.servicio_create, name="servicio_create"),
     path("servicios/<int:pk>/", views.servicio_detail, name="servicio_detail"),
     path("servicios/<int:pk>/editar/", views.servicio_edit, name="servicio_edit"),
+    path("servicios/<int:pk>/eliminar/", views.servicio_delete, name="servicio_delete"),
 
     # PCS
     path("pcs/", views.pcs_page, name="pcs_page"),
     path("pcs/nuevo/", views.pcs_create, name="pcs_create"),
     path("pcs/<int:pk>/", views.pc_detail, name="pc_detail"),
     path("pcs/<int:pk>/editar/", views.pcs_edit, name="pcs_edit"),
+    path("pcs/<int:pk>/ping/", views.pc_ping, name="pc_ping"),
 
     # IMPRESORAS
     path("impresoras/", views.impresoras_page, name="impresoras_page"),
+    path("impresoras/exportar.xlsx", views.impresoras_exportar_excel, name="impresoras_exportar_excel"),
     path("impresoras/nuevo/", views.impresora_create, name="impresora_create"),
     path("impresoras/<int:pk>/", views.impresora_detail, name="impresora_detail"),
     path("impresoras/<int:pk>/editar/", views.impresora_edit, name="impresora_edit"),
+    path("impresoras/<int:pk>/ping/", views.impresora_ping, name="impresora_ping"),
     path("impresoras/<int:pk>/toggle/", views.impresora_toggle, name="impresora_toggle"),
     path("impresoras/entrega/", views.impresora_entrega, name="impresora_entrega"),
     path("impresoras/historial/", views.impresora_historial, name="impresora_historial"),
@@ -107,6 +114,7 @@ urlpatterns = [
     path("pedidos/<int:pk>/pendientes/nuevo/", views.pendiente_create_for_pedido, name="pendiente_create_for_pedido"),
     path("patrimonios/", views.patrimonios_list, name="patrimonios_list"),
     path("patrimonios/<int:pk>/", views.patrimonio_detail, name="patrimonio_detail"),
+    path("patrimonios/<int:pk>/ping/", views.patrimonio_ping, name="patrimonio_ping"),
     path("patrimonios/nuevo/", views.patrimonio_standalone_create, name="patrimonio_standalone_create"),
     path("patrimonios/donaciones/", views.donaciones_list, name="donaciones_list"),
     path("patrimonios/donaciones/nueva/", views.donacion_create, name="donacion_create"),
