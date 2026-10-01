@@ -56,8 +56,8 @@ def _ensure_single_instance() -> None:
         sock.close()
         ctypes.windll.user32.MessageBoxW(
             0,
-            "StockFlow ya está abierto.\n\nBuscala en la barra de tareas.",
-            "StockFlow",
+            "Inventario ya está abierto.\n\nBuscala en la barra de tareas.",
+            "Inventario",
             0x40,
         )
         sys.exit(0)
@@ -100,10 +100,10 @@ _DESKTOP_JS = r"""
         e.preventDefault();
     }, true);
 
-    /* Sin zoom Ctrl+rueda ni Ctrl+pinch */
-    document.addEventListener('wheel', function (e) {
-        if (e.ctrlKey) e.preventDefault();
-    }, { passive: false });
+    /* Zoom por defecto un poco más cerca (el usuario puede seguir ajustando con Ctrl+rueda) */
+    document.documentElement.style.zoom = '1.05';
+
+    /* Ctrl+rueda y Ctrl+pinch sí hacen zoom (comportamiento nativo del navegador) */
 
     /* Bloquear atajos que rompen la experiencia de app */
     document.addEventListener('keydown', function (e) {
@@ -113,8 +113,7 @@ _DESKTOP_JS = r"""
             e.key === 'F12' ||
             (ctrl && (e.key === 'r' || e.key === 'R')) ||
             (ctrl && (e.key === 'u' || e.key === 'U')) ||
-            (ctrl && e.shiftKey && (e.key === 'i' || e.key === 'I')) ||
-            (ctrl && (e.key === '+' || e.key === '-' || e.key === '0'));
+            (ctrl && e.shiftKey && (e.key === 'i' || e.key === 'I'));
         if (blocked) e.preventDefault();
     }, true);
 
@@ -176,7 +175,7 @@ SPLASH_HTML = """<!DOCTYPE html>
       <circle cx="18" cy="14" r="1" fill="#4f8cff" stroke="none"/>
     </svg>
   </div>
-  <h1>StockFlow</h1>
+  <h1>Inventario</h1>
   <p class="sub">Iniciando sistema…</p>
   <div class="track"><div class="fill"></div></div>
 </div>
@@ -262,7 +261,7 @@ def run_server(port: int) -> None:
 
 def main() -> None:
     _ensure_single_instance()
-    logging.info("Iniciando StockFlow")
+    logging.info("Iniciando Inventario")
 
     state = _load_window_state()
     port  = get_free_port()
@@ -271,7 +270,7 @@ def main() -> None:
     api = AppAPI()
 
     window = webview.create_window(
-        "StockFlow",
+        "Inventario",
         html=SPLASH_HTML,
         width=state["width"],
         height=state["height"],
@@ -319,8 +318,8 @@ if __name__ == "__main__":
         logging.exception("Error fatal al iniciar")
         ctypes.windll.user32.MessageBoxW(
             0,
-            f"No se pudo iniciar StockFlow.\n\nDetalle:\n{exc}\n\n"
+            f"No se pudo iniciar Inventario.\n\nDetalle:\n{exc}\n\n"
             f"Revisá el log en:\n{os.path.join(_APP_DIR, 'app.log')}",
-            "StockFlow — Error",
+            "Inventario — Error",
             0x10,
         )
