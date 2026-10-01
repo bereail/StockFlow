@@ -9,8 +9,7 @@ $ROOT     = $PSScriptRoot
 $VENV     = Join-Path $ROOT ".venv"
 $PYTHON   = Join-Path $VENV "Scripts\python.exe"
 $PIP      = Join-Path $VENV "Scripts\pip.exe"
-$PYINST   = Join-Path $VENV "Scripts\pyinstaller.exe"
-$DIST     = Join-Path $ROOT "dist\StockToner"
+$DIST     = Join-Path $ROOT "dist"
 $EXE      = Join-Path $DIST "StockToner.exe"
 $DESKTOP  = [Environment]::GetFolderPath("Desktop")
 
@@ -41,10 +40,13 @@ if (Test-Path (Join-Path $ROOT "build")) {
 Write-Host "      OK" -ForegroundColor DarkGreen
 
 # ── 3. Compilar con PyInstaller ───────────────────────────────────
+# Se invoca como módulo (python -m PyInstaller) en vez del wrapper
+# .venv\Scripts\pyinstaller.exe: ese wrapper falla en silencio (exit
+# code 1, sin ningún mensaje) en algunos entornos — como módulo anda bien.
 Write-Host "[3/4] Compilando con PyInstaller..." -ForegroundColor Green
 Write-Host "      Esto puede tardar 2-5 minutos..." -ForegroundColor Gray
 Set-Location $ROOT
-& $PYINST StockToner.spec --noconfirm
+& $PYTHON -m PyInstaller StockToner.spec --noconfirm
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] PyInstaller falló con código $LASTEXITCODE" -ForegroundColor Red
     exit 1
@@ -67,9 +69,10 @@ Write-Host "=============================" -ForegroundColor Cyan
 Write-Host " Build completado con exito!" -ForegroundColor Green
 Write-Host "=============================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  EXE:       $EXE" -ForegroundColor White
-Write-Host "  Carpeta:   $DIST" -ForegroundColor White
+Write-Host "  EXE:        $EXE" -ForegroundColor White
 Write-Host "  Acceso dir: $DESKTOP\StockToner.lnk" -ForegroundColor White
 Write-Host ""
-Write-Host "Para distribuir: comprime la carpeta dist\StockToner\ y enviala." -ForegroundColor Gray
+Write-Host "Para distribuir: comprime $EXE y enviala." -ForegroundColor Gray
+Write-Host "Para llevar los datos a otra PC, copia junto con el .exe el archivo" -ForegroundColor Gray
+Write-Host "db.sqlite3 de %APPDATA%\StockToner — ver LEEME de la instalación." -ForegroundColor Gray
 Write-Host ""
