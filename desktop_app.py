@@ -242,6 +242,16 @@ def setup_django() -> None:
     import django
     django.setup()
 
+    from django.conf import settings
+    from inventario.services.backups import respaldar_sqlite
+
+    db_path = settings.DATABASES["default"]["NAME"]
+    backups_dir = os.path.join(os.path.dirname(db_path), "backups")
+    try:
+        respaldar_sqlite(db_path, backups_dir, mantener=15)
+    except Exception:
+        logging.exception("No se pudo generar el backup de la base antes de migrar")
+
     from django.core.management import call_command
     call_command("migrate", "--run-syncdb", verbosity=0)
 
