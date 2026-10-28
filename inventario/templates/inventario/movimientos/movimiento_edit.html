@@ -6,7 +6,11 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Movimiento #{{ movimiento.id }}</h1>
-    <div class="page-subtitle muted">{{ movimiento.get_tipo_display }} · {{ movimiento.fecha|date:"d/m/Y H:i" }}</div>
+    <div class="page-subtitle muted">
+      {{ movimiento.get_tipo_display }} · {{ movimiento.fecha|date:"d/m/Y H:i" }}
+      {% if movimiento.creado_por %} · Creado por {{ movimiento.creado_por.get_username }}{% endif %}
+      {% if movimiento.anulado %} · Anulado{% if movimiento.anulado_por %} por {{ movimiento.anulado_por.get_username }}{% endif %}{% if movimiento.fecha_anulado %} el {{ movimiento.fecha_anulado|date:"d/m/Y H:i" }}{% endif %}{% endif %}
+    </div>
   </div>
   <a class="btn btn-ghost" href="{% url 'movimientos_list' %}">← Volver</a>
 </div>

@@ -455,8 +455,28 @@ class Movimiento(models.Model):
     observaciones = models.TextField(blank=True, default="")
     anulado = models.BooleanField(default=False)
 
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos_creados",
+        verbose_name="Creado por",
+    )
+    anulado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos_anulados",
+        verbose_name="Anulado por",
+    )
+    fecha_anulado = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de anulación")
+
     class Meta:
         ordering = ["-fecha"]
+        indexes = [
+            models.Index(fields=["-fecha"], name="idx_movimiento_fecha"),
+            models.Index(fields=["anulado", "fecha"], name="idx_movimiento_anulado_fecha"),
+        ]
 
     def __str__(self):
         return f"{self.tipo} {self.fecha:%Y-%m-%d %H:%M}"
@@ -468,6 +488,15 @@ class MovimientoDetalle(models.Model):
     movimiento = models.ForeignKey(Movimiento, related_name="detalles", on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
     cantidad = models.IntegerField(validators=[MinValueValidator(1)])
+
+    class Meta:
+        constraints = [
+            # No "> 0": un AJUSTE usa cantidad como delta con signo (ver
+            # services/stock.py y el test test_ajuste_resta), así que un
+            # ajuste a la baja es cantidad negativa, legítimo. Lo único que
+            # nunca tiene sentido en ningún tipo de movimiento es 0.
+            models.CheckConstraint(check=~Q(cantidad=0), name="chk_movimientodetalle_cantidad_no_cero"),
+        ]
 
     def __str__(self):
         return f"{self.item} x {self.cantidad}"
@@ -692,6 +721,13 @@ class Pedido(models.Model):
         verbose_name="Proveedor",
     )
 
+    pedidos_relacionados = models.ManyToManyField(
+        "self",
+        blank=True,
+        verbose_name="Pedidos relacionados",
+        help_text="Otros pedidos vinculados a este (opcional).",
+    )
+
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
@@ -705,6 +741,23 @@ class Pedido(models.Model):
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """
+        Completa la fecha de auditoría correspondiente al entrar a cada
+        estado, sin importar si el cambio vino del botón "Avanzar" o de
+        una edición manual del campo "estado" (antes esto solo pasaba en
+        la vista de "Avanzar", dejando pedidos editados a mano con el
+        estado correcto pero sin su fecha asociada).
+        """
+        hoy = timezone.localdate()
+        if self.estado == "APROBADO" and not self.fecha_aprobado:
+            self.fecha_aprobado = hoy
+        if self.estado == "RECIBIDO" and not self.fecha_recibido:
+            self.fecha_recibido = hoy
+        if self.estado == "ENTREGADO" and not self.fecha_entregado:
+            self.fecha_entregado = hoy
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.numero} - {self.get_estado_display()}"
@@ -829,6 +882,13 @@ class Nota(models.Model):
 
     fecha_cierre = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de finalización")
     fecha_entrega_mesa_entrada = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de entrega a Mesa de Entrada")
+
+    notas_relacionadas = models.ManyToManyField(
+        "self",
+        blank=True,
+        verbose_name="Notas relacionadas",
+        help_text="Otras notas vinculadas a esta (opcional).",
+    )
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
