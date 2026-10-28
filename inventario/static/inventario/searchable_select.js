@@ -77,12 +77,33 @@
        tapen el click a las opciones. */
     document.body.appendChild(panel);
 
+    // Alto preferido del panel; si no entra ni arriba ni abajo del campo,
+    // se achica al espacio disponible (con scroll interno) en vez de
+    // cortarse contra el borde de la ventana sin forma de verlo completo.
+    var ALTO_PANEL_PREFERIDO = 220;
+
     function positionPanel() {
       var rect = box.getBoundingClientRect();
+      var vh = window.innerHeight;
+      var margen = 8;
+      var espacioAbajo = vh - rect.bottom - margen;
+      var espacioArriba = rect.top - margen;
+
       panel.style.position = "fixed";
       panel.style.left = rect.left + "px";
-      panel.style.top = (rect.bottom + 4) + "px";
       panel.style.width = rect.width + "px";
+
+      var abrirAbajo = espacioAbajo >= ALTO_PANEL_PREFERIDO || espacioAbajo >= espacioArriba;
+      var alto = Math.max(100, Math.min(ALTO_PANEL_PREFERIDO, abrirAbajo ? espacioAbajo : espacioArriba));
+      panel.style.maxHeight = alto + "px";
+
+      if (abrirAbajo) {
+        panel.style.top = (rect.bottom + 4) + "px";
+        panel.style.bottom = "auto";
+      } else {
+        panel.style.top = "auto";
+        panel.style.bottom = (vh - rect.top + 4) + "px";
+      }
     }
 
     var currentOptions = [];
@@ -133,16 +154,31 @@
       input.value = opt ? opt.text : "";
     }
 
+    // Para selects largos (notas/pedidos relacionados), sin texto de
+    // búsqueda no tiene sentido listarlos todos: se muestran solo los N
+    // primeros (ya vienen ordenados del más reciente al más viejo desde
+    // el server) y se aclara que hay que escribir para encontrar el resto.
+    var limiteInicial = parseInt(select.dataset.limiteInicial || "", 10) || null;
+
     function renderPanel(filterText) {
       var texto = normalizar(filterText).trim();
       panel.innerHTML = "";
       currentOptions = [];
       activeIndex = -1;
 
-      realOptions().forEach(function (opt) {
-        if (isMulti && opt.selected) return;
-        if (texto && normalizar(opt.text).indexOf(texto) === -1) return;
+      var disponibles = realOptions().filter(function (opt) {
+        if (isMulti && opt.selected) return false;
+        if (texto && normalizar(opt.text).indexOf(texto) === -1) return false;
+        return true;
+      });
 
+      var truncado = false;
+      if (!texto && limiteInicial && disponibles.length > limiteInicial) {
+        truncado = true;
+        disponibles = disponibles.slice(0, limiteInicial);
+      }
+
+      disponibles.forEach(function (opt) {
         currentOptions.push(opt);
         var item = document.createElement("div");
         item.className = "ssel-opt";
@@ -160,6 +196,11 @@
         empty.className = "ssel-empty";
         empty.textContent = "Sin resultados";
         panel.appendChild(empty);
+      } else if (truncado) {
+        var hint = document.createElement("div");
+        hint.className = "ssel-hint";
+        hint.textContent = "Mostrando los " + limiteInicial + " más recientes — escribí para buscar el resto";
+        panel.appendChild(hint);
       }
     }
 
@@ -256,13 +297,19 @@
       if (!panel.hidden) positionPanel();
     }, true);
 
+    // Si algo externo (ej: autocompletado por AJAX) cambia el <select>
+    // nativo y dispara "change", reflejamos el valor en la UI visual.
+    select.addEventListener("change", function () {
+      if (isMulti) renderChips(); else syncInputSingle();
+    });
+
     renderChips();
     syncInputSingle();
   }
 
   function enhanceAll(root) {
     (root || document).querySelectorAll("select").forEach(function (sel) {
-      if (/servicio|patrimonio|item/i.test(sel.name || "")) enhance(sel);
+      if (/servicio|patrimonio|item|pedido|nota/i.test(sel.name || "")) enhance(sel);
     });
   }
 

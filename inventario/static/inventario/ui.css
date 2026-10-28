@@ -1179,6 +1179,7 @@ select.ssel-native { display: none; }
 .ssel-opt { padding: 7px 9px; border-radius: var(--radius-sm); font-size: 12.5px; cursor: pointer; }
 .ssel-opt:hover, .ssel-opt.is-active { background: rgba(var(--accent-rgb),.14); }
 .ssel-empty { padding: 8px 10px; font-size: 12.5px; color: var(--muted); }
+.ssel-hint { padding: 6px 10px; font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 2px; }
 
 /* =========================================================
    31) RESPONSIVE
