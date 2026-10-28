@@ -77,6 +77,16 @@
         {% if pedido.observaciones %}
         <div><div class="label">Observaciones</div><div class="muted" style="white-space:pre-wrap;font-size:.83rem">{{ pedido.observaciones }}</div></div>
         {% endif %}
+        {% if pedido.pedidos_relacionados.all %}
+        <div>
+          <div class="label">Pedidos relacionados</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+            {% for p in pedido.pedidos_relacionados.all %}
+              <a href="{% url 'pedido_detail' p.pk %}" class="muted" style="text-decoration:underline">{{ p.numero }} — {{ p.get_estado_display }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
         <div><div class="label">Creado</div><div class="muted">{{ pedido.creado|date:"d/m/Y" }}</div></div>
       </div>
     </div>

@@ -51,10 +51,24 @@
         {% if form.servicio_solicitante.errors %}<div class="form-error">{{ form.servicio_solicitante.errors }}</div>{% endif %}
       </div>
 
+      <div class="field col-6">
+        <label class="label" for="{{ form.pedido.id_for_label }}">{{ form.pedido.label }}</label>
+        {{ form.pedido }}
+        <div class="muted" style="font-size:.78rem;margin-top:4px">{{ form.pedido.help_text }}</div>
+        <div id="pedido-feedback" style="font-size:.82rem;margin-top:6px;min-height:1.2em"></div>
+        {% if form.pedido.errors %}<div class="form-error">{{ form.pedido.errors }}</div>{% endif %}
+      </div>
+
       <div class="field col-12">
         <label class="label" for="{{ form.detalle.id_for_label }}">Detalle</label>
         {{ form.detalle }}
         {% if form.detalle.errors %}<div class="form-error">{{ form.detalle.errors }}</div>{% endif %}
+      </div>
+
+      <div class="field col-12">
+        <label class="label" for="{{ form.notas_relacionadas.id_for_label }}">Notas relacionadas (opcional)</label>
+        {{ form.notas_relacionadas }}
+        {% if form.notas_relacionadas.errors %}<div class="form-error">{{ form.notas_relacionadas.errors }}</div>{% endif %}
       </div>
     </div>
   </div>
@@ -150,12 +164,12 @@
   }
   document.querySelectorAll("#nota-detalle-tbody .nota-detalle-row").forEach(labelizeNotaRow);
 
-  document.getElementById("btn-add-item")?.addEventListener("click", () => {
+  function agregarFilaNota() {
     const tbody = document.getElementById("nota-detalle-tbody");
     const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
     const emptyDiv = document.getElementById("nota-detalle-empty-form");
     const tpl = document.getElementById("nota-detalle-empty-row");
-    if (!tbody || !totalForms || !emptyDiv || !tpl) return;
+    if (!tbody || !totalForms || !emptyDiv || !tpl) return null;
 
     const index = parseInt(totalForms.value, 10);
 
@@ -171,9 +185,88 @@
       .replace("__DELETE__", del);
 
     tbody.insertAdjacentHTML("beforeend", rowHtml);
-    labelizeNotaRow(tbody.lastElementChild);
+    const row = tbody.lastElementChild;
+    labelizeNotaRow(row);
     totalForms.value = index + 1;
-    window.HeepSearchableSelect?.enhanceAll(tbody.lastElementChild);
+    window.HeepSearchableSelect?.enhanceAll(row);
+    return row;
+  }
+
+  document.getElementById("btn-add-item")?.addEventListener("click", () => agregarFilaNota());
+
+  function filaVaciaDisponible() {
+    const filas = document.querySelectorAll("#nota-detalle-tbody .nota-detalle-row");
+    for (const fila of filas) {
+      const select = fila.querySelector("select");
+      const detalle = fila.querySelector('input[name*="-detalle"]');
+      const idInput = fila.querySelector('input[name$="-id"]');
+      const esNueva = !idInput || !idInput.value;
+      if (esNueva && select && !select.value && (!detalle || !detalle.value)) return fila;
+    }
+    return null;
+  }
+
+  function cargarItemEnFila(fila, itemId, cantidad, detalle) {
+    const select = fila.querySelector("select");
+    const inputCantidad = fila.querySelector('input[name*="-cantidad"]');
+    const inputDetalle = fila.querySelector('input[name*="-detalle"]');
+    if (select) {
+      select.value = itemId;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    if (inputCantidad) inputCantidad.value = cantidad;
+    if (inputDetalle) inputDetalle.value = detalle || "";
+  }
+
+  function mostrarFeedbackPedido(texto, tipo) {
+    const el = document.getElementById("pedido-feedback");
+    if (!el) return;
+    const colores = { ok: "var(--ok)", warn: "var(--warn)", danger: "var(--danger)" };
+    el.style.color = colores[tipo] || "var(--muted)";
+    el.textContent = texto;
+  }
+
+  async function cargarItemsDelPedido(pedidoId) {
+    mostrarFeedbackPedido("Cargando ítems del pedido…", "muted");
+    try {
+      const notaId = "{{ nota.pk|default:'' }}";
+      const resp = await fetch(`{% url 'pedido_items_por_numero' %}?pedido_id=${encodeURIComponent(pedidoId)}&nota_id=${encodeURIComponent(notaId)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      const data = await resp.json();
+
+      if (!data.encontrado) {
+        mostrarFeedbackPedido("No se encontró ese pedido.", "warn");
+        return;
+      }
+
+      let agregados = 0;
+      data.items.forEach(({ item_id, cantidad, detalle }) => {
+        const fila = filaVaciaDisponible() || agregarFilaNota();
+        if (!fila) return;
+        cargarItemEnFila(fila, item_id, cantidad, detalle);
+        agregados += 1;
+      });
+
+      let mensaje = agregados
+        ? `Pedido ${data.pedido_numero}: se cargaron ${agregados} ítem(s) para que confirmes que corresponden a esta nota.`
+        : `Pedido ${data.pedido_numero} encontrado (sin ítems cargados).`;
+      if (data.ya_vinculado_a_otra_nota) {
+        mensaje += " Atención: ya estaba vinculado a otra nota; se reemplazará ese vínculo al guardar.";
+      }
+      mostrarFeedbackPedido(mensaje, data.ya_vinculado_a_otra_nota ? "warn" : "ok");
+    } catch (err) {
+      mostrarFeedbackPedido("No se pudo cargar el pedido. Intentá de nuevo.", "danger");
+    }
+  }
+
+  document.getElementById("id_pedido")?.addEventListener("change", (e) => {
+    const pedidoId = e.target.value;
+    if (!pedidoId) {
+      mostrarFeedbackPedido("", "muted");
+      return;
+    }
+    cargarItemsDelPedido(pedidoId);
   });
 </script>
 

@@ -21,6 +21,7 @@ class PedidoForm(forms.ModelForm):
             "fecha_aprobado",
             "fecha_recibido",
             "fecha_entregado",
+            "pedidos_relacionados",
         ]
         widgets = {
             "observaciones":    forms.Textarea(attrs={"rows": 2}),
@@ -29,6 +30,7 @@ class PedidoForm(forms.ModelForm):
             "fecha_aprobado":   forms.DateInput(attrs={"type": "date"}),
             "fecha_recibido":   forms.DateInput(attrs={"type": "date"}),
             "fecha_entregado":  forms.DateInput(attrs={"type": "date"}),
+            "pedidos_relacionados": forms.SelectMultiple(attrs={"data-limite-inicial": "3"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -38,6 +40,15 @@ class PedidoForm(forms.ModelForm):
         self.fields["nota"].empty_label = "— Sin nota asociada —"
         self.fields["nota"].label_from_instance = (
             lambda n: f"{n.numero.strip() or 'Sin número'} — {getattr(n.servicio_solicitante, 'nombre', None) or 'Sin servicio'} ({n.get_estado_display()})"
+        )
+
+        qs_relacionados = Pedido.objects.order_by("-creado")
+        if self.instance.pk:
+            qs_relacionados = qs_relacionados.exclude(pk=self.instance.pk)
+        self.fields["pedidos_relacionados"].queryset = qs_relacionados
+        self.fields["pedidos_relacionados"].required = False
+        self.fields["pedidos_relacionados"].label_from_instance = (
+            lambda p: f"{p.numero} ({p.get_estado_display()})"
         )
 
     def clean(self):

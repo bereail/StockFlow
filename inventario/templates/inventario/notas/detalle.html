@@ -38,6 +38,16 @@
       {% if nota.detalle %}
       <div><div class="label">Detalle</div><div class="muted" style="white-space:pre-wrap;font-size:.83rem">{{ nota.detalle }}</div></div>
       {% endif %}
+      {% if nota.notas_relacionadas.all %}
+      <div>
+        <div class="label">Notas relacionadas</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+          {% for n in nota.notas_relacionadas.all %}
+            <a href="{% url 'nota_detail' n.pk %}" class="muted" style="text-decoration:underline">{{ n.numero|default:"Sin número" }} — {{ n.servicio_solicitante|default:"Sin servicio" }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 

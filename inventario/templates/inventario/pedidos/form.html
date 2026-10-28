@@ -60,6 +60,12 @@
         {{ form.observaciones }}
         {% if form.observaciones.errors %}<div class="form-error">{{ form.observaciones.errors }}</div>{% endif %}
       </div>
+
+      <div class="field col-12">
+        <label class="label" for="{{ form.pedidos_relacionados.id_for_label }}">Pedidos relacionados (opcional)</label>
+        {{ form.pedidos_relacionados }}
+        {% if form.pedidos_relacionados.errors %}<div class="form-error">{{ form.pedidos_relacionados.errors }}</div>{% endif %}
+      </div>
     </div>
   </div>
 

@@ -176,18 +176,7 @@ def pedido_avanzar(request, pk):
     siguiente = _SIGUIENTE_ESTADO_PEDIDO.get(pedido.estado)
     if siguiente:
         pedido.estado = siguiente
-        hoy = timezone.localdate()
-        campos = ["estado", "actualizado"]
-        if siguiente == "APROBADO" and not pedido.fecha_aprobado:
-            pedido.fecha_aprobado = hoy
-            campos.append("fecha_aprobado")
-        if siguiente == "RECIBIDO" and not pedido.fecha_recibido:
-            pedido.fecha_recibido = hoy
-            campos.append("fecha_recibido")
-        if siguiente == "ENTREGADO" and not pedido.fecha_entregado:
-            pedido.fecha_entregado = hoy
-            campos.append("fecha_entregado")
-        pedido.save(update_fields=campos)
+        pedido.save()  # Pedido.save() completa la fecha correspondiente al nuevo estado
         messages.success(request, f"Pedido avanzado a {pedido.get_estado_display()}.")
     return redirect("pedido_detail", pk=pedido.pk)
 
