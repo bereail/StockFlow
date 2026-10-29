@@ -26,7 +26,11 @@ if (-not (Test-Path $PYTHON)) {
 }
 
 Write-Host "[1/4] Colectando archivos estáticos..." -ForegroundColor Green
-& $PYTHON manage.py collectstatic --noinput --clear 2>&1 | Out-Null
+& $PYTHON manage.py collectstatic --noinput --clear | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] collectstatic falló con código $LASTEXITCODE" -ForegroundColor Red
+    exit 1
+}
 Write-Host "      OK" -ForegroundColor DarkGreen
 
 # ── 2. Limpiar builds anteriores ──────────────────────────────────
