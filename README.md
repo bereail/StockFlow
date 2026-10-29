@@ -59,7 +59,7 @@ config/            # settings, urls (proyecto Django)
 inventario/         # app principal: modelos, vistas, forms, templates
   forms/             # un archivo de formulario por entidad
   fixtures/           # datos de ejemplo para `manage.py seed`
-  tests.py            # 121 tests
+  tests.py            # 207 tests
 desktop_app.py       # punto de entrada de la app de escritorio (pywebview + waitress)
 manage.py             # punto de entrada estándar de Django (desarrollo)
 StockToner.spec        # configuración de PyInstaller para el build del .exe
@@ -77,7 +77,8 @@ StockToner.spec        # configuración de PyInstaller para el build del .exe
 Antes de escribir el primer modelo se armó un [documento de diseño](docs/modelo-de-datos.pdf) con
 las entidades, reglas de negocio y decisiones de estructura, y un
 [mockup temprano de la UI](docs/mockup-ui.png) para validar la estética de escritorio antes de
-implementarla.
+implementarla. También hay un [diagrama de la app](docs/diagrama_app.html) con una vista general
+de los módulos.
 
 ## Stack
 
@@ -122,7 +123,7 @@ por consola) solo para uso local.
 
 ## Testing
 
-**121 tests automatizados**, cubriendo modelos y flujos principales. Corren automáticamente
+**207 tests automatizados**, cubriendo modelos y flujos principales. Corren automáticamente
 en cada push/PR vía GitHub Actions.
 
 ```bash
