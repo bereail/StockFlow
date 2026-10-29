@@ -4,6 +4,11 @@ extend-exclude = ["*/migrations/*"]
 
 [lint]
 select = ["E", "F"]
+# E501 (línea larga) queda fuera de forma global: son ~30 líneas repartidas
+# en dicts de widgets de formularios y f-strings de reportes HTML, deuda de
+# estilo aceptada a propósito (tocarlas a mano no vale el riesgo) — así el
+# check de CI (OPS-005) sí puede ser bloqueante sin fallar por esto.
+ignore = ["E501"]
 
 [lint.per-file-ignores]
 # views/__init__.py es un barrel: re-exporta todo con `import *` a propósito
