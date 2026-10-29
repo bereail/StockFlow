@@ -20,10 +20,6 @@ def stock_de_item(item_id: int) -> int:
     return ingresos - egresos + ajustes
 
 
-def hay_stock_suficiente(item_id: int, cantidad_a_egresar: int) -> bool:
-    return stock_de_item(item_id) >= cantidad_a_egresar
-
-
 def toners_con_stock_critico():
     """
     Tóners activos con stock_minimo configurado (> 0) cuyo stock actual

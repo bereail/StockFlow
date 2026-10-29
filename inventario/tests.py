@@ -20,7 +20,7 @@ from inventario.models import (
 from inventario.services.servicios import historial_de_servicio
 from inventario.services.listados import ordenar
 from inventario.services.stock import (
-    stock_de_item, hay_stock_suficiente, verificar_stock_suficiente, toners_con_stock_critico,
+    stock_de_item, verificar_stock_suficiente, toners_con_stock_critico,
     lock_item_para_egreso, stock_armable_de_combo, crear_detalle_egreso,
 )
 from inventario.services.items import (
@@ -68,17 +68,6 @@ class StockServiceTest(TestCase):
         self._mov("INGRESO", 10)
         self._mov("EGRESO", 3, anulado=True)
         self.assertEqual(stock_de_item(self.item.id), 10)
-
-    def test_hay_stock_suficiente_ok(self):
-        self._mov("INGRESO", 5)
-        self.assertTrue(hay_stock_suficiente(self.item.id, 5))
-
-    def test_hay_stock_suficiente_insuficiente(self):
-        self._mov("INGRESO", 5)
-        self.assertFalse(hay_stock_suficiente(self.item.id, 6))
-
-    def test_hay_stock_suficiente_sin_stock(self):
-        self.assertFalse(hay_stock_suficiente(self.item.id, 1))
 
     def test_verificar_stock_suficiente_ok_no_lanza(self):
         self._mov("INGRESO", 5)

@@ -6,10 +6,11 @@ extend-exclude = ["*/migrations/*"]
 select = ["E", "F"]
 
 [lint.per-file-ignores]
-# forms/__init__.py y views/__init__.py son barrels: re-exportan todo con
-# `import *` a propósito para que el resto de la app use `forms.XForm` /
-# `views.x_view` sin conocer el submódulo interno.
-"inventario/forms/__init__.py" = ["F401", "F403"]
+# views/__init__.py es un barrel: re-exporta todo con `import *` a propósito
+# para que el resto de la app use `views.x_view` sin conocer el submódulo
+# interno. forms/__init__.py ya no cumple ese rol (ARQ-01): el 94% del
+# código ya importaba directo del submódulo, así que se vació el barrel y
+# se migró el único import que quedaba.
 "inventario/views/__init__.py" = ["F401", "F403"]
 # desktop_app.py necesita fijar la variable de entorno PYWEBVIEW_GUI antes
 # de importar webview — el import fuera del top del archivo es a propósito.
