@@ -12,6 +12,13 @@ from .models import (
     PrestamoDetalle,
     ItemComponente,
     Intercambio,
+    Pedido,
+    PedidoDetalle,
+    Nota,
+    Reparacion,
+    PatrimonioUnidad,
+    ActivoPC,
+    AsignacionImpresora,
 )
 
 # =========================
@@ -124,4 +131,62 @@ class ProveedorAdmin(admin.ModelAdmin):
     search_fields = ("nombre", "telefono", "email")
     list_filter = ("activo",)
     ordering = ("nombre",)
+
+
+# =========================
+# ENTIDADES TRANSACCIONALES (ARQ-05)
+# Solo vía de contingencia manual si la UI custom fallara — el flujo
+# normal sigue siendo la UI propia, que valida reglas de negocio que
+# estos ModelAdmin no reproducen (máquinas de estado, stock, etc.).
+# =========================
+class PedidoDetalleInline(admin.TabularInline):
+    model = PedidoDetalle
+    extra = 0
+
+
+@admin.register(Pedido)
+class PedidoAdmin(admin.ModelAdmin):
+    list_display = ("numero", "estado", "proveedor", "nota", "creado")
+    list_filter = ("estado", "proveedor")
+    search_fields = ("numero", "observaciones", "para_que")
+    ordering = ("-creado",)
+    inlines = [PedidoDetalleInline]
+
+
+@admin.register(Nota)
+class NotaAdmin(admin.ModelAdmin):
+    list_display = ("numero", "servicio_solicitante", "estado", "fecha")
+    list_filter = ("estado", "servicio_solicitante")
+    search_fields = ("numero", "detalle")
+    ordering = ("-fecha",)
+
+
+@admin.register(Reparacion)
+class ReparacionAdmin(admin.ModelAdmin):
+    list_display = ("id", "item", "estado", "servicio", "proveedor", "fecha_envio", "fecha_retorno")
+    list_filter = ("estado", "servicio", "proveedor")
+    search_fields = ("diagnostico", "seguimiento")
+    ordering = ("-creado",)
+
+
+@admin.register(PatrimonioUnidad)
+class PatrimonioUnidadAdmin(admin.ModelAdmin):
+    list_display = ("numero_patrimonio", "articulo", "servicio_asignado", "es_donacion", "fecha")
+    list_filter = ("es_donacion", "servicio_asignado")
+    search_fields = ("numero_patrimonio", "nombre_pc", "ip", "serial", "usuario_asignado")
+    ordering = ("-fecha",)
+
+
+@admin.register(ActivoPC)
+class ActivoPCAdmin(admin.ModelAdmin):
+    list_display = ("nombre_pc", "ip", "usuario", "articulo")
+    search_fields = ("nombre_pc", "ip", "usuario")
+
+
+@admin.register(AsignacionImpresora)
+class AsignacionImpresoraAdmin(admin.ModelAdmin):
+    list_display = ("impresora", "servicio", "fecha_desde", "fecha_hasta", "responsable")
+    list_filter = ("servicio",)
+    search_fields = ("ubicacion", "responsable")
+    ordering = ("-fecha_desde",)
 
