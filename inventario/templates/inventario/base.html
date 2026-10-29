@@ -396,6 +396,28 @@ document.addEventListener('submit', function (e) {
   });
 }, true);
 
+/* ── Evitar doble-submit en formularios de escritura ── */
+/* Deshabilita el botón de guardar recién cuando el envío es real (no cuando
+   un <form data-confirm> todavía está esperando la confirmación in-app de
+   arriba) — corre en fase de burbuja, después de que el navegador ya validó
+   el formulario, así que nunca bloquea la corrección de errores nativos. */
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  if (!(form instanceof HTMLFormElement)) return;
+  if (form.method.toLowerCase() !== 'post') return;
+  if (e.defaultPrevented) return;
+  var btn = form.querySelector(
+    'button[type="submit"]:not([disabled]), button:not([type]):not([disabled]), input[type="submit"]:not([disabled])'
+  );
+  if (!btn) return;
+  btn.disabled = true;
+  if (btn.tagName === 'INPUT') {
+    btn.value = 'Guardando…';
+  } else {
+    btn.textContent = 'Guardando…';
+  }
+});
+
 function _showConfirmPopover(anchor, message, onConfirm) {
   document.querySelectorAll('.confirm-pop').forEach(function (p) { p.remove(); });
 
