@@ -117,7 +117,8 @@ python manage.py seed_demo
 ```
 
 Genera datos 100% ficticios (no pisa nada si ya hay pedidos cargados) y, si no existe ningún
-superusuario, crea uno de prueba (`demo` / `demo1234`) solo para uso local.
+superusuario, crea uno de prueba (`demo` / contraseña generada al azar, impresa una sola vez
+por consola) solo para uso local.
 
 ## Testing
 

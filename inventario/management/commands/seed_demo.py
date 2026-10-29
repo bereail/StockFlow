@@ -15,6 +15,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 
 from inventario.models import (
     ActivoPC,
@@ -142,11 +143,13 @@ class Command(BaseCommand):
         user = User.objects.filter(is_superuser=True).order_by("id").first()
         if user:
             return user
+        password = get_random_string(16)
         user = User.objects.create_superuser(
-            username="demo", email="demo@example.com", password="demo1234",
+            username="demo", email="demo@example.com", password=password,
         )
         self.stdout.write(self.style.SUCCESS(
-            "Seed demo: no había ningún superusuario, se creó 'demo' / 'demo1234' (solo para uso local)."
+            f"Seed demo: no había ningún superusuario, se creó 'demo' / '{password}' "
+            "(contraseña generada al azar, no se guarda en ningún lado más que esta salida)."
         ))
         return user
 
