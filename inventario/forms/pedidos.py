@@ -1,11 +1,32 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv46_address
 from ..models import Pedido, PedidoDetalle, PatrimonioUnidad, Nota
 from ..models import Item  # ✅ IMPORTANTE
 from ..services.impresoras import asignar_impresora_a_servicio
 from ..services.patrimonios import generar_ficha_desde_articulo
+
+
+def _item_queryset_para_pedido_detalle():
+    return (
+        Item.objects
+        .filter(tipo__in=["ARTICULO", "IMPRESORA"])
+        .select_related("articulo", "impresora")
+        .order_by("tipo", "articulo__nombre", "impresora__marca", "impresora__modelo")
+    )
+
+
+def _label_item_pedido_detalle(obj):
+    if obj.articulo:
+        nombre = str(obj.articulo)
+        if obj.articulo.es_patrimonial:
+            return f"{nombre}  🔖 Patrimonial"
+        return nombre
+    if obj.impresora:
+        return f"Impresora: {obj.impresora}"
+    return str(obj)
 
 class PedidoForm(forms.ModelForm):
     class Meta:
@@ -69,31 +90,43 @@ class PedidoDetalleForm(forms.ModelForm):
             "detalle": forms.TextInput(attrs={"placeholder": "Detalle opcional (marca/modelo/etc.)"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, item_queryset=None, item_choices=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["item"].queryset = (
-            Item.objects
-            .filter(tipo__in=["ARTICULO", "IMPRESORA"])
-            .select_related("articulo", "impresora")
-            .order_by("tipo", "articulo__nombre", "impresora__marca", "impresora__modelo")
+            item_queryset if item_queryset is not None else _item_queryset_para_pedido_detalle()
         )
+        self.fields["item"].label_from_instance = _label_item_pedido_detalle
+        if item_choices is not None:
+            # Pisa el widget.choices con la lista ya materializada por el
+            # formset (ver PedidoDetalleBaseFormSet) en vez de dejar que el
+            # ModelChoiceField recorra su queryset de nuevo: sin esto, cada
+            # fila existente del pedido repetía la misma consulta de
+            # "ítems disponibles" (N formularios → N queries idénticas).
+            self.fields["item"].choices = item_choices
 
-        def _label(obj):
-            if obj.articulo:
-                nombre = str(obj.articulo)
-                if obj.articulo.es_patrimonial:
-                    return f"{nombre}  🔖 Patrimonial"
-                return nombre
-            if obj.impresora:
-                return f"Impresora: {obj.impresora}"
-            return str(obj)
 
-        self.fields["item"].label_from_instance = _label
+class PedidoDetalleBaseFormSet(BaseInlineFormSet):
+    """Materializa una sola vez, por formset, la lista de ítems disponibles
+    para el combo "item" de cada fila — ver PedidoDetalleForm.__init__."""
+
+    def get_form_kwargs(self, index):
+        kwargs = super().get_form_kwargs(index)
+        if not hasattr(self, "_item_choices_compartidas"):
+            qs = _item_queryset_para_pedido_detalle()
+            self._item_queryset_compartida = qs
+            self._item_choices_compartidas = [("", "---------")] + [
+                (item.pk, _label_item_pedido_detalle(item)) for item in qs
+            ]
+        kwargs["item_queryset"] = self._item_queryset_compartida
+        kwargs["item_choices"] = self._item_choices_compartidas
+        return kwargs
+
 
 PedidoDetalleFormSet = inlineformset_factory(
     Pedido,
     PedidoDetalle,
     form=PedidoDetalleForm,  # <-- clave
+    formset=PedidoDetalleBaseFormSet,
     extra=1,
     can_delete=True,
 )

@@ -1660,6 +1660,54 @@ class SinNMasUnoTest(TestCase):
 
         self.assertEqual(pocas, muchas)
 
+    def test_movimientos_list_no_escala_con_la_cantidad_de_movimientos(self):
+        # Página de 5: se compara dentro de la misma página (2 vs 5 filas),
+        # no el total, así la paginación no contamina la comparación.
+        servicio = Servicio.objects.create(nombre="Guardia")
+        for i in range(2):
+            toner = Toner.objects.create(nombre=f"Toner {i}", marca="HP")
+            mov = Movimiento.objects.create(tipo="INGRESO", servicio=servicio)
+            MovimientoDetalle.objects.create(movimiento=mov, item=item_de_toner(toner), cantidad=1)
+        pocas = self._queries_para("/movimientos/")
+
+        for i in range(2, 5):
+            toner = Toner.objects.create(nombre=f"Toner {i}", marca="HP")
+            mov = Movimiento.objects.create(tipo="INGRESO", servicio=servicio)
+            MovimientoDetalle.objects.create(movimiento=mov, item=item_de_toner(toner), cantidad=1)
+        muchas = self._queries_para("/movimientos/")
+
+        self.assertEqual(pocas, muchas)
+
+    def test_prestamos_list_no_escala_con_la_cantidad_de_prestamos(self):
+        servicio = Servicio.objects.create(nombre="Guardia")
+        for i in range(2):
+            articulo = Articulo.objects.create(nombre=f"Notebook {i}")
+            prestamo = Prestamo.objects.create(servicio=servicio, entregado_a="Enfermería")
+            PrestamoDetalle.objects.create(prestamo=prestamo, item=item_de_articulo(articulo))
+        pocas = self._queries_para("/prestamos/")
+
+        for i in range(2, 5):
+            articulo = Articulo.objects.create(nombre=f"Notebook {i}")
+            prestamo = Prestamo.objects.create(servicio=servicio, entregado_a="Enfermería")
+            PrestamoDetalle.objects.create(prestamo=prestamo, item=item_de_articulo(articulo))
+        muchas = self._queries_para("/prestamos/")
+
+        self.assertEqual(pocas, muchas)
+
+    def test_pedido_detail_no_escala_con_la_cantidad_de_items(self):
+        pedido = Pedido.objects.create(numero="PED-SINNMASUNO-1")
+        for i in range(2):
+            toner = Toner.objects.create(nombre=f"Toner detalle {i}", marca="HP")
+            PedidoDetalle.objects.create(pedido=pedido, item=item_de_toner(toner), cantidad=1)
+        pocas = self._queries_para(f"/pedidos/{pedido.pk}/")
+
+        for i in range(2, 8):
+            toner = Toner.objects.create(nombre=f"Toner detalle {i}", marca="HP")
+            PedidoDetalle.objects.create(pedido=pedido, item=item_de_toner(toner), cantidad=1)
+        muchas = self._queries_para(f"/pedidos/{pedido.pk}/")
+
+        self.assertEqual(pocas, muchas)
+
 
 # ============================================================
 # generar_ficha_desde_articulo() — sin ningún test hasta ahora
@@ -1878,6 +1926,46 @@ class PedidoEstadoFechaTest(TestCase):
 # ============================================================
 # MOVIMIENTODETALLE: CANTIDAD SIEMPRE POSITIVA (constraint de DB)
 # ============================================================
+
+class PedidoDetalleFormularioTest(TestCase):
+    """Regresión de punta a punta para PedidoDetalleBaseFormSet (ver
+    SinNMasUnoTest.test_pedido_detail_no_escala_con_la_cantidad_de_items):
+    que el combo "item" se renderice sin re-consultar por fila no debe
+    romper que, al enviar el formulario real, el item elegido se guarde."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_superuser("pedform", "pedform@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Terapia")
+
+    def test_crear_pedido_con_un_item_real_vincula_el_detalle(self):
+        articulo = Articulo.objects.create(nombre="Mouse óptico")
+        item = item_de_articulo(articulo)
+        r = self.client.post("/pedidos/nuevo/", {
+            "numero": "PED-FORM-1",
+            "servicios": [self.servicio.pk],
+            "proveedor": "",
+            "nota": "",
+            "para_que": "",
+            "observaciones": "",
+            "estado": "HECHO",
+            "fecha_aprobado": "",
+            "fecha_recibido": "",
+            "fecha_entregado": "",
+            "pedidos_relacionados": [],
+            "detalles-TOTAL_FORMS": "1",
+            "detalles-INITIAL_FORMS": "0",
+            "detalles-MIN_NUM_FORMS": "0",
+            "detalles-MAX_NUM_FORMS": "1000",
+            "detalles-0-item": str(item.pk),
+            "detalles-0-cantidad": "1",
+            "detalles-0-detalle": "",
+        })
+        self.assertEqual(r.status_code, 302)
+        pedido = Pedido.objects.get(numero="PED-FORM-1")
+        self.assertTrue(pedido.detalles.filter(item=item).exists())
+
 
 class MovimientoDetalleConstraintTest(TestCase):
     """

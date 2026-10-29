@@ -129,7 +129,7 @@ def pedido_detail(request, pk):
 
     detalles = (
         PedidoDetalle.objects
-        .select_related("item")
+        .select_related("item__toner", "item__articulo", "item__activo_pc", "item__impresora")
         .prefetch_related("patrimonios")
         .filter(pedido=pedido)
     )

@@ -19,7 +19,12 @@ def prestamos_list(request):
     prestamos = (
         Prestamo.objects
         .select_related("servicio")
-        .prefetch_related("detalles", "detalles__item")
+        .prefetch_related(
+            "detalles__item__toner",
+            "detalles__item__articulo",
+            "detalles__item__activo_pc",
+            "detalles__item__impresora",
+        )
     )
 
     prestamos = buscar_texto(
