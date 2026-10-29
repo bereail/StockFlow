@@ -211,7 +211,7 @@
   // Accesibilidad: los <select>/<input> de cada fila del formset no traen
   // <label> propio (la columna de la tabla ya da el contexto visual), así
   // que se asocia por aria-label. Se aplica tanto a las filas iniciales
-  // como a las agregadas dinámicamente por addFormRow.
+  // como a las agregadas dinámicamente por HeepFormsetRows.agregarFilaDesdeTemplate.
   function labelizeRow(tr, kind) {
     if (!tr) return;
     var select = tr.querySelector("select");
@@ -224,68 +224,26 @@
   document.querySelectorAll("#toner-tbody .toner-row").forEach(function (tr) { labelizeRow(tr, "toner"); });
   document.querySelectorAll("#art-tbody .art-row").forEach(function (tr) { labelizeRow(tr, "articulo"); });
 
-  // helper: agrega una fila al formset usando empty_form (__prefix__)
-  function addFormRow(prefix, tbodyId, totalFormsId, emptyDataDivId, templateId) {
-    const tbody = document.getElementById(tbodyId);
-    const totalForms = document.getElementById(totalFormsId);
-    const emptyDiv = document.getElementById(emptyDataDivId);
-    const tpl = document.getElementById(templateId);
-
-    if (!tbody || !totalForms || !emptyDiv || !tpl) return;
-
-    const index = parseInt(totalForms.value, 10);
-
-    // HTML de widgets del empty_form (vienen con __prefix__)
-    let field1 = "";
-    let field2 = "";
-    let del = "";
-
-    if (prefix === "toner") {
-      field1 = emptyDiv.dataset.toner;
-    } else {
-      field1 = emptyDiv.dataset.articulo;
-    }
-    field2 = emptyDiv.dataset.cantidad;
-    del = emptyDiv.dataset.delete;
-
-    // reemplazo __prefix__ por index
-    field1 = field1.replaceAll("__prefix__", index);
-    field2 = field2.replaceAll("__prefix__", index);
-    del = del.replaceAll("__prefix__", index);
-
-    // armo la fila desde template
-    let rowHtml = tpl.innerHTML
-      .replace("__TONER__", field1)
-      .replace("__ARTICULO__", field1)
-      .replace("__CANTIDAD__", field2)
-      .replace("__DELETE__", del);
-
-    // inserto
-    tbody.insertAdjacentHTML("beforeend", rowHtml);
-    labelizeRow(tbody.lastElementChild, prefix);
-
-    // incremento TOTAL_FORMS
-    totalForms.value = index + 1;
-  }
-
   document.getElementById("btn-add-toner")?.addEventListener("click", () => {
-    addFormRow(
-      "toner",
-      "toner-tbody",
-      "id_toner-TOTAL_FORMS",
-      "toner-empty-form",
-      "toner-empty-form-template"
-    );
+    window.HeepFormsetRows.agregarFilaDesdeTemplate({
+      tbodyId: "toner-tbody",
+      totalFormsId: "id_toner-TOTAL_FORMS",
+      emptyDataDivId: "toner-empty-form",
+      templateId: "toner-empty-form-template",
+      placeholders: { "__TONER__": "toner", "__CANTIDAD__": "cantidad", "__DELETE__": "delete" },
+      onRowAdded: (fila) => labelizeRow(fila, "toner"),
+    });
   });
 
   document.getElementById("btn-add-art")?.addEventListener("click", () => {
-    addFormRow(
-      "art",
-      "art-tbody",
-      "id_art-TOTAL_FORMS",
-      "art-empty-form",
-      "art-empty-form-template"
-    );
+    window.HeepFormsetRows.agregarFilaDesdeTemplate({
+      tbodyId: "art-tbody",
+      totalFormsId: "id_art-TOTAL_FORMS",
+      emptyDataDivId: "art-empty-form",
+      templateId: "art-empty-form-template",
+      placeholders: { "__ARTICULO__": "articulo", "__CANTIDAD__": "cantidad", "__DELETE__": "delete" },
+      onRowAdded: (fila) => labelizeRow(fila, "art"),
+    });
   });
 </script>
 {% endblock %}

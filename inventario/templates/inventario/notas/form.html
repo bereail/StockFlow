@@ -165,31 +165,20 @@
   document.querySelectorAll("#nota-detalle-tbody .nota-detalle-row").forEach(labelizeNotaRow);
 
   function agregarFilaNota() {
-    const tbody = document.getElementById("nota-detalle-tbody");
-    const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
-    const emptyDiv = document.getElementById("nota-detalle-empty-form");
-    const tpl = document.getElementById("nota-detalle-empty-row");
-    if (!tbody || !totalForms || !emptyDiv || !tpl) return null;
-
-    const index = parseInt(totalForms.value, 10);
-
-    const item = emptyDiv.dataset.item.replaceAll("__prefix__", index);
-    const cantidad = emptyDiv.dataset.cantidad.replaceAll("__prefix__", index);
-    const detalle = emptyDiv.dataset.detalle.replaceAll("__prefix__", index);
-    const del = emptyDiv.dataset.delete.replaceAll("__prefix__", index);
-
-    const rowHtml = tpl.innerHTML
-      .replace("__ITEM__", item)
-      .replace("__CANTIDAD__", cantidad)
-      .replace("__DETALLE__", detalle)
-      .replace("__DELETE__", del);
-
-    tbody.insertAdjacentHTML("beforeend", rowHtml);
-    const row = tbody.lastElementChild;
-    labelizeNotaRow(row);
-    totalForms.value = index + 1;
-    window.HeepSearchableSelect?.enhanceAll(row);
-    return row;
+    return window.HeepFormsetRows.agregarFilaDesdeTemplate({
+      tbodyId: "nota-detalle-tbody",
+      totalFormsId: "id_detalles-TOTAL_FORMS",
+      emptyDataDivId: "nota-detalle-empty-form",
+      templateId: "nota-detalle-empty-row",
+      placeholders: {
+        "__ITEM__": "item", "__CANTIDAD__": "cantidad",
+        "__DETALLE__": "detalle", "__DELETE__": "delete",
+      },
+      onRowAdded: (fila) => {
+        labelizeNotaRow(fila);
+        window.HeepSearchableSelect?.enhanceAll(fila);
+      },
+    });
   }
 
   document.getElementById("btn-add-item")?.addEventListener("click", () => agregarFilaNota());
