@@ -128,7 +128,7 @@
     <div class="card">
       <div class="label" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;color:var(--muted)">Ítems y patrimonios</div>
       {% for d in detalles %}
-        {% with cargados=d.patrimonios.count %}
+        {% with cargados=d.patrimonios.all|length %}
         <div style="border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">
           <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03)">
             <div style="flex:1;font-weight:600;font-size:.9rem">
@@ -341,35 +341,9 @@
   }
 
   function addDetalle() {
-    var tbody = document.querySelector('#tabla-detalles tbody');
-    var total = document.getElementById('id_detalles-TOTAL_FORMS');
-    var idx   = parseInt(total.value);
-    var primera = tbody.querySelector('tr.fila-detalle');
-    if (!primera) return;
-    var nueva = primera.cloneNode(true);
-
-    /* El <select> de ítem de la primera fila ya está mejorado con buscador
-       (ssel-wrap): el clon trae ese wrapper pero sin sus listeners (cloneNode
-       no los copia). Se desarma a un <select> limpio para volver a mejorarlo
-       ya en la fila nueva. */
-    var wrapClon = nueva.querySelector('.ssel-wrap');
-    if (wrapClon) {
-      var selClon = wrapClon.querySelector('select');
-      selClon.classList.remove('ssel-native');
-      delete selClon.dataset.sselDone;
-      wrapClon.parentNode.replaceChild(selClon, wrapClon);
-    }
-
-    nueva.querySelectorAll('input, select, textarea').forEach(function(el) {
-      el.name  = el.name.replace(/-\d+-/, '-' + idx + '-');
-      el.id    = el.id.replace(/-\d+-/, '-' + idx + '-');
-      el.value = '';
-    });
-    var chk = nueva.querySelector('input[type=checkbox]');
-    if (chk) chk.checked = false;
-    tbody.appendChild(nueva);
-    total.value = idx + 1;
-    window.HeepSearchableSelect && window.HeepSearchableSelect.enhanceAll(nueva);
+    window.HeepFormsetRows.agregarFilaClonando(
+      '#tabla-detalles tbody', 'tr.fila-detalle', 'id_detalles-TOTAL_FORMS'
+    );
   }
 
   function removeDetalle(btn) {

@@ -143,36 +143,9 @@
 
 <script>
   function addDetallePedido() {
-    var tbody = document.querySelector('#tabla-detalles-pedido tbody');
-    var total = document.getElementById('id_detalles-TOTAL_FORMS');
-    var idx   = parseInt(total.value);
-    var primera = tbody.querySelector('tr.fila-detalle');
-    if (!primera) return;
-    var nueva = primera.cloneNode(true);
-
-    /* Si el <select> de ítem ya está mejorado con buscador (ssel-wrap), el
-       clon trae el wrapper sin sus listeners (cloneNode no los copia): se
-       desarma a un <select> limpio para volver a mejorarlo en la fila nueva. */
-    var wrapClon = nueva.querySelector('.ssel-wrap');
-    if (wrapClon) {
-      var selClon = wrapClon.querySelector('select');
-      selClon.classList.remove('ssel-native');
-      delete selClon.dataset.sselDone;
-      wrapClon.parentNode.replaceChild(selClon, wrapClon);
-    }
-
-    nueva.querySelectorAll('input, select, textarea').forEach(function (el) {
-      if (el.type === 'hidden' && el.name.endsWith('-id')) { el.value = ''; return; }
-      el.name  = el.name.replace(/-\d+-/, '-' + idx + '-');
-      el.id    = el.id.replace(/-\d+-/, '-' + idx + '-');
-      el.value = '';
-    });
-    nueva.querySelectorAll('label[for]').forEach(function (lbl) {
-      lbl.setAttribute('for', lbl.getAttribute('for').replace(/-\d+-/, '-' + idx + '-'));
-    });
-    tbody.appendChild(nueva);
-    total.value = idx + 1;
-    window.HeepSearchableSelect && window.HeepSearchableSelect.enhanceAll(nueva);
+    window.HeepFormsetRows.agregarFilaClonando(
+      '#tabla-detalles-pedido tbody', 'tr.fila-detalle', 'id_detalles-TOTAL_FORMS'
+    );
   }
 </script>
 
