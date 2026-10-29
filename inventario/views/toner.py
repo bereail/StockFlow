@@ -16,7 +16,7 @@ from ..forms.toner import TonerForm, EntregaRapidaTonerForm
 from ..services.busqueda import buscar_texto
 from ..services.items import item_de_toner
 from ..services.listados import ordenar
-from ..services.stock import stock_de_item, verificar_stock_suficiente
+from ..services.stock import crear_detalle_egreso, lock_item_para_egreso, stock_de_item, verificar_stock_suficiente
 
 
 @login_required
@@ -97,6 +97,7 @@ def toner_entrega(request):
             try:
                 with transaction.atomic():
                     item = item_de_toner(toner)
+                    lock_item_para_egreso(item)
                     verificar_stock_suficiente(item, cantidad)
 
                     mov = Movimiento.objects.create(
@@ -104,13 +105,10 @@ def toner_entrega(request):
                         fecha=fecha,
                         servicio=servicio,
                         observaciones=obs,
+                        creado_por=request.user,
                     )
 
-                    MovimientoDetalle.objects.create(
-                        movimiento=mov,
-                        item=item,
-                        cantidad=cantidad,
-                    )
+                    crear_detalle_egreso(mov, item, cantidad)
 
                 return redirect("toner_page")
             except ValidationError as e:

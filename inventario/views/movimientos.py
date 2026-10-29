@@ -13,7 +13,7 @@ from ..models import Toner, Servicio, Movimiento, MovimientoDetalle
 from ..forms import MovimientoForm, MovimientoDetalleTonerForm, MovimientoDetalleArticuloForm
 from ..services.busqueda import buscar_texto
 from ..services.items import item_de_toner, item_de_articulo
-from ..services.stock import verificar_stock_suficiente
+from ..services.stock import crear_detalle_egreso, lock_item_para_egreso, verificar_stock_suficiente
 
 
 TonerFormSet = formset_factory(MovimientoDetalleTonerForm, extra=1, can_delete=True)
@@ -79,11 +79,17 @@ def movimiento_create(request):
                             cantidad_por_item[item.pk] = cantidad_por_item.get(item.pk, 0) + cantidad
                             item_por_pk[item.pk] = item
                         for item_pk, cantidad_total in cantidad_por_item.items():
+                            lock_item_para_egreso(item_por_pk[item_pk])
                             verificar_stock_suficiente(item_por_pk[item_pk], cantidad_total)
 
-                    movimiento = form.save()
+                    movimiento = form.save(commit=False)
+                    movimiento.creado_por = request.user
+                    movimiento.save()
                     for item, cantidad in detalles_a_crear:
-                        MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
+                        if movimiento.tipo == "EGRESO":
+                            crear_detalle_egreso(movimiento, item, cantidad)
+                        else:
+                            MovimientoDetalle.objects.create(movimiento=movimiento, item=item, cantidad=cantidad)
 
                 messages.success(request, "✅ Movimiento guardado.")
                 return redirect("movimientos_list")
@@ -192,7 +198,9 @@ def movimiento_anular(request, pk):
         messages.info(request, "Ese movimiento ya estaba anulado.")
     else:
         movimiento.anulado = True
-        movimiento.save(update_fields=["anulado"])
+        movimiento.anulado_por = request.user
+        movimiento.fecha_anulado = timezone.now()
+        movimiento.save(update_fields=["anulado", "anulado_por", "fecha_anulado"])
         messages.success(request, "Movimiento anulado. Ya no se cuenta en el stock.")
     return redirect("movimientos_list")
 

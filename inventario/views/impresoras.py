@@ -250,6 +250,7 @@ def impresora_entrega(request):
                         fecha=fecha,
                         servicio=servicio,
                         observaciones=observaciones,
+                        creado_por=request.user,
                     )
 
                     MovimientoDetalle.objects.create(

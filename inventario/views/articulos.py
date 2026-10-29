@@ -12,7 +12,7 @@ from ..forms.articulos import ArticuloForm, EntregaRapidaArticuloForm
 from ..services.busqueda import buscar_texto
 from ..services.items import item_de_articulo
 from ..services.listados import ordenar
-from ..services.stock import stock_de_item
+from ..services.stock import crear_detalle_egreso, lock_item_para_egreso, stock_armable_de_combo, stock_de_item
 from ..services.stock import verificar_stock_suficiente
 
 
@@ -80,6 +80,14 @@ def articulo_detail(request, pk: int):
     item = item_de_articulo(articulo)
     stock = stock_de_item(item.pk)
 
+    componentes = (
+        item.componentes.select_related("item_hijo__toner", "item_hijo__articulo",
+                                          "item_hijo__activo_pc", "item_hijo__impresora")
+        if item.es_combo else []
+    )
+    stock_armable = stock_armable_de_combo(item) if item.es_combo else None
+    unidades_entregadas = max(-stock, 0) if item.es_combo else None
+
     movimientos_recientes = (
         MovimientoDetalle.objects
         .filter(item=item, movimiento__anulado=False)
@@ -95,6 +103,10 @@ def articulo_detail(request, pk: int):
     return render(request, "inventario/articulos/articulo_detail.html", {
         "articulo": articulo,
         "stock": stock,
+        "es_combo": item.es_combo,
+        "componentes": componentes,
+        "stock_armable": stock_armable,
+        "unidades_entregadas": unidades_entregadas,
         "movimientos_recientes": movimientos_recientes,
         "patrimonios": patrimonios,
     })
@@ -159,6 +171,7 @@ def articulo_entrega(request):
             try:
                 with transaction.atomic():
                     item = item_de_articulo(articulo)
+                    lock_item_para_egreso(item)
                     verificar_stock_suficiente(item, cantidad)
 
                     mov = Movimiento.objects.create(
@@ -166,13 +179,10 @@ def articulo_entrega(request):
                         fecha=fecha,
                         servicio=servicio,
                         observaciones=observaciones.strip(),
+                        creado_por=request.user,
                     )
 
-                    MovimientoDetalle.objects.create(
-                        movimiento=mov,
-                        item=item,
-                        cantidad=cantidad,
-                    )
+                    crear_detalle_egreso(mov, item, cantidad)
 
                     # La entrega de una unidad puntual es, en la práctica, su
                     # asignación actual: queda registrada la misma forma que se

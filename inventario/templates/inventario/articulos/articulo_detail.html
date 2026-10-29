@@ -11,6 +11,7 @@
       <h1 class="page-title" style="margin:0">{{ articulo.nombre }}</h1>
       {% if articulo.activo %}<span class="chip ok">Activo</span>{% else %}<span class="chip">Inactivo</span>{% endif %}
       {% if articulo.es_patrimonial %}<span class="chip warn">Patrimonial</span>{% endif %}
+      {% if es_combo %}<span class="chip">Combo</span>{% endif %}
     </div>
     {% if articulo.marca %}<div class="page-subtitle muted">{{ articulo.marca }}</div>{% endif %}
   </div>
@@ -30,11 +31,46 @@
 
 {% if not articulo.es_patrimonial %}
 <div class="stats-row" style="margin-bottom:16px">
-  <div class="stat-card" style="{% if stock < 0 %}border-left:3px solid var(--danger){% endif %}">
-    <div class="stat-value" style="{% if stock < 0 %}color:var(--danger){% endif %}">{{ stock }}</div>
-    <div class="stat-label">Stock actual</div>
-    {% if stock < 0 %}<div class="chip danger" style="margin-top:6px">Dato histórico inconsistente</div>{% endif %}
+  <div class="stat-card" style="{% if stock < 0 and not es_combo %}border-left:3px solid var(--danger){% endif %}">
+    <div class="stat-value" style="{% if stock < 0 and not es_combo %}color:var(--danger){% endif %}">
+      {% if es_combo %}{{ unidades_entregadas }}{% else %}{{ stock }}{% endif %}
+    </div>
+    <div class="stat-label">{% if es_combo %}Unidades entregadas{% else %}Stock actual{% endif %}</div>
+    {% if stock < 0 and not es_combo %}<div class="chip danger" style="margin-top:6px">Dato histórico inconsistente</div>{% endif %}
   </div>
+  {% if es_combo %}
+  <div class="stat-card">
+    <div class="stat-value">{{ stock_armable }}</div>
+    <div class="stat-label">Se pueden armar hoy</div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if es_combo %}
+<div class="card" style="margin-bottom:14px">
+  <div class="card-header">
+    <span class="card-label">Componentes del combo</span>
+  </div>
+  {% if componentes %}
+    <div class="table-wrapper table-wrapper--flush">
+      <table>
+        <thead><tr><th>Ítem</th><th style="width:140px">Cantidad por combo</th></tr></thead>
+        <tbody>
+          {% for c in componentes %}
+            <tr>
+              <td>{{ c.item_hijo }}</td>
+              <td class="mono">{{ c.cantidad }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted" style="padding:16px 0 4px">
+      Sin componentes cargados todavía — agregalos desde el panel de administración.
+    </p>
+  {% endif %}
 </div>
 {% endif %}
 

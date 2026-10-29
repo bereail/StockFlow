@@ -1,13 +1,18 @@
+import os
+import tempfile
+import threading
 from unittest.mock import patch
 
-from django.test import TestCase, Client
+from django.core.management import call_command
+from django.db import connections, transaction
+from django.test import TestCase, TransactionTestCase, Client
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
 from inventario.models import (
-    Toner, Articulo, ActivoPC, Impresora, Servicio,
+    Toner, Articulo, ActivoPC, Impresora, Servicio, ItemComponente,
     Movimiento, MovimientoDetalle,
     AsignacionImpresora, Nota, Pendiente, Reparacion,
     Prestamo, PrestamoDetalle, Pedido, PedidoDetalle, PatrimonioUnidad, Intercambio,
@@ -16,6 +21,7 @@ from inventario.services.servicios import historial_de_servicio
 from inventario.services.listados import ordenar
 from inventario.services.stock import (
     stock_de_item, hay_stock_suficiente, verificar_stock_suficiente, toners_con_stock_critico,
+    lock_item_para_egreso, stock_armable_de_combo, crear_detalle_egreso,
 )
 from inventario.services.items import (
     item_de_toner, item_de_articulo, item_de_pc, item_de_impresora,
@@ -108,6 +114,212 @@ class StockServiceTest(TestCase):
         self._mov("EGRESO", 3)
         self._mov("INGRESO", 10)
         self.assertEqual(stock_de_item(self.item.id), 22)
+
+
+# ============================================================
+# STOCK — CONCURRENCIA (TEST-03 / STK-02)
+# ============================================================
+
+class StockConcurrenciaTest(TransactionTestCase):
+    """
+    Dos egresos concurrentes del mismo item, con stock para uno solo, no
+    deben poder sobregirar el stock (ver STK-02 en la auditoría de
+    2026-10-23: antes de `lock_item_para_egreso()`, dos requests podían leer
+    "hay stock suficiente" cada uno por separado antes de que cualquiera
+    llegara a escribir).
+
+    Corre contra un archivo sqlite temporal real en vez del `:memory:` que
+    usa el resto de la suite: con sqlite en memoria, cada conexión (cada
+    thread tiene la suya) ve una base completamente separada y vacía, así
+    que la concurrencia real nunca se pondría a prueba. Se restaura la base
+    en memoria original al terminar — ningún otro test depende de datos
+    creados por este, cada uno arma los propios.
+    """
+    databases = {"default"}
+
+    @classmethod
+    def setUpClass(cls):
+        fd, cls._tmp_path = tempfile.mkstemp(suffix=".sqlite3")
+        os.close(fd)
+        cls._orig_name = connections["default"].settings_dict["NAME"]
+        cls.addClassCleanup(cls._restaurar_db_en_memoria)
+        connections["default"].settings_dict["NAME"] = cls._tmp_path
+        connections["default"].close()
+        call_command("migrate", run_syncdb=True, verbosity=0)
+        super().setUpClass()
+
+    @classmethod
+    def _restaurar_db_en_memoria(cls):
+        connections["default"].close()
+        connections["default"].settings_dict["NAME"] = cls._orig_name
+        connections["default"].close()
+        call_command("migrate", run_syncdb=True, verbosity=0)
+        try:
+            os.remove(cls._tmp_path)
+        except OSError:
+            pass
+
+    def test_dos_egresos_concurrentes_no_sobregiran_stock(self):
+        servicio = Servicio.objects.create(nombre="Guardia")
+        toner = Toner.objects.create(nombre="Test concurrencia", marca="X")
+        item = item_de_toner(toner)
+        ingreso = Movimiento.objects.create(tipo="INGRESO")
+        MovimientoDetalle.objects.create(movimiento=ingreso, item=item, cantidad=5)
+
+        resultados = []
+
+        def egresar():
+            try:
+                with transaction.atomic():
+                    lock_item_para_egreso(item)
+                    verificar_stock_suficiente(item, 5)
+                    mov = Movimiento.objects.create(tipo="EGRESO", servicio=servicio)
+                    MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=5)
+                resultados.append("ok")
+            except ValidationError:
+                resultados.append("rechazado")
+            finally:
+                connections.close_all()
+
+        hilos = [threading.Thread(target=egresar) for _ in range(2)]
+        for h in hilos:
+            h.start()
+        for h in hilos:
+            h.join()
+
+        self.assertEqual(sorted(resultados), ["ok", "rechazado"])
+        self.assertEqual(stock_de_item(item.pk), 0)
+
+
+# ============================================================
+# STOCK — COMBOS (STK-04)
+# ============================================================
+
+class StockComboTest(TestCase):
+    def setUp(self):
+        self.servicio = Servicio.objects.create(nombre="Terapia")
+
+        self.combo_articulo = Articulo.objects.create(nombre="Kit de instalación")
+        self.combo_item = item_de_articulo(self.combo_articulo)
+        self.combo_item.es_combo = True
+        self.combo_item.save(update_fields=["es_combo"])
+
+        self.toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        self.toner_item = item_de_toner(self.toner)
+
+        self.cable = Articulo.objects.create(nombre="Cable de red")
+        self.cable_item = item_de_articulo(self.cable)
+
+        ItemComponente.objects.create(item_padre=self.combo_item, item_hijo=self.toner_item, cantidad=1)
+        ItemComponente.objects.create(item_padre=self.combo_item, item_hijo=self.cable_item, cantidad=2)
+
+    def _ingreso(self, item, cantidad):
+        mov = Movimiento.objects.create(tipo="INGRESO")
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=cantidad)
+
+    def test_combo_sin_componentes_no_se_puede_armar(self):
+        item = item_de_articulo(Articulo.objects.create(nombre="Combo vacío"))
+        item.es_combo = True
+        item.save(update_fields=["es_combo"])
+        self.assertEqual(stock_armable_de_combo(item), 0)
+
+    def test_armable_es_el_minimo_entre_componentes(self):
+        self._ingreso(self.toner_item, 5)
+        self._ingreso(self.cable_item, 6)  # alcanza para 3 combos (6 // 2)
+        self.assertEqual(stock_armable_de_combo(self.combo_item), 3)
+
+    def test_armable_nunca_negativo_aunque_un_componente_tenga_stock_negativo(self):
+        self._ingreso(self.toner_item, 5)
+        self._ingreso(self.cable_item, 1)
+        MovimientoDetalle.objects.create(
+            movimiento=Movimiento.objects.create(tipo="EGRESO"), item=self.cable_item, cantidad=5,
+        )  # cable queda en -4, dato histórico, no se "corrige"
+        self.assertEqual(stock_armable_de_combo(self.combo_item), 0)
+
+    def test_verificar_stock_combo_ok_no_lanza(self):
+        self._ingreso(self.toner_item, 5)
+        self._ingreso(self.cable_item, 10)
+        verificar_stock_suficiente(self.combo_item, 3)  # no debe lanzar
+
+    def test_verificar_stock_combo_insuficiente_lanza(self):
+        self._ingreso(self.toner_item, 1)
+        self._ingreso(self.cable_item, 10)
+        with self.assertRaises(ValidationError):
+            verificar_stock_suficiente(self.combo_item, 2)  # solo hay 1 toner
+
+    def test_verificar_stock_combo_sin_componentes_lanza(self):
+        item = item_de_articulo(Articulo.objects.create(nombre="Combo vacío 2"))
+        item.es_combo = True
+        item.save(update_fields=["es_combo"])
+        with self.assertRaises(ValidationError):
+            verificar_stock_suficiente(item, 1)
+
+    def test_egreso_de_combo_descuenta_cada_componente(self):
+        self._ingreso(self.toner_item, 5)
+        self._ingreso(self.cable_item, 10)
+
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        crear_detalle_egreso(mov, self.combo_item, 2)
+
+        self.assertEqual(stock_de_item(self.toner_item.pk), 3)   # 5 - 2*1
+        self.assertEqual(stock_de_item(self.cable_item.pk), 6)   # 10 - 2*2
+        # El combo en sí también queda registrado en su propio historial.
+        self.assertEqual(
+            MovimientoDetalle.objects.filter(movimiento=mov, item=self.combo_item).count(), 1
+        )
+
+    def test_anular_movimiento_de_combo_restaura_stock_de_componentes(self):
+        self._ingreso(self.toner_item, 5)
+        self._ingreso(self.cable_item, 10)
+
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        crear_detalle_egreso(mov, self.combo_item, 2)
+        mov.anulado = True
+        mov.save(update_fields=["anulado"])
+
+        self.assertEqual(stock_de_item(self.toner_item.pk), 5)
+        self.assertEqual(stock_de_item(self.cable_item.pk), 10)
+
+    def test_item_sin_combo_no_se_ve_afectado_por_logica_de_combo(self):
+        self._ingreso(self.toner_item, 5)
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        crear_detalle_egreso(mov, self.toner_item, 2)
+        self.assertEqual(stock_de_item(self.toner_item.pk), 3)
+        self.assertEqual(MovimientoDetalle.objects.filter(movimiento=mov).count(), 1)
+
+
+class StockComboEntregaViewTest(TestCase):
+    """Prueba de verificación de STK-04 de punta a punta: entregar un combo
+    desde la vista real descuenta el stock de cada componente."""
+
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin", "admin@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+        self.servicio = Servicio.objects.create(nombre="Terapia")
+        self.combo_articulo = Articulo.objects.create(nombre="Kit de instalación")
+        combo_item = item_de_articulo(self.combo_articulo)
+        combo_item.es_combo = True
+        combo_item.save(update_fields=["es_combo"])
+
+        self.toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        toner_item = item_de_toner(self.toner)
+        mov = Movimiento.objects.create(tipo="INGRESO")
+        MovimientoDetalle.objects.create(movimiento=mov, item=toner_item, cantidad=5)
+
+        ItemComponente.objects.create(item_padre=combo_item, item_hijo=toner_item, cantidad=1)
+        self.toner_item = toner_item
+
+    def test_entrega_de_combo_via_vista_descuenta_componente(self):
+        r = self.client.post("/articulos/entrega/", {
+            "servicio": self.servicio.pk,
+            "articulo": self.combo_articulo.pk,
+            "cantidad": 2,
+        })
+        self.assertRedirects(r, "/articulos/")
+        self.assertEqual(stock_de_item(self.toner_item.pk), 3)
 
 
 # ============================================================
@@ -321,7 +533,10 @@ class ViewsSmokeTest(TestCase):
         self._get_ok("/toner/historial/")
 
     def test_toner_create_get(self):
-        self._get_ok("/toner/nuevo/")
+        r = self.client.get("/toner/nuevo/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Nuevo tóner")
+        self.assertContains(r, 'name="nombre"')
 
     def test_articulos_page(self):
         self._get_ok("/articulos/")
@@ -345,7 +560,11 @@ class ViewsSmokeTest(TestCase):
         self._get_ok("/movimientos/")
 
     def test_movimiento_create_get(self):
-        self._get_ok("/movimientos/nuevo/")
+        r = self.client.get("/movimientos/nuevo/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Nuevo Movimiento")
+        self.assertContains(r, 'name="tipo"')
+        self.assertContains(r, 'name="fecha"')
 
     def test_prestamos_list(self):
         self._get_ok("/prestamos/")
@@ -369,16 +588,40 @@ class ViewsSmokeTest(TestCase):
         self._get_ok("/reportes/")
 
     def test_reporte_toner_html(self):
-        self._get_ok("/reportes/toner.html")
+        servicio = Servicio.objects.create(nombre="Terapia")
+        toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="EGRESO", servicio=servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=3)
+
+        r = self.client.get("/reportes/toner.html")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "CE285A")
+        self.assertContains(r, "Subtotal — Terapia")
+        self.assertContains(r, '<div class="sum-val">3</div>')
 
     def test_reporte_pcs_html(self):
-        self._get_ok("/reportes/pcs.html")
+        r = self.client.get("/reportes/pcs.html")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Equipos y patrimonios")
+        self.assertContains(r, "Sin patrimonios registrados.")
 
     def test_reporte_pedidos_html(self):
         self._get_ok("/reportes/pedidos.html")
 
     def test_reporte_movimientos_html(self):
-        self._get_ok("/reportes/movimientos.html")
+        servicio = Servicio.objects.create(nombre="Guardia")
+        toner = Toner.objects.create(nombre="CF283A", marca="HP")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=servicio, observaciones="Compra anual")
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=10)
+
+        r = self.client.get("/reportes/movimientos.html")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "CF283A")
+        self.assertContains(r, "Guardia")
+        self.assertContains(r, "Compra anual")
+        self.assertContains(r, "Total: 1 movimientos")
 
     def test_pcs_reporte_csv(self):
         self._get_ok("/reportes/pcs.csv")
@@ -1556,7 +1799,7 @@ class AsignarImpresoraAServicioTest(TestCase):
 
 
 # ============================================================
-# PEDIDO: FECHAS AUTOMÁTICAS POR ESTADO (API-01)
+# PEDIDO: FECHAS DE AUDITORÍA CONSISTENTES SIN IMPORTAR EL CAMINO
 # ============================================================
 
 class PedidoEstadoFechaTest(TestCase):
