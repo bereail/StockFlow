@@ -1,9 +1,9 @@
 import csv
 import io
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch, Sum
+from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -235,9 +235,23 @@ def _parse_mes(mes_str: str):
 
 
 def _periodo_now(mes_str: str):
-    periodo = mes_str or "Todos los períodos"
+    periodo = mes_str or "Últimos 12 meses"
     now = timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")
     return periodo, now
+
+
+def _filtro_rango_reporte(year, month, campo: str) -> Q:
+    """
+    Filtro de fecha para los reportes de actividad (toner, movimientos,
+    pedidos): si se eligió un mes puntual, filtra ese mes; si no, limita
+    por default a los últimos 12 meses en vez de recorrer todo el
+    historial sin límite (PERF-02) — evita que el reporte sin filtro
+    escale con años de datos acumulados.
+    """
+    if year and month:
+        return Q(**{f"{campo}__year": year, f"{campo}__month": month})
+    desde = timezone.now() - timedelta(days=365)
+    return Q(**{f"{campo}__gte": desde})
 
 
 def _html_report_response(body: str, prefix: str, mes_str: str) -> HttpResponse:
@@ -292,10 +306,9 @@ def reporte_toner_html(request):
         MovimientoDetalle.objects
         .select_related("movimiento__servicio", "item__toner")
         .filter(movimiento__tipo="EGRESO", item__tipo="TONER", movimiento__anulado=False)
+        .filter(_filtro_rango_reporte(year, month, "movimiento__fecha"))
         .order_by("movimiento__servicio__nombre", "-movimiento__fecha")
     )
-    if year and month:
-        qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
 
     # Agrupar por servicio
     grupos: dict = OrderedDict()
@@ -362,10 +375,9 @@ def reporte_toner_excel(request):
         MovimientoDetalle.objects
         .select_related("movimiento__servicio", "item__toner")
         .filter(movimiento__tipo="EGRESO", item__tipo="TONER", movimiento__anulado=False)
+        .filter(_filtro_rango_reporte(year, month, "movimiento__fecha"))
         .order_by("movimiento__servicio__nombre", "-movimiento__fecha")
     )
-    if year and month:
-        qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
 
     filas = [
         (
@@ -488,9 +500,13 @@ def reporte_pedidos_html(request):
     servicio_id = (request.GET.get("servicio") or "").strip()
     year, month = _parse_mes(mes_str)
 
-    qs = Pedido.objects.prefetch_related("servicios").select_related("proveedor").order_by("-creado")
-    if year and month:
-        qs = qs.filter(creado__year=year, creado__month=month)
+    qs = (
+        Pedido.objects
+        .filter(_filtro_rango_reporte(year, month, "creado"))
+        .prefetch_related("servicios")
+        .select_related("proveedor")
+        .order_by("-creado")
+    )
     if estado:
         qs = qs.filter(estado=estado)
     if servicio_id:
@@ -543,9 +559,13 @@ def reporte_pedidos_excel(request):
     servicio_id = (request.GET.get("servicio") or "").strip()
     year, month = _parse_mes(mes_str)
 
-    qs = Pedido.objects.prefetch_related("servicios").select_related("proveedor").order_by("-creado")
-    if year and month:
-        qs = qs.filter(creado__year=year, creado__month=month)
+    qs = (
+        Pedido.objects
+        .filter(_filtro_rango_reporte(year, month, "creado"))
+        .prefetch_related("servicios")
+        .select_related("proveedor")
+        .order_by("-creado")
+    )
     if estado:
         qs = qs.filter(estado=estado)
     if servicio_id:
@@ -585,10 +605,9 @@ def reporte_movimientos_html(request):
             "item", "item__toner", "item__articulo",
             "item__activo_pc", "item__impresora",
         )
+        .filter(_filtro_rango_reporte(year, month, "movimiento__fecha"))
         .order_by("-movimiento__fecha")
     )
-    if year and month:
-        qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
     if servicio_id:
         qs = qs.filter(movimiento__servicio_id=servicio_id)
 
@@ -633,10 +652,9 @@ def reporte_movimientos_excel(request):
             "item", "item__toner", "item__articulo",
             "item__activo_pc", "item__impresora",
         )
+        .filter(_filtro_rango_reporte(year, month, "movimiento__fecha"))
         .order_by("-movimiento__fecha")
     )
-    if year and month:
-        qs = qs.filter(movimiento__fecha__year=year, movimiento__fecha__month=month)
     if servicio_id:
         qs = qs.filter(movimiento__servicio_id=servicio_id)
 
