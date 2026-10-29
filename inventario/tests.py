@@ -1553,3 +1553,405 @@ class AsignarImpresoraAServicioTest(TestCase):
 
         self.assertIsNone(self.impresora.servicio_actual)
         self.assertEqual(AsignacionImpresora.objects.filter(fecha_hasta__isnull=True).count(), 0)
+
+
+# ============================================================
+# PEDIDO: FECHAS AUTOMÁTICAS POR ESTADO (API-01)
+# ============================================================
+
+class PedidoEstadoFechaTest(TestCase):
+    """
+    Antes, las fechas (fecha_aprobado/recibido/entregado) solo se
+    completaban en la vista "Avanzar". Editar el estado desde el
+    formulario normal dejaba el pedido en ese estado sin su fecha. Ahora
+    la lógica vive en Pedido.save(), así que aplica sin importar el
+    camino de entrada.
+    """
+
+    def setUp(self):
+        self.pedido = Pedido.objects.create(numero="PED-2026-0001", estado="HECHO")
+
+    def test_pasar_a_aprobado_completa_fecha_aprobado(self):
+        self.pedido.estado = "APROBADO"
+        self.pedido.save()
+        self.pedido.refresh_from_db()
+        self.assertIsNotNone(self.pedido.fecha_aprobado)
+
+    def test_pasar_a_recibido_completa_fecha_recibido(self):
+        self.pedido.estado = "RECIBIDO"
+        self.pedido.save()
+        self.pedido.refresh_from_db()
+        self.assertIsNotNone(self.pedido.fecha_recibido)
+
+    def test_pasar_a_entregado_completa_fecha_entregado(self):
+        self.pedido.estado = "ENTREGADO"
+        self.pedido.save()
+        self.pedido.refresh_from_db()
+        self.assertIsNotNone(self.pedido.fecha_entregado)
+
+    def test_no_pisa_una_fecha_ya_cargada(self):
+        from datetime import date
+        vieja = date(2020, 1, 1)
+        self.pedido.fecha_aprobado = vieja
+        self.pedido.estado = "APROBADO"
+        self.pedido.save()
+        self.pedido.refresh_from_db()
+        self.assertEqual(self.pedido.fecha_aprobado, vieja)
+
+    def test_avanzar_via_la_vista_sigue_completando_la_fecha(self):
+        User = get_user_model()
+        user = User.objects.create_superuser("pedadmin", "ped@test.com", "pw1234")
+        self.client.force_login(user)
+
+        r = self.client.post(f"/pedidos/{self.pedido.pk}/avanzar/")
+        self.assertEqual(r.status_code, 302)
+        self.pedido.refresh_from_db()
+        self.assertEqual(self.pedido.estado, "APROBADO")
+        self.assertIsNotNone(self.pedido.fecha_aprobado)
+
+    def test_editar_estado_desde_el_form_normal_tambien_completa_la_fecha(self):
+        """
+        Caso que antes fallaba (API-01): cambiar el estado desde el
+        formulario de edición común, no desde "Avanzar".
+        """
+        User = get_user_model()
+        user = User.objects.create_superuser("pedadmin2", "ped2@test.com", "pw1234")
+        self.client.force_login(user)
+        servicio = Servicio.objects.create(nombre="Quirófano")
+
+        self.assertIsNone(self.pedido.fecha_entregado)
+        r = self.client.post(f"/pedidos/{self.pedido.pk}/editar/", {
+            "numero": self.pedido.numero,
+            "servicios": [servicio.pk],
+            "proveedor": "",
+            "nota": "",
+            "para_que": "",
+            "observaciones": "",
+            "estado": "ENTREGADO",
+            "fecha_aprobado": "",
+            "fecha_recibido": "",
+            "fecha_entregado": "",
+            "pedidos_relacionados": [],
+            "detalles-TOTAL_FORMS": "0",
+            "detalles-INITIAL_FORMS": "0",
+            "detalles-MIN_NUM_FORMS": "0",
+            "detalles-MAX_NUM_FORMS": "1000",
+        })
+        self.assertEqual(r.status_code, 302)
+        self.pedido.refresh_from_db()
+        self.assertEqual(self.pedido.estado, "ENTREGADO")
+        self.assertIsNotNone(self.pedido.fecha_entregado)
+
+
+# ============================================================
+# MOVIMIENTODETALLE: CANTIDAD SIEMPRE POSITIVA (constraint de DB)
+# ============================================================
+
+class MovimientoDetalleConstraintTest(TestCase):
+    """
+    cantidad=0 nunca tiene sentido en ningún tipo de movimiento (no hace
+    nada), así que eso sí está bloqueado a nivel de base. cantidad
+    negativa SIGUE permitida: en un AJUSTE es un delta con signo (ver
+    StockServiceTest.test_ajuste_resta) — no se puede garantizar "siempre
+    positiva" sin romper esa funcionalidad real y ya probada.
+    """
+
+    def setUp(self):
+        self.servicio = Servicio.objects.create(nombre="Pediatría")
+        self.toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        self.item = item_de_toner(self.toner)
+        self.movimiento = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+
+    def test_cantidad_cero_directo_por_orm_falla(self):
+        with self.assertRaises(IntegrityError):
+            MovimientoDetalle.objects.create(movimiento=self.movimiento, item=self.item, cantidad=0)
+
+    def test_cantidad_positiva_sigue_funcionando(self):
+        detalle = MovimientoDetalle.objects.create(movimiento=self.movimiento, item=self.item, cantidad=3)
+        self.assertEqual(detalle.cantidad, 3)
+
+    def test_cantidad_negativa_sigue_permitida_para_ajuste(self):
+        ajuste = Movimiento.objects.create(tipo="AJUSTE", servicio=self.servicio)
+        detalle = MovimientoDetalle.objects.create(movimiento=ajuste, item=self.item, cantidad=-3)
+        self.assertEqual(detalle.cantidad, -3)
+
+
+# ============================================================
+# MOVIMIENTO: TRAZABILIDAD DE USUARIO
+# ============================================================
+
+class MovimientoTrazabilidadTest(TestCase):
+    """
+    Todo movimiento de stock (y su anulación) debe quedar asociado a quién
+    lo hizo — antes no había ningún campo de usuario en Movimiento.
+    """
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_superuser("trazaadmin", "traza@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Pediatría")
+
+    def test_movimiento_create_registra_quien_lo_creo(self):
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item_de_toner(toner), cantidad=5)
+
+        r = self.client.post("/movimientos/nuevo/", {
+            "tipo": "EGRESO",
+            "servicio": self.servicio.pk,
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+            "toner-TOTAL_FORMS": "1",
+            "toner-INITIAL_FORMS": "0",
+            "toner-MIN_NUM_FORMS": "0",
+            "toner-MAX_NUM_FORMS": "1000",
+            "toner-0-toner": str(toner.pk),
+            "toner-0-cantidad": "2",
+            "art-TOTAL_FORMS": "0",
+            "art-INITIAL_FORMS": "0",
+            "art-MIN_NUM_FORMS": "0",
+            "art-MAX_NUM_FORMS": "1000",
+        })
+        self.assertEqual(r.status_code, 302)
+        egreso = Movimiento.objects.get(tipo="EGRESO")
+        self.assertEqual(egreso.creado_por, self.user)
+
+    def test_entrega_rapida_toner_registra_quien_la_hizo(self):
+        toner = Toner.objects.create(nombre="TK-1110", marca="Kyocera")
+        item = item_de_toner(toner)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=5)
+
+        r = self.client.post("/toner/entrega/", {
+            "servicio": self.servicio.pk,
+            "toner": toner.pk,
+            "cantidad": 2,
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+        })
+        self.assertEqual(r.status_code, 302)
+        egreso = Movimiento.objects.get(tipo="EGRESO")
+        self.assertEqual(egreso.creado_por, self.user)
+
+    def test_entrega_rapida_articulo_registra_quien_la_hizo(self):
+        articulo = Articulo.objects.create(nombre="Mouse óptico")
+        item = item_de_articulo(articulo)
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov, item=item, cantidad=5)
+
+        r = self.client.post("/articulos/entrega/", {
+            "servicio": self.servicio.pk,
+            "articulo": articulo.pk,
+            "cantidad": 1,
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+        })
+        self.assertEqual(r.status_code, 302)
+        egreso = Movimiento.objects.get(tipo="EGRESO")
+        self.assertEqual(egreso.creado_por, self.user)
+
+    def test_anular_movimiento_registra_quien_y_cuando(self):
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+        self.assertIsNone(mov.anulado_por)
+        self.assertIsNone(mov.fecha_anulado)
+
+        r = self.client.post(f"/movimientos/{mov.pk}/anular/")
+        self.assertEqual(r.status_code, 302)
+
+        mov.refresh_from_db()
+        self.assertTrue(mov.anulado)
+        self.assertEqual(mov.anulado_por, self.user)
+        self.assertIsNotNone(mov.fecha_anulado)
+
+    def test_anular_movimiento_ya_anulado_no_pisa_quien_lo_anulo(self):
+        User = get_user_model()
+        otro = User.objects.create_superuser("otroadmin", "otro@test.com", "pw1234")
+        mov = Movimiento.objects.create(tipo="INGRESO", servicio=self.servicio)
+
+        self.client.post(f"/movimientos/{mov.pk}/anular/")
+        mov.refresh_from_db()
+        primer_anulador = mov.anulado_por
+
+        self.client.force_login(otro)
+        self.client.post(f"/movimientos/{mov.pk}/anular/")
+        mov.refresh_from_db()
+        self.assertEqual(mov.anulado_por, primer_anulador)
+
+
+# ============================================================
+# ADMIN: PERMISOS (gestión de usuarios y roles)
+# ============================================================
+
+class AdminPermisosTest(TestCase):
+    """
+    Cubre el único punto de escalamiento de privilegios del sistema: las
+    vistas de inventario/views/admin.py, protegidas con @login_required +
+    @solo_superadmin (is_superuser). No prueba el caso "anónimo" porque,
+    con AutoLoginMiddleware activo, no existe un request realmente anónimo
+    en esta app — eso ya está documentado como hallazgo de seguridad
+    aparte (ver docs/auditoria).
+    """
+
+    def setUp(self):
+        User = get_user_model()
+        self.superadmin = User.objects.create_superuser("super1", "super1@test.com", "pw1234")
+        self.comun = User.objects.create_user("comun1", "comun1@test.com", "pw1234")
+        self.otro = User.objects.create_user("otro1", "otro1@test.com", "pw1234")
+
+    def _rutas_protegidas(self):
+        return [
+            ("get", "/gestion/"),
+            ("get", "/gestion/usuarios/"),
+            ("get", "/gestion/usuarios/nuevo/"),
+            ("get", f"/gestion/usuarios/{self.otro.pk}/editar/"),
+            ("post", f"/gestion/usuarios/{self.otro.pk}/toggle/"),
+            ("post", f"/gestion/usuarios/{self.otro.pk}/eliminar/"),
+            ("get", "/gestion/roles/"),
+            ("get", "/gestion/roles/nuevo/"),
+        ]
+
+    def test_usuario_no_superadmin_es_rechazado_en_todas_las_rutas(self):
+        self.client.force_login(self.comun)
+        for metodo, url in self._rutas_protegidas():
+            with self.subTest(url=url):
+                resp = self.client.get(url) if metodo == "get" else self.client.post(url)
+                self.assertEqual(resp.status_code, 302)
+                self.assertIn("/accounts/login/", resp.url)
+
+        # Confirma que el rechazo es real: nada de lo que debería bloquearse pasó.
+        self.otro.refresh_from_db()
+        self.assertTrue(self.otro.is_active)
+        User = get_user_model()
+        self.assertTrue(User.objects.filter(pk=self.otro.pk).exists())
+
+    def test_superadmin_puede_listar_usuarios_y_roles(self):
+        self.client.force_login(self.superadmin)
+        self.assertEqual(self.client.get("/gestion/usuarios/").status_code, 200)
+        self.assertEqual(self.client.get("/gestion/roles/").status_code, 200)
+
+    def test_superadmin_puede_crear_usuario(self):
+        self.client.force_login(self.superadmin)
+        User = get_user_model()
+        resp = self.client.post("/gestion/usuarios/nuevo/", {
+            "username": "nuevo1",
+            "first_name": "", "last_name": "", "email": "",
+            "is_active": "on",
+            "groups": [],
+            "password1": "contrasenia123",
+            "password2": "contrasenia123",
+        })
+        self.assertRedirects(resp, "/gestion/usuarios/")
+        self.assertTrue(User.objects.filter(username="nuevo1").exists())
+
+    def test_superadmin_puede_activar_y_desactivar_usuario(self):
+        self.client.force_login(self.superadmin)
+        self.assertTrue(self.otro.is_active)
+        self.client.post(f"/gestion/usuarios/{self.otro.pk}/toggle/")
+        self.otro.refresh_from_db()
+        self.assertFalse(self.otro.is_active)
+
+    def test_superadmin_no_puede_desactivarse_a_si_mismo(self):
+        self.client.force_login(self.superadmin)
+        self.client.post(f"/gestion/usuarios/{self.superadmin.pk}/toggle/")
+        self.superadmin.refresh_from_db()
+        self.assertTrue(self.superadmin.is_active)
+
+    def test_superadmin_puede_eliminar_usuario(self):
+        self.client.force_login(self.superadmin)
+        User = get_user_model()
+        self.client.post(f"/gestion/usuarios/{self.otro.pk}/eliminar/")
+        self.assertFalse(User.objects.filter(pk=self.otro.pk).exists())
+
+    def test_superadmin_no_puede_eliminarse_a_si_mismo(self):
+        self.client.force_login(self.superadmin)
+        User = get_user_model()
+        self.client.post(f"/gestion/usuarios/{self.superadmin.pk}/eliminar/")
+        self.assertTrue(User.objects.filter(pk=self.superadmin.pk).exists())
+
+    def test_superadmin_puede_crear_y_editar_rol(self):
+        from django.contrib.auth.models import Group
+
+        self.client.force_login(self.superadmin)
+        resp = self.client.post("/gestion/roles/nuevo/", {"name": "Operador"})
+        self.assertRedirects(resp, "/gestion/roles/")
+        rol = Group.objects.get(name="Operador")
+
+        resp = self.client.post(f"/gestion/roles/{rol.pk}/editar/", {"name": "Supervisor"})
+        self.assertRedirects(resp, "/gestion/roles/")
+        rol.refresh_from_db()
+        self.assertEqual(rol.name, "Supervisor")
+
+    def test_superadmin_puede_eliminar_rol(self):
+        from django.contrib.auth.models import Group
+        rol = Group.objects.create(name="Temporal")
+        self.client.force_login(self.superadmin)
+        self.client.post(f"/gestion/roles/{rol.pk}/eliminar/")
+        self.assertFalse(Group.objects.filter(pk=rol.pk).exists())
+
+
+# ============================================================
+# BACKUP DE LA BASE (lo usa desktop_app.py antes de migrar)
+# ============================================================
+
+class RespaldarSqliteTest(TestCase):
+    """
+    Corre contra bases SQLite de prueba en un directorio temporal, nunca
+    contra la base real de la app.
+    """
+
+    def _crear_db_sqlite(self, path):
+        import sqlite3
+        conn = sqlite3.connect(str(path))
+        conn.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+        conn.execute("INSERT INTO t (v) VALUES ('hola')")
+        conn.commit()
+        conn.close()
+
+    def test_sin_base_no_hace_nada(self):
+        import tempfile
+        from pathlib import Path
+        from inventario.services.backups import respaldar_sqlite
+
+        with tempfile.TemporaryDirectory() as tmp:
+            resultado = respaldar_sqlite(Path(tmp) / "no_existe.sqlite3", Path(tmp) / "backups")
+            self.assertIsNone(resultado)
+
+    def test_crea_un_backup_con_los_datos_de_la_base(self):
+        import sqlite3
+        import tempfile
+        from pathlib import Path
+        from inventario.services.backups import respaldar_sqlite
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "db.sqlite3"
+            self._crear_db_sqlite(db_path)
+            backups_dir = Path(tmp) / "backups"
+
+            destino = respaldar_sqlite(db_path, backups_dir)
+
+            self.assertIsNotNone(destino)
+            self.assertTrue(destino.exists())
+            conn = sqlite3.connect(str(destino))
+            fila = conn.execute("SELECT v FROM t").fetchone()
+            conn.close()
+            self.assertEqual(fila[0], "hola")
+
+    def test_rota_y_deja_solo_los_ultimos_N(self):
+        import os
+        import tempfile
+        from pathlib import Path
+        from inventario.services.backups import _rotar_backups
+
+        with tempfile.TemporaryDirectory() as tmp:
+            backups_dir = Path(tmp)
+            archivos = []
+            for i in range(5):
+                archivo = backups_dir / f"db_000{i}.sqlite3"
+                archivo.write_text("x")
+                os.utime(archivo, (1000 + i, 1000 + i))  # mtime creciente controlado
+                archivos.append(archivo)
+
+            _rotar_backups(backups_dir, mantener=3)
+
+            restantes = sorted(backups_dir.glob("db_*.sqlite3"))
+            self.assertEqual(len(restantes), 3)
+            # deben quedar los 3 más nuevos
+            self.assertEqual(set(restantes), set(archivos[-3:]))
