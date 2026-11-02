@@ -1,5 +1,3 @@
-from django.conf import settings
-
 MAS_URLS = {
     "prestamos_list", "prestamo_create", "prestamo_detail",
     "prestamo_edit", "prestamo_devolver",
@@ -13,6 +11,5 @@ MAS_URLS = {
 def global_settings(request):
     url_name = getattr(request.resolver_match, "url_name", "") or ""
     return {
-        "settings": settings,
         "nav_mas_activo": url_name in MAS_URLS,
     }
