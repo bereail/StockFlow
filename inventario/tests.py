@@ -1805,6 +1805,27 @@ class GenerarFichaDesdeArticuloTest(TestCase):
         self.assertEqual(pc.serie, "SN123")
         self.assertEqual(pc.servicio, self.servicio)
 
+    def test_genera_activo_pc_es_idempotente(self):
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="PC de escritorio", genera_ficha="ACTIVO_PC")
+        unidad = self._unidad(numero_patrimonio="PAT-600")
+        generar_ficha_desde_articulo(unidad, articulo)
+        generar_ficha_desde_articulo(unidad, articulo)
+        self.assertEqual(ActivoPC.objects.filter(patrimonio="PAT-600").count(), 1)
+
+    def test_genera_ficha_con_valor_desconocido_no_hace_nada(self):
+        # genera_ficha solo admite "", "IMPRESORA" o "ACTIVO_PC" por choices
+        # del formulario, pero el campo no tiene constraint a nivel de DB —
+        # un valor ajeno (dato legado, carga directa) no debe romper ni crear
+        # fichas de ningún tipo.
+        from inventario.services.patrimonios import generar_ficha_desde_articulo
+        articulo = Articulo.objects.create(nombre="Mouse")
+        articulo.genera_ficha = "OTRO_VALOR"
+        unidad = self._unidad(numero_patrimonio="PAT-700")
+        generar_ficha_desde_articulo(unidad, articulo)
+        self.assertFalse(Impresora.objects.exists())
+        self.assertFalse(ActivoPC.objects.exists())
+
 
 # ============================================================
 # asignar_impresora_a_servicio() — "única fuente de verdad" sin tests directos
