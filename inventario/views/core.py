@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from ..models import (
     Toner,
     Articulo,
@@ -41,6 +42,8 @@ def custom_login(request):
             else:
                 request.session.set_expiry(0)  # se cierra con el navegador
             next_url = request.POST.get("next") or request.GET.get("next") or "dashboard"
+            if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+                next_url = "dashboard"
             return redirect(next_url)
         error = True
     return render(request, "registration/login.html", {"error": error, "next": request.GET.get("next", "")})

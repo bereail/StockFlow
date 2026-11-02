@@ -989,6 +989,26 @@ class LoginRedirectTest(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("/accounts/login/", r["Location"])
 
+    def test_login_rechaza_next_a_otro_host(self):
+        User = get_user_model()
+        User.objects.create_user("usuario_login", password="pw1234")
+        r = self.client.post(
+            "/accounts/login/",
+            {"username": "usuario_login", "password": "pw1234", "next": "https://evil.example.com/robar"},
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r["Location"], "/")
+
+    def test_login_acepta_next_del_mismo_sitio(self):
+        User = get_user_model()
+        User.objects.create_user("usuario_login2", password="pw1234")
+        r = self.client.post(
+            "/accounts/login/",
+            {"username": "usuario_login2", "password": "pw1234", "next": "/toner/"},
+        )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r["Location"], "/toner/")
+
 
 # ============================================================
 # SERVICIO — vista de detalle (expediente completo)
