@@ -10,6 +10,7 @@
       <h1 class="view-title">Impresoras</h1>
     </div>
     <div class="page-actions">
+      <a class="btn btn-ghost" href="{% url 'impresoras_monitoreo' %}">📶 Monitoreo</a>
       <a class="btn btn-ghost" href="{% url 'impresora_historial' %}">Historial</a>
       <a class="btn btn-ghost" href="{% url 'impresora_entrega' %}">Registrar movimiento</a>
       <button class="btn btn-ghost" type="button" onclick="downloadCsv('{% url 'impresoras_exportar_excel' %}', 'impresoras_por_servicio.xlsx')" title="Descargar Excel de impresoras por servicio">Exportar</button>

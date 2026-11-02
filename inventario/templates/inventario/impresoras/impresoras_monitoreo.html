@@ -1,0 +1,139 @@
+{% extends "inventario/base.html" %}
+{% block title %}Monitoreo de red{% endblock %}
+{% block content %}
+
+<div class="view">
+
+  <div class="view-header">
+    <div>
+      <h1 class="view-title">Monitoreo de red</h1>
+      <div class="muted" style="font-size:.82rem;margin-top:2px">
+        Verifica automáticamente cada 30 segundos cuáles impresoras están respondiendo en la red.
+      </div>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn-ghost" href="{% url 'impresoras_page' %}">← Volver</a>
+      <button class="btn primary" type="button" id="net-refrescar">🔄 Verificar ahora</button>
+    </div>
+  </div>
+
+  {% if impresoras %}
+    <div class="stats-row" aria-live="polite">
+      <div class="stat-card">
+        <div class="stat-value">{{ impresoras|length }}</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="net-resumen-ok" style="color:var(--ok)">—</div>
+        <div class="stat-label">En línea</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="net-resumen-danger" style="color:var(--danger)">—</div>
+        <div class="stat-label">Sin respuesta</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="net-resumen-checking" style="color:var(--warn)">—</div>
+        <div class="stat-label">Verificando</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="net-ultima-verificacion" style="font-size:12.5px;font-weight:600">Verificando…</div>
+        <div class="stat-label">Última verificación</div>
+      </div>
+    </div>
+
+    <div class="net-grid">
+      {% for i in impresoras %}
+        <a class="net-card" href="{% url 'impresora_detail' i.pk %}"
+           data-net-card data-status="checking" data-ping-url="{% url 'impresora_ping' i.pk %}">
+          <span class="net-card-status" aria-hidden="true"></span>
+          <span class="net-card-body">
+            <strong>{{ i.marca }} {{ i.modelo }}</strong>
+            <span class="muted" style="display:block;font-size:.78rem;margin-top:2px">
+              {% if i.servicio_actual %}{{ i.servicio_actual.nombre }}{% else %}Sin servicio{% endif %}
+              · <span class="mono">{{ i.ip }}</span>
+            </span>
+            <span class="net-card-footer">
+              <span class="net-card-label" data-net-label>Verificando…</span>
+              <span class="muted" data-net-time></span>
+            </span>
+          </span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">No hay impresoras con IP cargada para monitorear.</div>
+  {% endif %}
+
+</div>
+
+<script>
+  (function () {
+    var cards = Array.prototype.slice.call(document.querySelectorAll('[data-net-card]'));
+    if (!cards.length) return;
+
+    var resumenOk = document.getElementById('net-resumen-ok');
+    var resumenDanger = document.getElementById('net-resumen-danger');
+    var resumenChecking = document.getElementById('net-resumen-checking');
+    var ultimaVerificacion = document.getElementById('net-ultima-verificacion');
+    var btnRefrescar = document.getElementById('net-refrescar');
+    var verificando = false;
+
+    function formatearHora(d) {
+      return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function actualizarResumen() {
+      var ok = 0, danger = 0, checking = 0;
+      cards.forEach(function (c) {
+        if (c.dataset.status === 'ok') ok++;
+        else if (c.dataset.status === 'danger') danger++;
+        else checking++;
+      });
+      if (resumenOk) resumenOk.textContent = ok;
+      if (resumenDanger) resumenDanger.textContent = danger;
+      if (resumenChecking) resumenChecking.textContent = checking;
+    }
+
+    function verificarImpresora(card) {
+      var label = card.querySelector('[data-net-label]');
+      var time = card.querySelector('[data-net-time]');
+      card.dataset.status = 'checking';
+      if (label) label.textContent = 'Verificando…';
+      actualizarResumen();
+
+      return fetch(card.dataset.pingUrl, { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var online = !!data.online;
+          card.dataset.status = online ? 'ok' : 'danger';
+          if (label) label.textContent = online ? '● En línea' : '● Sin respuesta';
+        })
+        .catch(function () {
+          card.dataset.status = 'danger';
+          if (label) label.textContent = '● Error al verificar';
+        })
+        .finally(function () {
+          if (time) time.textContent = formatearHora(new Date());
+          actualizarResumen();
+        });
+    }
+
+    function verificarTodas() {
+      if (verificando) return;
+      verificando = true;
+      if (btnRefrescar) btnRefrescar.disabled = true;
+      Promise.all(cards.map(verificarImpresora)).finally(function () {
+        verificando = false;
+        if (btnRefrescar) btnRefrescar.disabled = false;
+        if (ultimaVerificacion) ultimaVerificacion.textContent = formatearHora(new Date());
+      });
+    }
+
+    if (btnRefrescar) btnRefrescar.addEventListener('click', verificarTodas);
+
+    verificarTodas();
+    setInterval(verificarTodas, 30000);
+  })();
+</script>
+
+{% endblock %}

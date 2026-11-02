@@ -2520,6 +2520,45 @@ class ImpresorasPageFiltrosTest(TestCase):
         r = self.client.get("/impresoras/?q=Brother")
         self.assertEqual(r.context["page_obj"].paginator.count, 1)
 
+    def test_detecta_ips_duplicadas(self):
+        # Regresión: Impresora.ip es GenericIPAddressField y Django
+        # normaliza "" a NULL al guardarlo — un .exclude(ip__isnull=True)
+        # seguido de .exclude(ip="") encadenado terminaba comparando
+        # "ip = NULL" (ni verdadero ni falso en SQL) y descartaba TODAS las
+        # filas, dejando esta alerta siempre vacía pese a tener datos
+        # duplicados reales.
+        Impresora.objects.create(marca="HP", modelo="1102", conexion="IP", ip="10.0.0.5")
+        Impresora.objects.create(marca="Brother", modelo="HL-1212", conexion="IP", ip="10.0.0.5")
+        Impresora.objects.create(marca="Canon", modelo="MF3010", conexion="IP", ip="10.0.0.6")
+        r = self.client.get("/impresoras/")
+        self.assertEqual(r.context["ips_duplicadas"], {"10.0.0.5"})
+
+
+class ImpresorasMonitoreoViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin36", "a36@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_lista_solo_impresoras_con_ip(self):
+        Impresora.objects.create(marca="HP", modelo="1102", conexion="IP", ip="10.0.0.5")
+        Impresora.objects.create(marca="Brother", modelo="HL-1212", conexion="USB")
+        r = self.client.get("/impresoras/monitoreo/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "HP 1102")
+        self.assertNotContains(r, "Brother HL-1212")
+
+    def test_sin_impresoras_con_ip_muestra_empty_state(self):
+        Impresora.objects.create(marca="Brother", modelo="HL-1212", conexion="USB")
+        r = self.client.get("/impresoras/monitoreo/")
+        self.assertContains(r, "No hay impresoras con IP cargada")
+
+    def test_incluye_la_url_de_ping_de_cada_impresora(self):
+        imp = Impresora.objects.create(marca="HP", modelo="1102", conexion="IP", ip="10.0.0.5")
+        r = self.client.get("/impresoras/monitoreo/")
+        self.assertContains(r, f"/impresoras/{imp.pk}/ping/")
+
 
 class ImpresorasExportarExcelTest(TestCase):
     def setUp(self):

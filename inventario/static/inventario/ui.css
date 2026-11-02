@@ -609,6 +609,36 @@ select option:checked { background: rgba(var(--accent-rgb),.45); color: #fff; }
 .ping-status:empty { display: none; }
 
 /* =========================================================
+   10B) PANEL DE MONITOREO DE RED (impresoras)
+========================================================= */
+.net-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.net-card {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 14px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  text-decoration: none; color: inherit;
+  transition: border-color var(--t), background var(--t), transform var(--t);
+}
+.net-card:hover { background: var(--surface-hover); transform: translateY(-1px); }
+.net-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.net-card-status {
+  width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+  background: var(--muted);
+}
+.net-card-body { flex: 1; min-width: 0; }
+.net-card-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; }
+.net-card-label { font-weight: 700; color: var(--muted); }
+.net-card[data-status="ok"] { border-left-color: var(--ok); }
+.net-card[data-status="ok"] .net-card-status { background: var(--ok); }
+.net-card[data-status="ok"] .net-card-label { color: var(--ok); }
+.net-card[data-status="danger"] { border-left-color: var(--danger); }
+.net-card[data-status="danger"] .net-card-status { background: var(--danger); }
+.net-card[data-status="danger"] .net-card-label { color: var(--danger); }
+.net-card[data-status="checking"] .net-card-status { background: var(--warn); animation: ping-pulse 1s ease-in-out infinite; }
+.net-card[data-status="checking"] .net-card-label { color: var(--warn); }
+
+/* =========================================================
    11) EMPTY STATE
 ========================================================= */
 .empty-state { text-align: center; padding: 34px 16px; color: var(--muted); }

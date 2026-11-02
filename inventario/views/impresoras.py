@@ -73,9 +73,19 @@ def impresoras_page(request):
 
     # IPs repetidas entre impresoras: alerta visual (no bloquea nada,
     # hay datos reales preexistentes con IP duplicada — ver memoria del proyecto).
+    #
+    # OJO: alcanza con excluir ip__isnull=True. Impresora.ip es un
+    # GenericIPAddressField con blank=True: Django normaliza "" a NULL al
+    # guardar ese tipo de campo (nunca queda un string vacío real en la
+    # columna), así que un .exclude(ip="") encadenado termina comparando
+    # "ip = NULL" — en SQL eso no es nunca verdadero ni falso (es
+    # desconocido), y NOT(desconocido) también es desconocido, no TRUE. El
+    # AND de los dos exclude() terminaba descartando TODAS las filas,
+    # dejando ips_duplicadas siempre vacío pese a haber datos reales
+    # duplicados (encontrado al escribir el panel de monitoreo de red).
     ips_duplicadas = set(
         Impresora.objects
-        .exclude(ip__isnull=True).exclude(ip="")
+        .exclude(ip__isnull=True)
         .values("ip")
         .annotate(n=Count("id"))
         .filter(n__gt=1)
@@ -87,6 +97,30 @@ def impresoras_page(request):
         "estado": estado, "propiedad": propiedad, "sort_actual": sort_actual, "dir_actual": dir_actual,
         "ips_duplicadas": ips_duplicadas,
     })
+
+
+@login_required
+def impresoras_monitoreo(request):
+    """
+    Panel de red: todas las impresoras con IP cargada, para verificar de un
+    vistazo cuáles están respondiendo. El ping en sí lo dispara el navegador
+    (JS en el template), en paralelo y de forma periódica, contra el mismo
+    endpoint que ya usa el botón de ping individual — acá solo se arma la
+    lista de impresoras a chequear.
+    """
+    impresoras = (
+        Impresora.objects
+        .exclude(ip__isnull=True)
+        .select_related("toner", "articulo")
+        .prefetch_related(
+            Prefetch(
+                "asignaciones",
+                queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
+            )
+        )
+        .order_by("marca", "modelo")
+    )
+    return render(request, "inventario/impresoras/impresoras_monitoreo.html", {"impresoras": impresoras})
 
 
 @login_required
