@@ -169,6 +169,22 @@ class Impresora(models.Model):
 
     patrimonio = models.CharField(max_length=100, blank=True)
 
+    PROPIEDAD_CHOICES = (
+        ("PROPIA", "Propia"),
+        ("EXTERNA", "De una empresa externa"),
+    )
+    propiedad = models.CharField(
+        max_length=10,
+        choices=PROPIEDAD_CHOICES,
+        default="PROPIA",
+        verbose_name="Propiedad",
+    )
+    empresa_externa = models.CharField(
+        max_length=150, blank=True, default="",
+        verbose_name="Empresa externa",
+        help_text="Nombre de la empresa propietaria (solo si la propiedad es externa).",
+    )
+
     activo = models.BooleanField(default=True)
     estado = models.CharField(max_length=50, default="ACTIVA")
 
@@ -223,6 +239,9 @@ class Impresora(models.Model):
         return f"{self.marca} {self.modelo}"
 
     def clean(self):
+        if self.propiedad == "EXTERNA" and not self.empresa_externa:
+            raise ValidationError({"empresa_externa": "Si la impresora es de una empresa externa, indicá cuál."})
+
         if self.conexion == "IP" and not self.ip:
             raise ValidationError({"ip": "Si la conexión es por red (IP), debés cargar la IP."})
 

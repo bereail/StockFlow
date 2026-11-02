@@ -23,62 +23,103 @@
       </div>
     {% endif %}
 
-    {% if mode != "edit" %}
-      <div class="muted" style="font-size:.8rem;padding:8px 12px;margin-bottom:14px;border-radius:8px;background:rgba(79,140,255,.08);border:1px solid rgba(79,140,255,.25)">
-        ℹ Si ya tenés el modelo cargado como artículo patrimonial (ej: "Impresora Brother HL 1212"), elegilo abajo para no volver a tipear marca/modelo.
-      </div>
-    {% endif %}
-
     <div class="formgrid">
       <div class="form-subsection-title">🖨️ Identificación</div>
 
+      {% if mode == "edit" %}
       <div class="field col-12">
-        <label class="label" for="id_articulo">Artículo de catálogo (opcional)</label>        {{ form.articulo }}
+        <label class="label" for="id_articulo">Artículo de catálogo (opcional)</label> {{ form.articulo }}
         {% for e in form.articulo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_marca">Marca</label>        {{ form.marca }}
+        <label class="label" for="id_marca">Marca</label> {{ form.marca }}
         {% for e in form.marca.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_modelo">Modelo</label>        {{ form.modelo }}
+        <label class="label" for="id_modelo">Modelo</label> {{ form.modelo }}
         {% for e in form.modelo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_tipo">Tipo</label>        {{ form.tipo }}
+        <label class="label" for="id_tipo">Tipo</label> {{ form.tipo }}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_patrimonio">N° de patrimonio</label>        {{ form.patrimonio }}
+        <label class="label" for="id_patrimonio">N° de patrimonio</label> {{ form.patrimonio }}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_estado">Estado</label>        {{ form.estado }}
+        <label class="label" for="id_estado">Estado</label> {{ form.estado }}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_activo">Activa</label>        <div style="display:flex;align-items:center;min-height:34px">
+        <label class="label" for="id_activo">Activa</label>
+        <div style="display:flex;align-items:center;min-height:34px">
           {{ form.activo }}
         </div>
+      </div>
+      {% else %}
+      <div class="field col-8">
+        <label class="label" for="id_articulo">Modelo de impresora</label> {{ form.articulo }}
+        {% for e in form.articulo.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+        {% if form.articulo.field.queryset.exists %}
+          <div class="muted" style="font-size:.78rem;margin-top:4px">{{ form.articulo.help_text }}</div>
+        {% else %}
+          <div class="muted" style="font-size:.78rem;margin-top:4px">Todavía no hay ningún modelo cargado — creá el primero.</div>
+        {% endif %}
+      </div>
+      <div class="field col-4" style="display:flex;align-items:flex-end">
+        <a class="btn btn-ghost" style="width:100%" href="{% url 'modelo_impresora_create' %}?next={{ request.get_full_path|urlencode }}">+ Nuevo modelo</a>
+      </div>
+
+      <div class="field col-12" id="modelo-preview" style="display:none">
+        <span class="muted" style="font-size:.85rem">Marca/modelo: <strong id="modelo-preview-text"></strong></span>
+      </div>
+
+      <div class="field col-4">
+        <label class="label" for="id_tipo">Tipo</label> {{ form.tipo }}
+      </div>
+
+      <div class="field col-4">
+        <label class="label" for="id_patrimonio">N° de patrimonio</label> {{ form.patrimonio }}
+      </div>
+
+      <div class="field col-4">
+        <label class="label" for="id_servicio">Servicio</label> {{ form.servicio }}
+        {% for e in form.servicio.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="form-subsection-title">🏢 Propiedad</div>
+
+      <div class="field col-4">
+        <label class="label" for="id_propiedad">Propiedad</label>
+        {{ form.propiedad }}
+        {% for e in form.propiedad.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="field col-8" id="empresa-externa-field">
+        <label class="label" for="id_empresa_externa">Empresa externa</label>
+        {{ form.empresa_externa }}
+        {% for e in form.empresa_externa.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="form-subsection-title">🌐 Red (opcional)</div>
 
       <div class="field col-4">
-        <label class="label" for="id_conexion">Conexión</label>        {{ form.conexion }}
+        <label class="label" for="id_conexion">Conexión</label> {{ form.conexion }}
         {% for e in form.conexion.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_ip">Dirección IP</label>        {{ form.ip }}
+        <label class="label" for="id_ip">Dirección IP</label> {{ form.ip }}
         {% for e in form.ip.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
       <div class="field col-4">
-        <label class="label" for="id_puerta_enlace">Puerta de enlace</label>        {{ form.puerta_enlace }}
+        <label class="label" for="id_puerta_enlace">Puerta de enlace</label> {{ form.puerta_enlace }}
         {% for e in form.puerta_enlace.errors %}<div class="muted">{{ e }}</div>{% endfor %}
       </div>
 
@@ -139,18 +180,44 @@
     var select = document.getElementById('id_articulo');
     var marca  = document.getElementById('id_marca');
     var modelo = document.getElementById('id_modelo');
+    var preview = document.getElementById('modelo-preview');
+    var previewText = document.getElementById('modelo-preview-text');
     var dataEl = document.getElementById('articulos-catalogo-data');
     if (!select || !dataEl) return;
 
     var catalogo;
     try { catalogo = JSON.parse(dataEl.textContent); } catch (e) { return; }
 
-    select.addEventListener('change', function () {
+    function actualizarPreview() {
       var datos = catalogo[select.value];
-      if (!datos) return;
-      if (marca && !marca.value && datos.marca) marca.value = datos.marca;
-      if (modelo && !modelo.value && datos.nombre) modelo.value = datos.nombre;
-    });
+      if (!datos) {
+        if (preview) preview.style.display = 'none';
+        return;
+      }
+      if (marca && modelo) {
+        if (!marca.value && datos.marca) marca.value = datos.marca;
+        if (!modelo.value && datos.nombre) modelo.value = datos.nombre;
+      } else if (preview && previewText) {
+        previewText.textContent = (datos.marca ? datos.marca + ' — ' : '') + datos.nombre;
+        preview.style.display = '';
+      }
+    }
+
+    select.addEventListener('change', actualizarPreview);
+    if (select.value) actualizarPreview();
+  })();
+
+  (function () {
+    var propiedad = document.getElementById('id_propiedad');
+    var campoEmpresa = document.getElementById('empresa-externa-field');
+    if (!propiedad || !campoEmpresa) return;
+
+    function actualizarVisibilidad() {
+      campoEmpresa.style.display = (propiedad.value === 'EXTERNA') ? '' : 'none';
+    }
+
+    propiedad.addEventListener('change', actualizarVisibilidad);
+    actualizarVisibilidad();
   })();
 </script>
 

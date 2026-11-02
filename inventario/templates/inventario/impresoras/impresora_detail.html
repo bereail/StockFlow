@@ -10,6 +10,9 @@
     <div class="row" style="gap:10px;align-items:center">
       <h1 class="page-title" style="margin:0">{{ impresora.marca }} {{ impresora.modelo }}</h1>
       <span class="chip {% if impresora.estado == 'ACTIVA' %}ok{% elif impresora.estado == 'EN_REPARACION' %}warn{% else %}danger{% endif %}">{{ impresora.estado }}</span>
+      {% if impresora.propiedad == "EXTERNA" %}
+        <span class="chip" title="{{ impresora.empresa_externa|default:'Empresa externa' }}">🏢 externa</span>
+      {% endif %}
     </div>
     {% if impresora.servicio_actual %}<div class="page-subtitle muted">Asignada a {{ impresora.servicio_actual.nombre }}</div>{% endif %}
   </div>
@@ -42,6 +45,13 @@
     </div>
     <div class="field col-3"><span class="label">Conexión</span><span>{{ impresora.get_conexion_display }}</span></div>
     <div class="field col-3"><span class="label">Tipo</span><span>{{ impresora.tipo|default:"—" }}</span></div>
+    <div class="field col-3">
+      <span class="label">Propiedad</span>
+      <span>
+        {{ impresora.get_propiedad_display }}
+        {% if impresora.propiedad == "EXTERNA" and impresora.empresa_externa %}<span class="muted">({{ impresora.empresa_externa }})</span>{% endif %}
+      </span>
+    </div>
     <div class="field col-4">
       <span class="label">Tóner</span>
       {% if impresora.toner %}<a href="{% url 'toner_detail' impresora.toner.id %}">{{ impresora.toner }}</a>{% else %}<span class="muted">—</span>{% endif %}

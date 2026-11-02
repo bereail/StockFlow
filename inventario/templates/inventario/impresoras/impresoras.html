@@ -33,6 +33,11 @@
         <option value="EN_REPARACION" {% if estado == "EN_REPARACION" %}selected{% endif %}>En reparación</option>
         <option value="INACTIVA" {% if estado == "INACTIVA" %}selected{% endif %}>Inactiva</option>
       </select>
+      <select name="propiedad" style="width:auto;max-width:200px" aria-label="Filtrar por propiedad">
+        <option value="">Propia y externa</option>
+        <option value="PROPIA" {% if propiedad == "PROPIA" %}selected{% endif %}>Propia</option>
+        <option value="EXTERNA" {% if propiedad == "EXTERNA" %}selected{% endif %}>Empresa externa</option>
+      </select>
       <button class="btn" type="submit">Buscar</button>
     </form>
   </div>
@@ -76,6 +81,9 @@
               </td>
               <td>
                 <strong>{{ i.marca }} {{ i.modelo }}</strong>
+                {% if i.propiedad == "EXTERNA" %}
+                  <span class="chip" title="Impresora de empresa externa{% if i.empresa_externa %}: {{ i.empresa_externa }}{% endif %}">🏢 externa</span>
+                {% endif %}
                 {% if i.articulo %}<div class="muted" style="font-size:.7rem">🔖 {{ i.articulo.nombre }}</div>{% endif %}
               </td>
               <td>
@@ -111,6 +119,10 @@
                   <div class="field"><span class="label">Tipo</span><span>{{ i.tipo|default:"—" }}</span></div>
                   <div class="field"><span class="label">Conexión</span><span>{{ i.get_conexion_display }}</span></div>
                   <div class="field"><span class="label">Patrimonio</span><span>{{ i.patrimonio|default:"—" }}</span></div>
+                  <div class="field">
+                    <span class="label">Propiedad</span>
+                    <span>{{ i.get_propiedad_display }}{% if i.propiedad == "EXTERNA" and i.empresa_externa %} ({{ i.empresa_externa }}){% endif %}</span>
+                  </div>
                   <div class="field">
                     <span class="label">Estado</span>
                     {% with est=i.estado|default:"INACTIVA"|upper %}

@@ -8,11 +8,18 @@ from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import is_naive, make_aware
 from django.views.decorators.http import require_POST
 from ..models import Impresora, AsignacionImpresora, Movimiento, MovimientoDetalle, Reparacion
-from ..forms.impresoras import ImpresoraForm, EntregaRapidaImpresoraForm
+from ..forms.impresoras import (
+    ImpresoraForm,
+    ImpresoraCreateForm,
+    ModeloImpresoraForm,
+    EntregaRapidaImpresoraForm,
+)
 from ..forms.asignaciones import AsignacionImpresoraForm
 from ..services.items import item_de_impresora
 from ..services.impresoras import asignar_impresora_a_servicio
@@ -27,6 +34,7 @@ logger = logging.getLogger(__name__)
 def impresoras_page(request):
     q = (request.GET.get("q") or "").strip()
     estado = (request.GET.get("estado") or "").strip()
+    propiedad = (request.GET.get("propiedad") or "").strip()
 
     impresoras = (
         Impresora.objects
@@ -44,6 +52,8 @@ def impresoras_page(request):
         impresoras = impresoras.distinct()
     if estado:
         impresoras = impresoras.filter(estado=estado)
+    if propiedad:
+        impresoras = impresoras.filter(propiedad=propiedad)
 
     impresoras, sort_actual, dir_actual = ordenar(
         request, impresoras,
@@ -67,7 +77,7 @@ def impresoras_page(request):
 
     return render(request, "inventario/impresoras/impresoras.html", {
         "impresoras": page_obj, "page_obj": page_obj, "q": q,
-        "estado": estado, "sort_actual": sort_actual, "dir_actual": dir_actual,
+        "estado": estado, "propiedad": propiedad, "sort_actual": sort_actual, "dir_actual": dir_actual,
         "ips_duplicadas": ips_duplicadas,
     })
 
@@ -191,16 +201,45 @@ def asignar_impresora(request, impresora_id):
 @login_required
 def impresora_create(request):
     if request.method == "POST":
-        form = ImpresoraForm(request.POST)
+        form = ImpresoraCreateForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Impresora creada.")
             return redirect("impresoras_page")
         messages.error(request, "Revisá los errores del formulario.")
     else:
-        form = ImpresoraForm()
+        articulo_id = request.GET.get("articulo") or ""
+        initial = {"articulo": articulo_id} if articulo_id else None
+        form = ImpresoraCreateForm(initial=initial)
 
     return render(request, "inventario/impresoras/impresora_form.html", {"form": form, "mode": "create"})
+
+
+@login_required
+def modelo_impresora_create(request):
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
+    if next_url and not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = ""
+
+    if request.method == "POST":
+        form = ModeloImpresoraForm(request.POST)
+        if form.is_valid():
+            articulo = form.save()
+            messages.success(request, "Modelo de impresora creado.")
+            destino = next_url or reverse("impresora_create")
+            separador = "&" if "?" in destino else "?"
+            return redirect(f"{destino}{separador}articulo={articulo.pk}")
+        messages.error(request, "Revisá los errores del formulario.")
+    else:
+        form = ModeloImpresoraForm()
+
+    return render(
+        request,
+        "inventario/impresoras/modelo_form.html",
+        {"form": form, "next": next_url},
+    )
 
 
 @login_required

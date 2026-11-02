@@ -2316,3 +2316,163 @@ class RespaldarSqliteTest(TestCase):
             self.assertEqual(len(restantes), 3)
             # deben quedar los 3 más nuevos
             self.assertEqual(set(restantes), set(archivos[-3:]))
+
+
+# ============================================================
+# IMPRESORA: PROPIEDAD (propia / empresa externa)
+# ============================================================
+
+class ImpresoraPropiedadModelTest(TestCase):
+    def test_propia_por_defecto(self):
+        imp = Impresora.objects.create(marca="HP", modelo="1102", conexion="USB")
+        self.assertEqual(imp.propiedad, "PROPIA")
+        self.assertEqual(imp.empresa_externa, "")
+
+    def test_externa_sin_empresa_falla(self):
+        imp = Impresora(marca="HP", modelo="1102", conexion="USB", propiedad="EXTERNA")
+        with self.assertRaises(ValidationError):
+            imp.clean()
+
+    def test_externa_con_empresa_ok(self):
+        imp = Impresora(
+            marca="HP", modelo="1102", conexion="USB",
+            propiedad="EXTERNA", empresa_externa="Xerox Rental",
+        )
+        imp.clean()  # no debe lanzar
+
+
+# ============================================================
+# MODELO DE IMPRESORA (catálogo) — alta sin salir de Impresoras
+# ============================================================
+
+class ModeloImpresoraFormTest(TestCase):
+    def test_crea_articulo_con_genera_ficha_impresora(self):
+        from inventario.forms.impresoras import ModeloImpresoraForm
+        form = ModeloImpresoraForm(data={"nombre": "HL 1212", "marca": "Brother"})
+        self.assertTrue(form.is_valid(), form.errors)
+        articulo = form.save()
+        self.assertTrue(articulo.es_patrimonial)
+        self.assertEqual(articulo.genera_ficha, "IMPRESORA")
+        self.assertEqual(articulo.nombre, "Impresora HL 1212")
+
+    def test_item_queda_disponible_para_pedidos(self):
+        from inventario.forms.impresoras import ModeloImpresoraForm
+        from inventario.models import Item
+        form = ModeloImpresoraForm(data={"nombre": "M404", "marca": "HP"})
+        self.assertTrue(form.is_valid(), form.errors)
+        articulo = form.save()
+        self.assertTrue(Item.objects.filter(articulo=articulo, tipo="ARTICULO").exists())
+
+
+class ModeloImpresoraCreateViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin20", "a20@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_get_ok(self):
+        r = self.client.get("/impresoras/modelos/nuevo/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_crea_modelo_y_redirige_a_nueva_impresora_con_articulo_preseleccionado(self):
+        r = self.client.post("/impresoras/modelos/nuevo/", {"nombre": "HL 1212", "marca": "Brother"})
+        articulo = Articulo.objects.get(nombre="Impresora HL 1212")
+        self.assertRedirects(r, f"/impresoras/nuevo/?articulo={articulo.pk}")
+
+    def test_next_a_otro_host_se_ignora(self):
+        r = self.client.post(
+            "/impresoras/modelos/nuevo/?next=https://evil.example.com/",
+            {"nombre": "HL 1212", "marca": "Brother"},
+        )
+        articulo = Articulo.objects.get(nombre="Impresora HL 1212")
+        self.assertRedirects(r, f"/impresoras/nuevo/?articulo={articulo.pk}")
+
+    def test_next_del_mismo_sitio_se_respeta(self):
+        r = self.client.post(
+            "/impresoras/modelos/nuevo/?next=/impresoras/",
+            {"nombre": "HL 1212", "marca": "Brother"},
+        )
+        articulo = Articulo.objects.get(nombre="Impresora HL 1212")
+        self.assertRedirects(r, f"/impresoras/?articulo={articulo.pk}")
+
+
+# ============================================================
+# ALTA DE IMPRESORA NUEVA: modelo obligatorio + servicio en el mismo paso
+# ============================================================
+
+class ImpresoraCreateFormTest(TestCase):
+    def setUp(self):
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.articulo = Articulo.objects.create(
+            nombre="Impresora HL 1212", marca="Brother", es_patrimonial=True, genera_ficha="IMPRESORA",
+        )
+
+    def test_requiere_modelo(self):
+        from inventario.forms.impresoras import ImpresoraCreateForm
+        form = ImpresoraCreateForm(data={"conexion": "USB"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("articulo", form.errors)
+
+    def test_marca_y_modelo_salen_del_articulo(self):
+        from inventario.forms.impresoras import ImpresoraCreateForm
+        form = ImpresoraCreateForm(data={"articulo": self.articulo.pk, "conexion": "USB", "propiedad": "PROPIA"})
+        self.assertTrue(form.is_valid(), form.errors)
+        impresora = form.save()
+        self.assertEqual(impresora.marca, "Brother")
+        self.assertEqual(impresora.modelo, "Impresora HL 1212")
+
+    def test_asigna_servicio_en_el_mismo_paso(self):
+        from inventario.forms.impresoras import ImpresoraCreateForm
+        form = ImpresoraCreateForm(data={
+            "articulo": self.articulo.pk, "conexion": "USB", "propiedad": "PROPIA", "servicio": self.servicio.pk,
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        impresora = form.save()
+        self.assertEqual(impresora.servicio_actual, self.servicio)
+
+    def test_sin_servicio_no_asigna_nada(self):
+        from inventario.forms.impresoras import ImpresoraCreateForm
+        form = ImpresoraCreateForm(data={"articulo": self.articulo.pk, "conexion": "USB", "propiedad": "PROPIA"})
+        self.assertTrue(form.is_valid(), form.errors)
+        impresora = form.save()
+        self.assertIsNone(impresora.servicio_actual)
+        self.assertEqual(AsignacionImpresora.objects.count(), 0)
+
+    def test_externa_sin_empresa_falla(self):
+        from inventario.forms.impresoras import ImpresoraCreateForm
+        form = ImpresoraCreateForm(data={
+            "articulo": self.articulo.pk, "conexion": "USB", "propiedad": "EXTERNA",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("empresa_externa", form.errors)
+
+
+class ImpresoraCreateViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin21", "a21@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.articulo = Articulo.objects.create(
+            nombre="Impresora HL 1212", marca="Brother", es_patrimonial=True, genera_ficha="IMPRESORA",
+        )
+
+    def test_get_preselecciona_articulo_por_querystring(self):
+        r = self.client.get(f"/impresoras/nuevo/?articulo={self.articulo.pk}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context["form"].initial.get("articulo"), str(self.articulo.pk))
+
+    def test_post_crea_impresora_con_servicio(self):
+        r = self.client.post("/impresoras/nuevo/", {
+            "articulo": self.articulo.pk, "conexion": "USB", "propiedad": "PROPIA", "servicio": self.servicio.pk,
+        })
+        self.assertRedirects(r, "/impresoras/")
+        impresora = Impresora.objects.get(articulo=self.articulo)
+        self.assertEqual(impresora.servicio_actual, self.servicio)
+
+    def test_sin_articulo_no_crea_nada(self):
+        r = self.client.post("/impresoras/nuevo/", {"conexion": "USB"})
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Impresora.objects.exists())

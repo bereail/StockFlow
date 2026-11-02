@@ -60,6 +60,7 @@ urlpatterns = [
     path("impresoras/", views.impresoras_page, name="impresoras_page"),
     path("impresoras/exportar.xlsx", views.impresoras_exportar_excel, name="impresoras_exportar_excel"),
     path("impresoras/nuevo/", views.impresora_create, name="impresora_create"),
+    path("impresoras/modelos/nuevo/", views.modelo_impresora_create, name="modelo_impresora_create"),
     path("impresoras/<int:pk>/", views.impresora_detail, name="impresora_detail"),
     path("impresoras/<int:pk>/editar/", views.impresora_edit, name="impresora_edit"),
     path("impresoras/<int:pk>/ping/", views.impresora_ping, name="impresora_ping"),
