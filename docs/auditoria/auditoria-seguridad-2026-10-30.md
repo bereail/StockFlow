@@ -4,13 +4,14 @@ Auditoría de solo lectura, enfocada exclusivamente en seguridad (más profunda 
 
 ## 1. Resumen ejecutivo
 
-**3 hallazgos nuevos** (0 críticos · 0 altos · 1 medio · 2 bajos) — ninguno de severidad crítica/alta. El sistema sigue sin SQL crudo, sin `csrf_exempt`, sin secretos commiteados y con CSRF/XSS correctamente manejados en los puntos donde se generó contenido dinámico (reportes HTML). Se reconfirmó que **SEC-01 (`AutoLoginMiddleware`)** sigue activo tal como se documentó y decidió el 23/10 — no se vuelve a cuestionar esa decisión de producto, solo se documenta su alcance real para contexto de los hallazgos nuevos.
+**4 hallazgos nuevos** (0 críticos · 0 altos · 1 medio · 3 bajos) — ninguno de severidad crítica/alta. El sistema sigue sin SQL crudo, sin `csrf_exempt`, sin secretos commiteados y con CSRF/XSS correctamente manejados en los puntos donde se generó contenido dinámico (reportes HTML). Se reconfirmó que **SEC-01 (`AutoLoginMiddleware`)** sigue activo tal como se documentó y decidió el 23/10 — no se vuelve a cuestionar esa decisión de producto, solo se documenta su alcance real para contexto de los hallazgos nuevos.
 
-| ID | Hallazgo | Gravedad |
-|---|---|---|
-| SEC-N1 | Open redirect en `custom_login` vía el parámetro `next` | Media |
-| SEC-N2 | Sin límite de intentos de login (fuerza bruta) | Baja |
-| SEC-N3 | El context processor expone el objeto `settings` completo a todos los templates | Baja |
+| ID | Hallazgo | Gravedad | Estado |
+|---|---|---|---|
+| SEC-N1 | Open redirect en `custom_login` vía el parámetro `next` | Media | ✅ Resuelto (`c8ad52d`) |
+| SEC-N2 | Sin límite de intentos de login (fuerza bruta) | Baja | Pendiente a propósito, impacto bajo hoy |
+| SEC-N3 | El context processor expone el objeto `settings` completo a todos los templates | Baja | ✅ Resuelto (`36f047f`) |
+| SEC-N4 | `Django==5.2.10` (pin de `requirements.txt`) con 51 CVEs conocidas | Baja-Media | ✅ Resuelto (`38287b5`, bump a 5.2.18) |
 
 **Puntos de la lista de alcance revisados y SIN hallazgos nuevos:**
 - **CSRF:** cero usos de `csrf_exempt` en todo el proyecto; las únicas llamadas AJAX (`fetch`) son GET de solo lectura, no requieren token.
@@ -50,6 +51,16 @@ Auditoría de solo lectura, enfocada exclusivamente en seguridad (más profunda 
 - **Evidencia:** `inventario/views/core.py:25-46`; `requirements.txt` (sin paquete de rate-limiting).
 - **Solución recomendada:** si se retoma el login real en algún momento, agregar un lockout simple (ej. `django-axes`, o un contador en caché/sesión por IP) antes de depender de contraseñas fuertes como única defensa.
 
+### SEC-N4 — `Django==5.2.10` con 51 CVEs conocidas
+- **Categoría:** Dependencias
+- **Gravedad:** baja-media
+- **Archivo:** `requirements.txt:1`
+- **Explicación:** la auditoría original (2026-10-30) no pudo correr un scanner de CVE por falta de acceso a internet en esa sesión (ver sección 3, "Limitaciones"). En una sesión posterior, con internet disponible, `pip-audit -r requirements.txt` encontró 51 vulnerabilidades conocidas (`PYSEC-2026-*`) sobre `Django==5.2.10`, todas resueltas dentro de la misma rama `5.2.x` (sin necesidad de saltar a `6.x`), con el fix más reciente en `5.2.17`.
+- **Hallazgo adicional durante la verificación:** el entorno de desarrollo activo tenía instalado realmente `Django 5.2.1` (más viejo todavía), no el `5.2.10` que pedía `requirements.txt` — el entorno había quedado desincronizado del archivo de dependencias.
+- **Impacto real hoy:** variable según el CVE puntual; no evaluado uno por uno dado el volumen (51), pero el riesgo de mantener un framework con ese parche atrasado es suficiente para justificar el bump sin más análisis.
+- **Solución aplicada:** bump a `Django==5.2.18` (último patch de la rama 5.2 LTS disponible al momento). Se verificaron las release notes de 5.2.18 — el único cambio de comportamiento documentado es específico de GeoDjango (lookups espaciales con `bytes`), que este proyecto no usa. 209 tests en verde, `manage.py check`, `makemigrations --check --dry-run` y `ruff check .` limpios tras el bump.
+- **Evidencia:** commit `38287b5`.
+
 ### SEC-N3 — El context processor expone el objeto `settings` completo a todos los templates
 - **Categoría:** Exposición de configuración / hardening
 - **Gravedad:** baja
@@ -63,6 +74,6 @@ Auditoría de solo lectura, enfocada exclusivamente en seguridad (más profunda 
 
 ## 3. Limitaciones de esta auditoría
 
-- No se corrió un scanner de CVE contra `requirements.txt` (sin acceso a internet en esta sesión) — solo se verificó que las versiones estén ancladas y no se vean obviamente desactualizadas.
+- ~~No se corrió un scanner de CVE contra `requirements.txt` (sin acceso a internet en esta sesión)~~ — **hecho en una sesión posterior con internet disponible, ver SEC-N4.** Las demás dependencias (`waitress`, `whitenoise`, `pywebview`, `pyinstaller`, `openpyxl`) no mostraron CVEs conocidas en ese mismo scan.
 - No se evaluó seguridad de infraestructura de CI/CD (permisos del repo, secretos de GitHub Actions) — fuera del alcance pedido (código de la aplicación).
 - No se re-auditaron en profundidad los hallazgos de seguridad ya cerrados de la auditoría del 23/10 (SEC-01, DB-01, etc.) más allá de reconfirmar que `AutoLoginMiddleware` sigue activo como se documentó — se asumió que el resto de las correcciones commiteadas siguen en pie salvo que el código mostrara lo contrario.
