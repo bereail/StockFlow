@@ -36,20 +36,27 @@ def impresoras_page(request):
     estado = (request.GET.get("estado") or "").strip()
     propiedad = (request.GET.get("propiedad") or "").strip()
 
-    impresoras = (
-        Impresora.objects
-        .select_related("toner", "articulo")
-        .prefetch_related(
-            Prefetch(
-                "asignaciones",
-                queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
-            )
+    impresoras = buscar_texto(
+        Impresora.objects.all(), q, "marca", "modelo", "patrimonio", "ip", "asignaciones__servicio__nombre"
+    )
+    if q:
+        # buscar_texto anota una columna por cada campo, incluida la
+        # relación a-muchos "asignaciones__servicio__nombre" — eso obliga
+        # un join que multiplica filas por impresora con 2+ asignaciones, y
+        # un .distinct() de SQL plano no las junta porque esa columna
+        # anotada difiere entre esas filas aunque sean la misma impresora.
+        # Se resuelve en Python (ids distintos) antes de traer las
+        # relaciones reales con select_related/prefetch_related.
+        ids = list(impresoras.values_list("id", flat=True).distinct())
+        impresoras = Impresora.objects.filter(id__in=ids)
+
+    impresoras = impresoras.select_related("toner", "articulo").prefetch_related(
+        Prefetch(
+            "asignaciones",
+            queryset=AsignacionImpresora.objects.select_related("servicio").order_by("-fecha_desde"),
         )
     )
 
-    impresoras = buscar_texto(impresoras, q, "marca", "modelo", "patrimonio", "ip", "asignaciones__servicio__nombre")
-    if q:
-        impresoras = impresoras.distinct()
     if estado:
         impresoras = impresoras.filter(estado=estado)
     if propiedad:

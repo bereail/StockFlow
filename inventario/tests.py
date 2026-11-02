@@ -1139,6 +1139,11 @@ class PatrimonioStandaloneCreateConServicioPreseleccionadoTest(TestCase):
         self.assertRedirects(r, f"/servicios/{self.servicio.pk}/#equipamiento", fetch_redirect_response=False)
         self.assertTrue(PatrimonioUnidad.objects.filter(numero_patrimonio="PAT-GUARDIA-01", servicio_asignado=self.servicio).exists())
 
+    def test_post_invalido_no_crea_nada(self):
+        r = self.client.post("/patrimonios/nuevo/", {"numero_patrimonio": ""})  # sin articulo
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(PatrimonioUnidad.objects.exists())
+
 
 class HistorialServicioTest(TestCase):
     def setUp(self):
@@ -2375,6 +2380,11 @@ class ModeloImpresoraCreateViewTest(TestCase):
         r = self.client.get("/impresoras/modelos/nuevo/")
         self.assertEqual(r.status_code, 200)
 
+    def test_post_invalido_no_crea_nada(self):
+        r = self.client.post("/impresoras/modelos/nuevo/", {"nombre": ""})
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Articulo.objects.exists())
+
     def test_post_crea_modelo_y_redirige_a_nueva_impresora_con_articulo_preseleccionado(self):
         r = self.client.post("/impresoras/modelos/nuevo/", {"nombre": "HL 1212", "marca": "Brother"})
         articulo = Articulo.objects.get(nombre="Impresora HL 1212")
@@ -2476,3 +2486,481 @@ class ImpresoraCreateViewTest(TestCase):
         r = self.client.post("/impresoras/nuevo/", {"conexion": "USB"})
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Impresora.objects.exists())
+
+
+# ============================================================
+# IMPRESORAS: vistas secundarias sin cobertura previa
+# (asignar, editar, entrega rápida, exportar, historial filtrado,
+# filtros del listado)
+# ============================================================
+
+class ImpresorasPageFiltrosTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin22", "a22@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_filtra_por_propiedad(self):
+        Impresora.objects.create(marca="HP", modelo="1102", conexion="USB", propiedad="PROPIA")
+        Impresora.objects.create(
+            marca="Xerox", modelo="X1", conexion="USB",
+            propiedad="EXTERNA", empresa_externa="Xerox Rental",
+        )
+        r = self.client.get("/impresoras/?propiedad=EXTERNA")
+        self.assertContains(r, "Xerox")
+        self.assertNotContains(r, "HP 1102")
+
+    def test_busqueda_por_texto_no_duplica_con_varias_asignaciones(self):
+        servicio1 = Servicio.objects.create(nombre="Guardia")
+        servicio2 = Servicio.objects.create(nombre="Farmacia")
+        imp = Impresora.objects.create(marca="Brother", modelo="HL-1212", conexion="USB")
+        AsignacionImpresora.objects.create(impresora=imp, servicio=servicio1, fecha_hasta=timezone.localdate())
+        AsignacionImpresora.objects.create(impresora=imp, servicio=servicio2)
+        r = self.client.get("/impresoras/?q=Brother")
+        self.assertEqual(r.context["page_obj"].paginator.count, 1)
+
+
+class ImpresorasExportarExcelTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin23", "a23@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_devuelve_xlsx_con_una_fila_por_impresora(self):
+        servicio = Servicio.objects.create(nombre="Guardia")
+        imp = Impresora.objects.create(marca="HP", modelo="1102", conexion="IP", ip="10.0.0.5")
+        AsignacionImpresora.objects.create(impresora=imp, servicio=servicio)
+
+        r = self.client.get("/impresoras/exportar.xlsx")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r["Content-Type"].startswith("application/vnd.openxmlformats"))
+
+        import io
+        import openpyxl
+        wb = openpyxl.load_workbook(io.BytesIO(r.content))
+        ws = wb.active
+        self.assertEqual(ws.cell(row=1, column=1).value, "Impresora Guardia")
+        self.assertEqual(ws.cell(row=1, column=2).value, "10.0.0.5")
+
+
+class AsignarImpresoraViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin24", "a24@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.impresora = Impresora.objects.create(marca="HP", modelo="1102", conexion="USB")
+
+    def test_get_ok(self):
+        r = self.client.get(f"/impresoras/{self.impresora.pk}/asignar/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_asigna_y_cierra_la_anterior(self):
+        primera = AsignacionImpresora.objects.create(impresora=self.impresora, servicio=self.servicio)
+        otro_servicio = Servicio.objects.create(nombre="Farmacia")
+        r = self.client.post(f"/impresoras/{self.impresora.pk}/asignar/", {
+            "servicio": otro_servicio.pk, "fecha_desde": timezone.localdate().isoformat(),
+        })
+        self.assertRedirects(r, "/impresoras/")
+        primera.refresh_from_db()
+        self.assertIsNotNone(primera.fecha_hasta)
+        self.assertEqual(self.impresora.servicio_actual, otro_servicio)
+
+    def test_post_invalido_no_asigna(self):
+        r = self.client.post(f"/impresoras/{self.impresora.pk}/asignar/", {"servicio": "", "fecha_desde": ""})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(AsignacionImpresora.objects.count(), 0)
+
+
+class ImpresoraEditViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin25", "a25@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.impresora = Impresora.objects.create(marca="HP", modelo="1102", tipo="Laser", conexion="USB")
+
+    def test_get_ok(self):
+        r = self.client.get(f"/impresoras/{self.impresora.pk}/editar/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Editar impresora")
+
+    def test_post_actualiza(self):
+        r = self.client.post(f"/impresoras/{self.impresora.pk}/editar/", {
+            "marca": "HP", "modelo": "1102 actualizada", "conexion": "USB", "propiedad": "PROPIA",
+        })
+        self.assertRedirects(r, "/impresoras/")
+        self.impresora.refresh_from_db()
+        self.assertEqual(self.impresora.modelo, "1102 actualizada")
+
+    def test_post_invalido_muestra_error_y_no_actualiza(self):
+        r = self.client.post(f"/impresoras/{self.impresora.pk}/editar/", {
+            "marca": "HP", "modelo": "X", "conexion": "IP", "propiedad": "PROPIA",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.impresora.refresh_from_db()
+        self.assertEqual(self.impresora.modelo, "1102")
+
+
+class ImpresoraEntregaViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin26", "a26@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+        self.impresora = Impresora.objects.create(marca="HP", modelo="1102", conexion="USB")
+
+    def test_get_ok(self):
+        r = self.client.get("/impresoras/entrega/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_valido_registra_movimiento_y_asigna_servicio(self):
+        r = self.client.post("/impresoras/entrega/", {
+            "servicio": self.servicio.pk, "impresora": self.impresora.pk,
+        })
+        self.assertRedirects(r, "/impresoras/")
+        self.assertEqual(Movimiento.objects.filter(tipo="EGRESO").count(), 1)
+        self.assertEqual(self.impresora.servicio_actual, self.servicio)
+
+    def test_post_invalido_muestra_error(self):
+        r = self.client.post("/impresoras/entrega/", {"servicio": "", "impresora": ""})
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Movimiento.objects.exists())
+
+    def test_post_con_fecha_personalizada_queda_aware(self):
+        r = self.client.post("/impresoras/entrega/", {
+            "servicio": self.servicio.pk, "impresora": self.impresora.pk,
+            "fecha": "2026-01-15T10:30",
+        })
+        self.assertRedirects(r, "/impresoras/")
+        mov = Movimiento.objects.get(tipo="EGRESO")
+        self.assertFalse(timezone.is_naive(mov.fecha))
+
+    @patch("inventario.views.impresoras.asignar_impresora_a_servicio")
+    def test_post_con_excepcion_no_deja_movimiento_a_medias(self, mock_asignar):
+        mock_asignar.side_effect = Exception("boom")
+        r = self.client.post("/impresoras/entrega/", {
+            "servicio": self.servicio.pk, "impresora": self.impresora.pk,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Movimiento.objects.exists())  # transaction.atomic hizo rollback
+
+
+class ImpresoraHistorialFiltroTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin27", "a27@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.servicio = Servicio.objects.create(nombre="Guardia")
+
+    def test_filtra_por_impresora(self):
+        imp1 = Impresora.objects.create(marca="HP", modelo="1102", conexion="USB")
+        imp2 = Impresora.objects.create(marca="Brother", modelo="HL-1212", conexion="USB")
+        mov1 = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov1, item=item_de_impresora(imp1), cantidad=1)
+        mov2 = Movimiento.objects.create(tipo="EGRESO", servicio=self.servicio)
+        MovimientoDetalle.objects.create(movimiento=mov2, item=item_de_impresora(imp2), cantidad=1)
+
+        r = self.client.get(f"/impresoras/historial/?impresora={imp1.pk}")
+        self.assertContains(r, "HP")
+        self.assertNotContains(r, "Brother HL-1212")
+
+
+# ============================================================
+# PATRIMONIOS: vistas sin cobertura previa (filtros, ping, alta/edición
+# standalone, donaciones, alta/edición/vinculación ligadas a un pedido)
+# ============================================================
+
+class PatrimoniosListFiltroTipoTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin28", "a28@test.com", "pw1234")
+        self.client.force_login(self.user)
+
+    def test_filtra_por_tipo_articulo(self):
+        articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+        PatrimonioUnidad.objects.create(numero_patrimonio="PAT-1", articulo=articulo, asignado_por=self.user)
+        toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        pedido = Pedido.objects.create(numero="PED-900")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_toner(toner), cantidad=1)
+        PatrimonioUnidad.objects.create(numero_patrimonio="PAT-2", pedido_detalle=detalle, asignado_por=self.user)
+
+        r = self.client.get("/patrimonios/?tipo=ARTICULO")
+        self.assertContains(r, "PAT-1")
+        self.assertNotContains(r, "PAT-2")
+
+    def test_filtra_por_otro_tipo(self):
+        pc = ActivoPC.objects.create(nombre_pc="PC-01")
+        pedido = Pedido.objects.create(numero="PED-901")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_pc(pc), cantidad=1)
+        PatrimonioUnidad.objects.create(numero_patrimonio="PAT-3", pedido_detalle=detalle, asignado_por=self.user)
+        articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+        PatrimonioUnidad.objects.create(numero_patrimonio="PAT-4", articulo=articulo, asignado_por=self.user)
+
+        r = self.client.get("/patrimonios/?tipo=ACTIVO_PC")
+        self.assertContains(r, "PAT-3")
+        self.assertNotContains(r, "PAT-4")
+
+
+class PatrimonioPingViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin29", "a29@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Switch", es_patrimonial=True)
+
+    @patch("inventario.views.patrimonios.hacer_ping")
+    def test_online(self, mock_ping):
+        mock_ping.return_value = True
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-10", articulo=self.articulo, ip="10.0.0.9", asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{pat.pk}/ping/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"online": True})
+
+    def test_sin_ip(self):
+        pat = PatrimonioUnidad.objects.create(numero_patrimonio="PAT-11", articulo=self.articulo, asignado_por=self.user)
+        r = self.client.get(f"/patrimonios/{pat.pk}/ping/")
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()["online"])
+
+
+class PatrimonioStandaloneEditViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin30", "a30@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+
+    def test_get_ok(self):
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-20", articulo=self.articulo, asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{pat.pk}/editar-directo/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_actualiza_y_redirige_a_patrimonios_list(self):
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-21", articulo=self.articulo, asignado_por=self.user,
+        )
+        r = self.client.post(f"/patrimonios/{pat.pk}/editar-directo/", {
+            "articulo": self.articulo.pk, "numero_patrimonio": "PAT-21", "observaciones": "actualizado",
+        })
+        self.assertRedirects(r, "/patrimonios/")
+        pat.refresh_from_db()
+        self.assertEqual(pat.observaciones, "actualizado")
+
+    def test_donacion_redirige_a_donaciones_list(self):
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-22", articulo=self.articulo, asignado_por=self.user, es_donacion=True,
+        )
+        r = self.client.post(f"/patrimonios/{pat.pk}/editar-directo/", {
+            "articulo": self.articulo.pk, "numero_patrimonio": "PAT-22",
+        })
+        self.assertRedirects(r, "/patrimonios/donaciones/")
+
+    def test_post_invalido_no_actualiza(self):
+        pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-23", articulo=self.articulo, asignado_por=self.user,
+        )
+        r = self.client.post(f"/patrimonios/{pat.pk}/editar-directo/", {"numero_patrimonio": ""})  # sin articulo
+        self.assertEqual(r.status_code, 200)
+        pat.refresh_from_db()
+        self.assertEqual(pat.numero_patrimonio, "PAT-23")
+
+
+class DonacionesListViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin31", "a31@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+
+    def test_lista_solo_donaciones(self):
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-30", articulo=self.articulo, asignado_por=self.user,
+            es_donacion=True, donante="Fundación ABC",
+        )
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-31", articulo=self.articulo, asignado_por=self.user,
+        )
+        r = self.client.get("/patrimonios/donaciones/")
+        self.assertContains(r, "PAT-30")
+        self.assertNotContains(r, "PAT-31")
+
+    def test_busqueda_por_donante(self):
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-32", articulo=self.articulo, asignado_por=self.user,
+            es_donacion=True, donante="Fundación ABC",
+        )
+        r = self.client.get("/patrimonios/donaciones/?q=Fundaci%C3%B3n")
+        self.assertContains(r, "PAT-32")
+
+
+class DonacionCreateViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin32", "a32@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+
+    def test_get_ok(self):
+        r = self.client.get("/patrimonios/donaciones/nueva/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_crea_donacion(self):
+        r = self.client.post("/patrimonios/donaciones/nueva/", {
+            "articulo": self.articulo.pk, "numero_patrimonio": "PAT-40", "donante": "Fundación XYZ",
+        })
+        self.assertRedirects(r, "/patrimonios/donaciones/")
+        pat = PatrimonioUnidad.objects.get(numero_patrimonio="PAT-40")
+        self.assertTrue(pat.es_donacion)
+
+    def test_post_invalido_no_crea_nada(self):
+        r = self.client.post("/patrimonios/donaciones/nueva/", {"numero_patrimonio": ""})  # sin articulo
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(PatrimonioUnidad.objects.exists())
+
+
+class PatrimonioEditLinkedTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin33", "a33@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+        self.pedido = Pedido.objects.create(numero="PED-600", estado="RECIBIDO")
+        self.detalle = PedidoDetalle.objects.create(
+            pedido=self.pedido, item=item_de_articulo(self.articulo), cantidad=2,
+        )
+        self.pat = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-50", pedido_detalle=self.detalle, asignado_por=self.user,
+        )
+
+    def test_redirige_a_standalone_edit_si_no_tiene_pedido(self):
+        suelto = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-51", articulo=self.articulo, asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/{suelto.pk}/editar/")
+        self.assertRedirects(r, f"/patrimonios/{suelto.pk}/editar-directo/")
+
+    def test_get_ok(self):
+        r = self.client.get(f"/patrimonios/{self.pat.pk}/editar/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_actualiza_y_redirige_al_pedido(self):
+        r = self.client.post(f"/patrimonios/{self.pat.pk}/editar/", {
+            "numero_patrimonio": "PAT-50", "observaciones": "nota",
+        })
+        self.assertRedirects(r, f"/pedidos/{self.pedido.pk}/")
+        self.pat.refresh_from_db()
+        self.assertEqual(self.pat.observaciones, "nota")
+
+    def test_post_con_next_redirige_ahi(self):
+        r = self.client.post(f"/patrimonios/{self.pat.pk}/editar/?next=/patrimonios/", {
+            "numero_patrimonio": "PAT-50",
+        })
+        self.assertRedirects(r, "/patrimonios/")
+
+    def test_post_invalido_no_actualiza(self):
+        r = self.client.post(f"/patrimonios/{self.pat.pk}/editar/", {"numero_patrimonio": ""})
+        self.assertEqual(r.status_code, 200)
+        self.pat.refresh_from_db()
+        self.assertEqual(self.pat.numero_patrimonio, "PAT-50")
+
+
+class PatrimonioCreateLinkedTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin34", "a34@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+
+    def test_bloquea_si_pedido_no_esta_recibido(self):
+        pedido = Pedido.objects.create(numero="PED-700", estado="HECHO")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_articulo(self.articulo), cantidad=1)
+        r = self.client.get(f"/patrimonios/detalle/{detalle.pk}/nuevo/")
+        self.assertRedirects(r, f"/pedidos/{pedido.pk}/")
+        self.assertFalse(PatrimonioUnidad.objects.exists())
+
+    def test_get_ok_cuando_recibido(self):
+        pedido = Pedido.objects.create(numero="PED-701", estado="RECIBIDO")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_articulo(self.articulo), cantidad=1)
+        r = self.client.get(f"/patrimonios/detalle/{detalle.pk}/nuevo/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_crea_patrimonio(self):
+        pedido = Pedido.objects.create(numero="PED-702", estado="RECIBIDO")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_articulo(self.articulo), cantidad=1)
+        r = self.client.post(f"/patrimonios/detalle/{detalle.pk}/nuevo/", {"numero_patrimonio": "PAT-60"})
+        self.assertRedirects(r, f"/pedidos/{pedido.pk}/")
+        self.assertTrue(
+            PatrimonioUnidad.objects.filter(numero_patrimonio="PAT-60", pedido_detalle=detalle).exists()
+        )
+
+    def test_post_invalido_no_crea_nada(self):
+        pedido = Pedido.objects.create(numero="PED-704", estado="RECIBIDO")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_articulo(self.articulo), cantidad=1)
+        r = self.client.post(f"/patrimonios/detalle/{detalle.pk}/nuevo/", {"numero_patrimonio": ""})
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(PatrimonioUnidad.objects.exists())
+
+    def test_sin_articulo_patrimonial_no_muestra_unidades_disponibles(self):
+        toner = Toner.objects.create(nombre="CE285A", marca="HP")
+        pedido = Pedido.objects.create(numero="PED-705", estado="RECIBIDO")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_toner(toner), cantidad=1)
+        r = self.client.get(f"/patrimonios/detalle/{detalle.pk}/nuevo/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(list(r.context["unidades_disponibles"]), [])
+
+    def test_muestra_unidades_disponibles_para_articulo_patrimonial(self):
+        pedido = Pedido.objects.create(numero="PED-703", estado="RECIBIDO")
+        detalle = PedidoDetalle.objects.create(pedido=pedido, item=item_de_articulo(self.articulo), cantidad=2)
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-DISP", articulo=self.articulo, asignado_por=self.user,
+        )
+        r = self.client.get(f"/patrimonios/detalle/{detalle.pk}/nuevo/")
+        self.assertContains(r, "PAT-DISP")
+
+
+class PatrimonioAttachViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User = get_user_model()
+        self.user = User.objects.create_superuser("admin35", "a35@test.com", "pw1234")
+        self.client.force_login(self.user)
+        self.articulo = Articulo.objects.create(nombre="Monitor", es_patrimonial=True)
+        self.pedido = Pedido.objects.create(numero="PED-800", estado="RECIBIDO")
+        self.detalle = PedidoDetalle.objects.create(
+            pedido=self.pedido, item=item_de_articulo(self.articulo), cantidad=1,
+        )
+        self.suelta = PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-70", articulo=self.articulo, asignado_por=self.user,
+        )
+
+    def test_vincula_unidad_disponible(self):
+        r = self.client.post(f"/patrimonios/detalle/{self.detalle.pk}/vincular/{self.suelta.pk}/")
+        self.assertRedirects(r, f"/pedidos/{self.pedido.pk}/")
+        self.suelta.refresh_from_db()
+        self.assertEqual(self.suelta.pedido_detalle, self.detalle)
+
+    def test_no_vincula_si_ya_se_alcanzo_el_cupo(self):
+        PatrimonioUnidad.objects.create(
+            numero_patrimonio="PAT-71", pedido_detalle=self.detalle, asignado_por=self.user,
+        )
+        r = self.client.post(f"/patrimonios/detalle/{self.detalle.pk}/vincular/{self.suelta.pk}/")
+        self.assertRedirects(r, f"/pedidos/{self.pedido.pk}/")
+        self.suelta.refresh_from_db()
+        self.assertIsNone(self.suelta.pedido_detalle)
